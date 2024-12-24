@@ -1,8 +1,9 @@
-class_name utils
+class_name Utils
 extends Resource
 
 enum border_type {
 	EMPTY = 0,
 	WALL = 1,
-	LOCKED_DOOR = 2 
+	DEATH_ZONE = 2,
+	LOCKED_DOOR = 3 
 }

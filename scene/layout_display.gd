@@ -6,6 +6,7 @@ extends Node2D
 @export var generator: MapGenerator
 
 const empty_atlas = Vector2i(4, 2)
+const start_atlas = Vector2i(3, 4)
 const gate_Y_atlas = Vector2i(1,3)
 const gate_X_atlas = Vector2i(2,3)
 
@@ -17,14 +18,18 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	tilemap.clear()
-	var rooms = generator.rooms #horribly unoptimized
-	#var empty_cell = tileset.get_
+	var rooms = Utils.rooms
 	for column in rooms:
-		for room in column:
+		for room:Room in column:
 			if room != null: 
 				var current_tilemap_pos:Vector2i = room.grid_pos*2
 				var neighbours = get_adjacent_cells(current_tilemap_pos)
-				tilemap.set_cell(current_tilemap_pos, 0, empty_atlas)
+				#room content
+				if room.data.contains("initial room"):
+					tilemap.set_cell(current_tilemap_pos, 0, start_atlas)
+				else:
+					tilemap.set_cell(current_tilemap_pos, 0, empty_atlas)
+				#room neighbours
 				tilemap.set_cells_terrain_connect(neighbours, 0, 0)
 				var border:Utils.border = Utils.border.UP
 				for border_type in room.borders:
@@ -34,7 +39,7 @@ func _process(delta: float) -> void:
 							tilemap.set_cell(border_pos, 0, empty_atlas)
 							pass
 						Utils.border_type.LOCKED_DOOR:
-							tilemap.set_cell(border_pos, 0, gate_Y_atlas if border<=2 else gate_X_atlas)
+							tilemap.set_cell(border_pos, 0, gate_Y_atlas if border == Utils.border.UP || border == Utils.border.DOWN else gate_X_atlas)
 							pass
 						_:
 							pass

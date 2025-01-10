@@ -11,4 +11,4 @@
 generator = NodePath("../MapGenerator")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(385, 170)
+position = Vector2(529, 257)

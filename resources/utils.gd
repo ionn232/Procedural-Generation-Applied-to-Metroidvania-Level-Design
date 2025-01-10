@@ -29,7 +29,7 @@ static func border_to_vec2i(input:border) -> Vector2i:
 			return Vector2i(-1,0)
 		border.RIGHT:
 			return Vector2i(1,0)
-	print('❌ ERROR converting direction to vec2i')
+	print('❌ ERROR converting direction to vec2i: input value -> ', input)
 	return Vector2i(-5, -5)
 
 static func opposite_direction(direction:border) -> border:

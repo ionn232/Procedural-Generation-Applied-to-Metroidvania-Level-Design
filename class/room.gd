@@ -15,10 +15,10 @@ func assign_borders(up: Utils.border_type, down: Utils.border_type, left: Utils.
 	borders[Utils.border.RIGHT] = right
 
 
-func define_data(pos:Vector2i, data: String):
+func define_data(pos:Vector2i, input_data: String):
 	borders.resize(4)
 	grid_pos = pos
-	self.data = data
+	data = input_data
 
 #assign a wall type to each direction. Checks map bounds. Ensures parity with adjacent, existing rooms.
 func roll_borders():
@@ -33,6 +33,7 @@ func roll_borders():
 			if (adjacent_room):
 				var adjacent_border = adjacent_room.borders[Utils.opposite_direction(direction)]
 				borders[direction] = adjacent_border
+				print('direction: ', direction, ' // adjacent border type: ', adjacent_border)
 			#TODO: change behaviour
 			else:
 				var roll = randf()

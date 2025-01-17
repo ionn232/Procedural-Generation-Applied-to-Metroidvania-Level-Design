@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://ocnc86sdjvvv"]
 
-[ext_resource type="Script" path="res://scene/layout_display.gd" id="1_auwf0"]
+[ext_resource type="Script" path="res://class/layout_display.gd" id="1_auwf0"]
 [ext_resource type="TileSet" uid="uid://bb1r74h5164y5" path="res://game_specific_resources/layout_tilemaps/Style C/tileset.tres" id="2_6b0kb"]
 
 [node name="LayoutDisplay" type="Node2D"]

@@ -16,7 +16,11 @@ func _ready() -> void:
 
 #map rendering procedure
 func _process(delta: float) -> void:
+	#var mouse_coords = tilemap.get_cell_atlas_coords(Vector2i(0, 0))
+	#var mouse_coords = tilemap.local_to_map(get_local_mouse_position())
+	#print(mouse_coords)
 	tilemap.clear()
+	#tilemap.modulate = Color(1,0.4,0.35,1)
 	var rooms = Map.rooms
 	for column in rooms:
 		for room:Room in column:

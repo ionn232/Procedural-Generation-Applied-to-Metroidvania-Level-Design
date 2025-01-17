@@ -1,5 +1,5 @@
 class_name LockedDoor
-extends Node2D
+extends Resource
 
 
 # Called when the node enters the scene tree for the first time.

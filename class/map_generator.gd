@@ -1,8 +1,8 @@
 class_name MapGenerator
 extends Node2D
 
-@export var map_size_x:int = 40
-@export var map_size_y:int = 35
+@export var map_size_x:int
+@export var map_size_y:int
 
 func main_process() -> void:
 	Map.initialize_map(map_size_x, map_size_y)
@@ -11,11 +11,12 @@ func main_process() -> void:
 	var finished_rooms : Array[Room] = []
 	
 	#initial room initialization
-	var starting_coords:Vector2i = Vector2i(randi_range(0, map_size_x - 1), randi_range(0, map_size_y - 1))
+	var starting_coords:Vector2i = Vector2i(randi_range(0, map_size_x - 1), 0)
 	var initial_room = Room.new()
 	initial_room.define_data(starting_coords, 'initial room;')
 	undefined_rooms.push_back(initial_room)
 	Map.rooms[starting_coords.x][starting_coords.y] = initial_room
+	Map.initial_room = initial_room
 	
 	#room generation procedure (first pass)
 	while undefined_rooms.front() != null:
@@ -35,7 +36,7 @@ func main_process() -> void:
 		finished_rooms.push_back(finished_room)
 		DEBUG_check_borders(finished_room)
 		
-	DEBUG_check_paths()
+	DEBUG_check_paths(finished_rooms)
 
 #checks if a position is out of bounds, and if it is modifies the adjacent room's connecting direction into a wall
 #TODO: creo que no es necesario convertir en muros. Testear. Si no es necesario sustituir por la funcion en Utils
@@ -64,9 +65,15 @@ func DEBUG_check_borders(room:Room):
 	print('left: ', room.borders[Utils.direction.LEFT])
 	print('right: ', room.borders[Utils.direction.RIGHT])
 
-func DEBUG_check_paths():
+func DEBUG_check_paths(finished_rooms:Array[Room]):
 	print('---------------------------checking paths------------------------')
-	print('TODO')
+	var trueCount:int = 0
+	for room:Room in finished_rooms:
+		var traversable:bool = traversableArea.exists_path(Map.initial_room.grid_pos, room.grid_pos)
+		if (traversable):
+			trueCount += 1
+	
+	print('number of traversable rooms (including starting): ', trueCount)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

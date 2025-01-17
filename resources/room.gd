@@ -1,5 +1,5 @@
 class_name Room
-extends Node2D
+extends Resource
 
 var grid_pos:Vector2i
 #up, down, left, right

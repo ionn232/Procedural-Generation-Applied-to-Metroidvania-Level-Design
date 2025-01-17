@@ -3,13 +3,17 @@ extends Resource
 
 #TODO: improve shitty DFS implementation using better algorithm
 #TODO: consider gates with an input key list
-func exists_path(pos0:Vector2i, pos1:Vector2i) -> bool:
+#TODO: optimize seen array by removing dynamic memory allocation
+static func exists_path(pos0:Vector2i, pos1:Vector2i) -> bool:
 	var rooms = Map.rooms
 	var queue : Array[Room] = []
+	var seen : Array[Room] = []
 	
 	if (!(is_room_valid(pos0) && is_room_valid(pos1))):
 		print('❌ ERROR invalid position(s) at method traversableArea.exists_path for coords: ', pos0, pos1)
 		return false
+	
+	queue.push_back(Map.rooms[pos0.x][pos0.y])
 	
 	while (queue.front() != null):
 		var current_room:Room = queue.pop_front()
@@ -18,13 +22,16 @@ func exists_path(pos0:Vector2i, pos1:Vector2i) -> bool:
 		else:
 			for direction in Utils.direction.values():
 				var wall_type = current_room.borders[direction]
-				if (wall_type == Utils.border_type.WALL):
+				if (wall_type == Utils.border_type.EMPTY && seen.find(current_room) == -1 ):
 					var direction_vec = Utils.border_to_vec2i(direction)
 					var adjacent_pos = current_room.grid_pos + direction_vec
 					queue.push_back(Map.rooms[adjacent_pos.x][adjacent_pos.y])
+		seen.push_back(current_room)
 	return false
 
-func is_room_valid(pos:Vector2i) -> bool:
+#internal use only. Do not call outside traversableArea script.
+#TODO: como coño se hace una funcion privada
+static func is_room_valid(pos:Vector2i) -> bool:
 	if (!Utils.is_pos_inside_map(pos)):
 		return false
 	if (!Map.rooms[pos.x][pos.y]):

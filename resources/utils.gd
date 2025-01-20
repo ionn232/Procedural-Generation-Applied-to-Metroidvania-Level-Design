@@ -1,6 +1,8 @@
 class_name Utils
 extends Resource
 
+static var gui_selected_room:Vector2i = Vector2i(0,0)
+
 enum border_type {
 	EMPTY = 0,
 	WALL = 1,
@@ -40,9 +42,9 @@ static func opposite_direction(dir:direction) -> direction:
 			return direction.LEFT
 
 static func is_pos_inside_map(pos:Vector2i) -> bool:
-	if (pos.x >= Map.map_size_x):
+	if (pos.x >= Level.map_size_x):
 		return false
-	elif (pos.y >= Map.map_size_y):
+	elif (pos.y >= Level.map_size_y):
 		return false
 	elif (pos.x < 0):
 		return false

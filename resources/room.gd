@@ -29,7 +29,7 @@ func roll_borders():
 		if (!Utils.is_pos_inside_map(adjacent_pos)):
 			borders[direction] = Utils.border_type.WALL
 		else:
-			var adjacent_room = Map.rooms[adjacent_pos.x][adjacent_pos.y]
+			var adjacent_room = Level.complete_map.rooms[adjacent_pos.x][adjacent_pos.y]
 			if (adjacent_room):
 				var adjacent_border = adjacent_room.borders[Utils.opposite_direction(direction)]
 				borders[direction] = adjacent_border

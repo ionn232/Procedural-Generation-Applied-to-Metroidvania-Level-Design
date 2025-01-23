@@ -17,6 +17,21 @@ enum direction {
 	RIGHT = 3,
 }
 
+enum reward_type {
+	MAIN_UPGRADE,
+	SIDE_UPGRADE,
+	EQUIPMENT,
+	STAT_UPGRADES,
+	COLLECTIBLES
+}
+
+enum gate_state {
+	LOCKED,
+	TWO_WAY,
+	ONE_WAY,
+	OPEN
+}
+
 static func border_to_vec2i(input:direction) -> Vector2i:
 	match input:
 		direction.UP:

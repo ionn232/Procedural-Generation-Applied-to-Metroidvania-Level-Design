@@ -28,7 +28,8 @@ func main_process() -> void:
 		print('new room --------------------------------------', current_room.grid_pos)
 		current_room.roll_borders()
 		for direction in Utils.direction.values():
-			if (current_room.borders[direction] == Utils.border_type.EMPTY || current_room.borders[direction] == Utils.border_type.LOCKED_DOOR):
+			#TODO: allow locked doors that only contain side upgrades as key which are placed on the current or previous passes
+			if (current_room.borders[direction] == Utils.border_type.EMPTY):
 				var new_coords = current_room.grid_pos + Utils.border_to_vec2i(direction)
 				#TODO: finished/unfinished status on room data instead of checking if exists on an array for better performance
 				if (is_in_grid(new_coords) && finished_rooms.find(Level.complete_map.rooms[new_coords.x][new_coords.y]) == -1 && undefined_rooms.find(Level.complete_map.rooms[new_coords.x][new_coords.y]) == -1):

@@ -2,8 +2,10 @@ class_name Room
 extends Resource
 
 var grid_pos:Vector2i
+
 #up, down, left, right
 var borders:Array[Utils.border_type] = []
+var border_data:Array = [] #Array of LockedDoor or Key
 
 var data:String
 
@@ -39,7 +41,7 @@ func roll_borders():
 				var roll = randf()
 				if roll < 0.6:
 					borders[direction] = Utils.border_type.WALL
-				elif roll < 0.75:
+				elif roll < 0.65:
 					borders[direction] = Utils.border_type.LOCKED_DOOR
 				else:
 					borders[direction] = Utils.border_type.EMPTY

@@ -1,3 +1,4 @@
+class_name LayoutDisplay
 extends Node2D
 
 @onready var tilemap: TileMapLayer = $TileMapLayer
@@ -24,11 +25,13 @@ func _process(delta: float) -> void:
 			if room != null: 
 				var current_tilemap_pos:Vector2i = room.grid_pos*2
 				var neighbours = get_adjacent_cells(current_tilemap_pos)
+				
 				#room content
 				if room.data.contains("initial room"):
 					tilemap.set_cell(current_tilemap_pos, 0, start_atlas)
 				else:
 					tilemap.set_cell(current_tilemap_pos, 0, empty_atlas)
+				
 				#room neighbours
 				tilemap.set_cells_terrain_connect(neighbours, 0, 0)
 				var direction:Utils.direction = Utils.direction.UP

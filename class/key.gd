@@ -4,8 +4,6 @@ extends Resource
 var name: String
 var description : String
 
-static func define(name:String, desc:String) -> Key:
-	var newKey = Key.new()
-	newKey.name = name
-	newKey.description = desc
-	return newKey
+func define(newname:String, desc:String):
+	name = newname
+	description = desc

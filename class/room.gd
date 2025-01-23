@@ -41,7 +41,7 @@ func roll_borders():
 				var roll = randf()
 				if roll < 0.6:
 					borders[direction] = Utils.border_type.WALL
-				elif roll < 0.65:
-					borders[direction] = Utils.border_type.LOCKED_DOOR
+				#elif roll < 0.65:
+					#borders[direction] = Utils.border_type.LOCKED_DOOR
 				else:
 					borders[direction] = Utils.border_type.EMPTY

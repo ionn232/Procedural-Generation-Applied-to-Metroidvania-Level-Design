@@ -9,9 +9,10 @@ var state : Utils.gate_state = Utils.gate_state.LOCKED
 # if null, no transformation occurs
 var transformation_table: Array[Utils.gate_state] = []
 
-func define()  -> void:
+func define(first:Utils.gate_state, second = null)  -> void:
 	transformation_table.resize(2)
-	transformation_table.fill(null)
+	transformation_table[0] = first
+	transformation_table[1] = second
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

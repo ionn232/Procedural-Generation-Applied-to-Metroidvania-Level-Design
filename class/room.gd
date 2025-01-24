@@ -7,8 +7,18 @@ var grid_pos:Vector2i
 var borders:Array[Utils.border_type] = []
 var border_data:Array = [] #Array of LockedDoor or Key
 
+#check Utils.room_weights for enum. typed int or null.
+var weights:Array = []
+
 var data:String
 
+static func createNew() -> Room:
+	var newRoom = Room.new()
+	newRoom.borders.resize(4)
+	newRoom.border_data.resize(4)
+	newRoom.weights.resize(Utils.room_weights.size())
+	newRoom.weights.fill(null)
+	return newRoom
 
 func assign_borders(up: Utils.border_type, down: Utils.border_type, left: Utils.border_type, right: Utils.border_type): 
 	borders[Utils.direction.UP] = up
@@ -17,15 +27,17 @@ func assign_borders(up: Utils.border_type, down: Utils.border_type, left: Utils.
 	borders[Utils.direction.RIGHT] = right
 
 
-func define_data(pos:Vector2i, input_data: String):
-	borders.resize(4)
+func define_pos(pos:Vector2i):
 	grid_pos = pos
-	data = input_data
+
+#might need to do concatenate_data instead
+func define_data(newData:String):
+	data = newData
 
 #assign a wall type to each direction. Checks map bounds. Ensures parity with adjacent, existing rooms.
-func roll_borders():
+func roll_borders_first_pass():
 	for direction in Utils.direction.values():
-		var direction_vec = Utils.border_to_vec2i(direction)
+		var direction_vec = Utils.direction_to_vec2i(direction)
 		var adjacent_pos = grid_pos + direction_vec
 
 		if (!Utils.is_pos_inside_map(adjacent_pos)):
@@ -35,13 +47,53 @@ func roll_borders():
 			if (adjacent_room):
 				var adjacent_border = adjacent_room.borders[Utils.opposite_direction(direction)]
 				borders[direction] = adjacent_border
-				print('direction: ', direction, ' // adjacent direction type: ', adjacent_border)
-			#TODO: change behaviour
 			else:
 				var roll = randf()
 				if roll < 0.6:
 					borders[direction] = Utils.border_type.WALL
-				#elif roll < 0.65:
-					#borders[direction] = Utils.border_type.LOCKED_DOOR
 				else:
 					borders[direction] = Utils.border_type.EMPTY
+
+func assign_door(direction: Utils.direction) -> void:
+	borders[direction] = Utils.border_type.LOCKED_DOOR
+	var keys : Array[Key] = []
+	keys.resize(1)
+	keys[0] = RewardPool.keySet[0] #TODO: change
+	var new_door = LockedDoor.createNew(keys, Utils.gate_state.LOCKED, Utils.gate_state.TWO_WAY)
+	border_data[direction] = new_door
+
+#expand from a room until you reach one with at least 3 exits
+func steps_to_intersection() -> int:
+	#currently computing, do not count (avoids infinite recursion)
+	if weights[Utils.room_weights.ISOLATED] == 0:
+		return 1
+	#alredy computed, save computation cost
+	elif weights[Utils.room_weights.ISOLATED] != null:
+		return weights[Utils.room_weights.ISOLATED]
+	
+	#mark room as being computed
+	weights[Utils.room_weights.ISOLATED] = 0
+	print('init room ', grid_pos)
+	var available_directions : Array[Utils.direction]
+	available_directions.resize(4)
+	var count:int = 0
+	
+	for direction:Utils.direction in Utils.direction.values():
+		if (borders[direction] == Utils.border_type.EMPTY):
+			available_directions[count] = direction
+			count += 1
+	
+	#base cases
+	if (count == 4):
+		return 0
+	elif (count >= 3 or count == 0):
+		return 1
+	#recursive case
+	else:
+		var min:int = 1000
+		for index in range((count)):
+			var direction_vector : Vector2i = Utils.direction_to_vec2i(available_directions[index])
+			var next_room = Level.complete_map.rooms[grid_pos.x + direction_vector.x][grid_pos.y + direction_vector.y]
+			var next_value = next_room.steps_to_intersection()
+			min = min(min, next_value)
+		return min

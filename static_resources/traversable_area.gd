@@ -23,7 +23,7 @@ static func exists_path(pos0:Vector2i, pos1:Vector2i) -> bool:
 			for direction in Utils.direction.values():
 				var wall_type = current_room.borders[direction]
 				if (wall_type == Utils.border_type.EMPTY && seen.find(current_room) == -1 ):
-					var direction_vec = Utils.border_to_vec2i(direction)
+					var direction_vec = Utils.direction_to_vec2i(direction)
 					var adjacent_pos = current_room.grid_pos + direction_vec
 					queue.push_back(rooms[adjacent_pos.x][adjacent_pos.y])
 		seen.push_back(current_room)

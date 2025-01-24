@@ -9,16 +9,11 @@ var state : Utils.gate_state = Utils.gate_state.LOCKED
 # if null, no transformation occurs
 var transformation_table: Array[Utils.gate_state] = []
 
-func define(first:Utils.gate_state, second = null)  -> void:
-	transformation_table.resize(2)
-	transformation_table[0] = first
-	transformation_table[1] = second
-
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+static func createNew(keys:Array[Key], initial_state:Utils.gate_state, first:Utils.gate_state, second = null) -> LockedDoor:
+	var new_door = LockedDoor.new()
+	new_door.keyset = keys
+	new_door.state = initial_state
+	new_door.transformation_table.resize(2)
+	new_door.transformation_table[0] = first
+	new_door.transformation_table[1] = second
+	return new_door

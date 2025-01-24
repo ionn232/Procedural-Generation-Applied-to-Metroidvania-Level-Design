@@ -13,12 +13,6 @@ const gate_X_atlas = Vector2i(2,4)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
-
-#map rendering procedure
-func _process(delta: float) -> void:
-	tilemap.clear()
-	#tilemap.modulate = Color(1,0.4,0.35,1)
 	var rooms = Level.complete_map.rooms
 	for column in rooms:
 		for room:Room in column:
@@ -36,7 +30,7 @@ func _process(delta: float) -> void:
 				tilemap.set_cells_terrain_connect(neighbours, 0, 0)
 				var direction:Utils.direction = Utils.direction.UP
 				for border_type in room.borders:
-					var border_pos = current_tilemap_pos + Utils.border_to_vec2i(direction)
+					var border_pos = current_tilemap_pos + Utils.direction_to_vec2i(direction)
 					match border_type:
 						Utils.border_type.EMPTY:
 							tilemap.set_cell(border_pos, 0, empty_atlas)
@@ -47,6 +41,10 @@ func _process(delta: float) -> void:
 						_:
 							pass
 					direction += 1
+
+#map rendering procedure
+func _process(delta: float) -> void:
+	pass
 
 func get_adjacent_cells(pos:Vector2i) -> Array[Vector2i]:
 	var cells:Array[Vector2i] = []

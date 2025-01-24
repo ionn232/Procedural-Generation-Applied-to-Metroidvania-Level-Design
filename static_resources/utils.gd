@@ -32,7 +32,13 @@ enum gate_state {
 	OPEN
 }
 
-static func border_to_vec2i(input:direction) -> Vector2i:
+enum room_weights {
+	ISOLATED, #Rooms at the end of a path will have an isolated score, higher for longer path
+	MEMORABLE, #Rooms placed at points of interest will have a higher memorable score
+	PROXIMITY #Rooms will have lower proximity weights if they're close to main upgrades
+}
+
+static func direction_to_vec2i(input:direction) -> Vector2i:
 	match input:
 		direction.UP:
 			return Vector2i(0,-1)

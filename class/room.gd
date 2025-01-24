@@ -64,16 +64,12 @@ func assign_door(direction: Utils.direction) -> void:
 
 #expand from a room until you reach one with at least 3 exits
 func steps_to_intersection() -> int:
-	#currently computing, do not count (avoids infinite recursion)
-	if weights[Utils.room_weights.ISOLATED] == 0:
-		return 1
 	#alredy computed, save computation cost
-	elif weights[Utils.room_weights.ISOLATED] != null:
+	if weights[Utils.room_weights.ISOLATED] != null:
 		return weights[Utils.room_weights.ISOLATED]
 	
 	#mark room as being computed
 	weights[Utils.room_weights.ISOLATED] = 0
-	print('init room ', grid_pos)
 	var available_directions : Array[Utils.direction]
 	available_directions.resize(4)
 	var count:int = 0
@@ -83,12 +79,11 @@ func steps_to_intersection() -> int:
 			available_directions[count] = direction
 			count += 1
 	
-	#base cases
-	if (count == 4):
-		return 0
-	elif (count >= 3 or count == 0):
+	#base case
+	if (count >= 3 or count == 0):
+		weights[Utils.room_weights.ISOLATED] = 1
 		return 1
-	#recursive case
+	#recursive case (2 or 1 available directions)
 	else:
 		var min:int = 1000
 		for index in range((count)):
@@ -96,4 +91,4 @@ func steps_to_intersection() -> int:
 			var next_room = Level.complete_map.rooms[grid_pos.x + direction_vector.x][grid_pos.y + direction_vector.y]
 			var next_value = next_room.steps_to_intersection()
 			min = min(min, next_value)
-		return min
+		return min+1

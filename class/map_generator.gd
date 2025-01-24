@@ -102,4 +102,10 @@ func _process(delta: float) -> void:
 	pass
 
 func isolated_room_weight(room:Room) -> float:
+	DEBUG_reset_weights()
 	return room.steps_to_intersection()
+
+func DEBUG_reset_weights():
+	for room in finished_rooms:
+		if room.weights[Utils.room_weights.ISOLATED] == 0:
+			room.weights[Utils.room_weights.ISOLATED] = null

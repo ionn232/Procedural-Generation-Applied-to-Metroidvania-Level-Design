@@ -33,9 +33,9 @@ enum gate_state {
 }
 
 enum room_weights {
-	ISOLATED, #Rooms at the end of a path will have an isolated score, higher for longer path
-	MEMORABLE, #Rooms placed at points of interest will have a higher memorable score
-	PROXIMITY #Rooms will have lower proximity weights if they're close to main upgrades
+	ISOLATED, #Rooms at the end of a path will have an isolated score, higher for longer path: 1-inf
+	MEMORABLE, #Rooms placed at points of interest will have a higher memorable score: 0.0-1.0
+	PROXIMITY, #Rooms will have lower proximity weights if they're close to main upgrades: 
 }
 
 static func direction_to_vec2i(input:direction) -> Vector2i:
@@ -72,3 +72,6 @@ static func is_pos_inside_map(pos:Vector2i) -> bool:
 	elif (pos.y < 0):
 		return false
 	return true
+	
+static func sorting_function_isolated_weight(room1: Room, room2:Room) -> bool:
+	return  room1.weights[room_weights.ISOLATED] < room1.weights[room_weights.ISOLATED]

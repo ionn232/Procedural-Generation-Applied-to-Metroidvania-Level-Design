@@ -16,3 +16,6 @@ func _process(delta: float) -> void:
 	if (Input.is_action_pressed("Click") && Utils.is_pos_inside_map(mouse_room_coords) && Level.complete_map.rooms[mouse_room_coords.x][mouse_room_coords.y] != null):
 		Utils.gui_selected_room = mouse_room_coords
 	room_selection.text = 'Initial Room: ' + str(Level.initial_room.grid_pos) + '\nSelected Room: ' + str(Utils.gui_selected_room)
+	if (Level.complete_map.rooms[Utils.gui_selected_room.x][Utils.gui_selected_room.y]):
+		room_selection.text += '\nisolated weight: ' + str(Level.complete_map.rooms[Utils.gui_selected_room.x][Utils.gui_selected_room.y].weights[Utils.room_weights.ISOLATED])
+		room_selection.text += '\nmemorable weight: ' + str(Level.complete_map.rooms[Utils.gui_selected_room.x][Utils.gui_selected_room.y].weights[Utils.room_weights.MEMORABLE])

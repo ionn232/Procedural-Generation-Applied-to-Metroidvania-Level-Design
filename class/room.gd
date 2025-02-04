@@ -12,6 +12,9 @@ var weights:Array = []
 
 var data:String
 
+static var DEBUG_count1 = 0
+static var DEBUG_count2 = 0
+
 static func createNew() -> Room:
 	var newRoom = Room.new()
 	newRoom.borders.resize(4)
@@ -49,7 +52,7 @@ func roll_borders_first_pass():
 				borders[direction] = adjacent_border
 			else:
 				var roll = randf()
-				if roll < 0.6:
+				if roll < 0.75:
 					borders[direction] = Utils.border_type.WALL
 				else:
 					borders[direction] = Utils.border_type.EMPTY
@@ -62,8 +65,12 @@ func assign_door(direction: Utils.direction) -> void:
 	var new_door = LockedDoor.createNew(keys, Utils.gate_state.LOCKED, Utils.gate_state.TWO_WAY)
 	border_data[direction] = new_door
 
-#expand from a room until you reach one with at least 3 exits
-func steps_to_intersection() -> int:
+#expand from a room until you reach one with at least 3 exits. O(2n logn), could be made better.
+#TODO: if there are no intersections time incrises to O(n^2). Adjust for edge case.
+func weight_isolated_memorable() -> int:
+	
+	if weights[Utils.room_weights.ISOLATED] == 0:
+		return 10000
 	#alredy computed, save computation cost
 	if weights[Utils.room_weights.ISOLATED] != null:
 		return weights[Utils.room_weights.ISOLATED]
@@ -72,7 +79,7 @@ func steps_to_intersection() -> int:
 	weights[Utils.room_weights.ISOLATED] = 0
 	var available_directions : Array[Utils.direction]
 	available_directions.resize(4)
-	var count:int = 0
+	var count:int = 0 #number of crossable borders
 	
 	for direction:Utils.direction in Utils.direction.values():
 		if (borders[direction] == Utils.border_type.EMPTY):
@@ -89,6 +96,6 @@ func steps_to_intersection() -> int:
 		for index in range((count)):
 			var direction_vector : Vector2i = Utils.direction_to_vec2i(available_directions[index])
 			var next_room = Level.complete_map.rooms[grid_pos.x + direction_vector.x][grid_pos.y + direction_vector.y]
-			var next_value = next_room.steps_to_intersection()
+			var next_value = next_room.weight_isolated_memorable()
 			min = min(min, next_value)
 		return min+1

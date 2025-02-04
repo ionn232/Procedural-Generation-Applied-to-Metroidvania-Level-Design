@@ -7,6 +7,8 @@ extends Node2D
 var undefined_rooms : Array[Room] = [] 
 var finished_rooms : Array[Room] = [] #TODO: this can have a fixed size i think
 
+var ordered_rooms_isolated : Array[Room] = []
+
 func main_process() -> void:
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -42,14 +44,16 @@ func main_process() -> void:
 		finished_rooms.push_back(finished_room)
 		DEBUG_check_borders(finished_room)
 	
-	#room generation procedure - room weights (first pass)
-	#isolated room weight
-	print('--------------------------room weights----------------------------')
+	#room generation procedure - isolated and memorable room weight
 	for room:Room in finished_rooms:
-		room.weights[Utils.room_weights.ISOLATED] = isolated_room_weight(room);
-		print('room: ',room.grid_pos, '  //  ' ,room.weights[Utils.room_weights.ISOLATED])
+		var steps_to_intersection:int = isolated_room_weight(room);
+		room.weights[Utils.room_weights.ISOLATED] = steps_to_intersection
+		room.weights[Utils.room_weights.MEMORABLE] = 1.0/float(steps_to_intersection)
+	##print('number of rooms: ', finished_rooms.size(), ' // number of calls: ', Room.DEBUG_count1, ' // number of complete calls: ', Room.DEBUG_count2)
 	#room generation procedure - key-gate placement (first pass)
-	print('------------------------------------------------------------------')
+	
+	
+	#room generation procedure - key distance weight
 	
 	#start second pass
 	
@@ -96,16 +100,11 @@ func DEBUG_check_paths():
 func _ready() -> void:
 	main_process()
 
-
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
 
 func isolated_room_weight(room:Room) -> float:
-	DEBUG_reset_weights()
-	return room.steps_to_intersection()
-
-func DEBUG_reset_weights():
-	for room in finished_rooms:
-		if room.weights[Utils.room_weights.ISOLATED] == 0:
-			room.weights[Utils.room_weights.ISOLATED] = null
+	if room.weights[Utils.room_weights.ISOLATED] == 0:
+		room.weights[Utils.room_weights.ISOLATED] = null
+	return room.weight_isolated_memorable()

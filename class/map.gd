@@ -1,12 +1,12 @@
 class_name Map
 extends Resource
 
-var rooms:Array[Array] = []
+var MUs:Array[Array] = []
 
 func initialize_map():
-	rooms.resize(Level.map_size_x)
-	for i in rooms.size():
-		var room_column:Array[Room] = []
+	MUs.resize(Level.map_size_x)
+	for i in MUs.size():
+		var room_column:Array[MU] = []
 		room_column.resize(Level.map_size_y)
 		room_column.fill(null)
-		rooms[i] = room_column
+		MUs[i] = room_column

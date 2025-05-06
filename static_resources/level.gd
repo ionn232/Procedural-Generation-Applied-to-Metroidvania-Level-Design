@@ -1,12 +1,13 @@
 class_name Level
 extends Resource
 
-#The complete map contains all rooms of all sections
-static var complete_map: Map
-#Each section has the same size map, but no 2 sections can occupy the same coordinates
-static var sections: Array[Map]
+#The complete map contains all MUs
+static var map: Map
 
-#Size of all maps
+#The complete list of rooms
+static var rooms: Array[Room]
+
+#map size
 static var map_size_x:int
 static var map_size_y:int
 

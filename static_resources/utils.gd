@@ -1,20 +1,19 @@
 class_name Utils
 extends Resource
 
-static var gui_selected_room:Vector2i = Vector2i(0,0)
-
 enum border_type {
-	EMPTY = 0,
-	WALL = 1,
-	DEATH_ZONE = 2,
-	LOCKED_DOOR = 3 
+	EMPTY,
+	SAME_ROOM,
+	WALL,
+	DEATH_ZONE,
+	LOCKED_DOOR,
 }
 
 enum direction {
-	UP = 0,
-	DOWN = 1,
-	LEFT = 2,
-	RIGHT = 3,
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
 }
 
 enum reward_type {
@@ -26,16 +25,20 @@ enum reward_type {
 }
 
 enum gate_state {
-	LOCKED,
-	TWO_WAY,
-	ONE_WAY,
-	OPEN
+	NON_TRAVERSABLE,
+	TRAVERSABLE,
+	OPEN,
 }
 
-enum room_weights {
-	ISOLATED, #Rooms at the end of a path will have an isolated score, higher for longer path: 1-inf
-	MEMORABLE, #Rooms placed at points of interest will have a higher memorable score: 0.0-1.0
-	PROXIMITY, #Rooms will have lower proximity weights if they're close to main upgrades: 
+enum gate_directionality {
+	TWO_WAY,
+	ONE_WAY
+}
+
+enum room_type {
+	DEFAULT,
+	WARP,
+	SPAWN
 }
 
 static func direction_to_vec2i(input:direction) -> Vector2i:
@@ -73,5 +76,3 @@ static func is_pos_inside_map(pos:Vector2i) -> bool:
 		return false
 	return true
 	
-static func sorting_function_isolated_weight(room1: Room, room2:Room) -> bool:
-	return  room1.weights[room_weights.ISOLATED] < room1.weights[room_weights.ISOLATED]

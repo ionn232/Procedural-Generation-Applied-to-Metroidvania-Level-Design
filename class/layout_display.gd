@@ -1,6 +1,10 @@
 class_name LayoutDisplay
 extends Node2D
 
+const AREA_POINT = preload("res://scene/area_point.tscn")
+
+@onready var ui: CanvasLayer = $"../UI"
+
 @onready var tilemap: TileMapLayer = $TileMapLayer
 @onready var tileset = tilemap.tile_set
 
@@ -18,11 +22,26 @@ const room_inside = Vector2i(3,2)
 const spawn_color = Color(0.1, 0.7, 0.1)
 const default_color = Color(1.0 ,1.0 ,1.0)
 
-# Called when the node enters the scene tree for the first time. TODO: render instead of ready when changes can occur
+# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	ui.stage_changed.connect(_stage_handler.bind())
+	pass
+
+func _stage_handler():
+	match(Utils.generator_stage):
+		1:
+			draw_area_points()
+			pass
+		2:
+			pass
+
+func draw_area_points():
+	for point:AreaPoint in Level.area_points:
+		add_child(point, true)
+
+func draw_rooms():
 	var map_grid = Level.map.MUs
 	var rooms = Level.rooms
-	
 	for room:Room in rooms:
 		var limits = get_room_limits(room)
 		tilemap.set_cells_terrain_connect(limits, 0, 0)
@@ -62,10 +81,6 @@ func _ready() -> void:
 						pass
 				direction += 1
 
-#map rendering procedure
-func _process(delta: float) -> void:
-	pass
-
 func get_adjacent_cells(pos:Vector2i) -> Array[Vector2i]:
 	var cells:Array[Vector2i] = []
 	cells.resize(8)
@@ -98,6 +113,3 @@ func fill_room_spots(room:Room):
 	for i in range(room.room_size.x - 1):
 		for j in range(room.room_size.y - 1):
 			tilemap.set_cell(starting_tilemap_pos + Vector2i(i*2, 0) + Vector2i(0, j*2), 0, room_inside)
-
-func get_room_cells(room:Room) -> Array[Vector2i]:
-	return []

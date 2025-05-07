@@ -1,6 +1,8 @@
 class_name Utils
 extends Resource
 
+static var generator_stage : int = 0
+
 enum border_type {
 	EMPTY,
 	SAME_ROOM,
@@ -41,6 +43,16 @@ enum room_type {
 	SPAWN
 }
 
+static var area_colors : Array[Color] = [
+	Color.RED,
+	Color.GREEN,
+	Color.BLUE,
+	Color.ORANGE,
+	Color.PURPLE,
+	Color.YELLOW,
+	Color.TEAL
+]
+
 static func direction_to_vec2i(input:direction) -> Vector2i:
 	match input:
 		direction.UP:
@@ -76,3 +88,7 @@ static func is_pos_inside_map(pos:Vector2i) -> bool:
 		return false
 	return true
 	
+static func room_index_to_world(index:int) -> int:
+	return index*16
+static func room_pos_to_world(pos:Vector2i) -> Vector2i:
+	return pos * 16

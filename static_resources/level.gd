@@ -11,4 +11,7 @@ static var rooms: Array[Room]
 static var map_size_x:int
 static var map_size_y:int
 
+#initial room #TODO:just make it first in rooms array
 static var initial_room:Room
+
+static var area_points:Array[AreaPoint]

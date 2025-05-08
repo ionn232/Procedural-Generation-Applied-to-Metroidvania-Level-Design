@@ -15,3 +15,4 @@ static var map_size_y:int
 static var initial_room:Room
 
 static var area_points:Array[AreaPoint]
+static var initial_area:AreaPoint

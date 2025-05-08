@@ -5,6 +5,7 @@ extends Node2D
 
 #prefab for instancing
 const AREA_POINT = preload("res://scene/area_point.tscn")
+const font = preload("res://data/upheavtt.ttf")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 
@@ -12,6 +13,7 @@ const AREA_POINT = preload("res://scene/area_point.tscn")
 var pos : Vector2
 var relations : Array[AreaPoint]
 var area_index : int
+var has_hub : bool = false
 
 static func createNew(pos:Vector2, relations:Array[AreaPoint] = []) -> AreaPoint:
 	var newPoint = AREA_POINT.instantiate()
@@ -24,6 +26,9 @@ func update_position(newPos:Vector2):
 	pos = newPos
 	position = newPos
 
+func set_point_color(newColor:Color):
+	sprite.self_modulate = newColor
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	pass
@@ -31,3 +36,8 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
+
+func _draw(): #USES LOCAL COORDINATES!
+	for connecting_area:AreaPoint in relations:
+		draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)
+		draw_string_outline(font, Vector2(0,20), str(Level.area_points.find(self)),0,-1,32,0.5,Color.BLACK)

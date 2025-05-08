@@ -47,6 +47,7 @@ func draw_rooms():
 		tilemap.set_cells_terrain_connect(limits, 0, 0)
 		fill_room_spots(room)
 		
+		#TODO: multiples tilemaplayers para modular diferente
 		if room.room_type == Utils.room_type.SPAWN:
 			self.modulate = spawn_color
 		else:

@@ -84,8 +84,8 @@ func step_4(): ##establish area connections
 	#BUG: sometimes an area is isolated.
 	for i:int in range(number_of_areas):
 		compute_area_relations(i)
-	
-	debug_check_parity()
+	join_stragglers()
+	DEBUG_check_parity()
 
 #TODO: tweak values
 const MIN_ANGULAR_DISTANCE:float = PI/2.5
@@ -139,11 +139,25 @@ func decide_relations(current_area:AreaPoint, angles:Array, angle_candidates:Arr
 		if suitable:
 			angle_candidates[j] = second_area_angle #TODO: introduce randomness to make it more interesting
 
-func debug_check_parity():
+func join_stragglers():
+	for current_area:AreaPoint in Level.area_points:
+		if len(current_area.relations) == 0:
+			print('lone area: ', Level.area_points.find(current_area))
+			var min_dist:float = INF
+			var closest_area_index:int
+			for i:int in range(number_of_areas):
+				var second_area:AreaPoint = Level.area_points[i]
+				if current_area == second_area: continue
+				var distance_sq:float = current_area.pos.distance_squared_to(second_area.pos)
+				if distance_sq < min_dist:
+					min_dist = distance_sq
+					closest_area_index = i
+			current_area.relations.push_back(Level.area_points[closest_area_index])
+			Level.area_points[closest_area_index].relations.push_back(current_area)
+
+func DEBUG_check_parity():
 	var parity = true
 	for area:AreaPoint in Level.area_points:
-		if len(area.relations) == 0:
-			print('lone area: ', Level.area_points.find(area))
 		for relation:AreaPoint in area.relations:
 			if !area in relation.relations:
 				parity = false

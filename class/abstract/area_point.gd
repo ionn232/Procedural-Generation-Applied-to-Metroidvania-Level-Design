@@ -38,6 +38,8 @@ func _process(delta: float) -> void:
 	pass
 
 func _draw(): #USES LOCAL COORDINATES!
+	var index:int = Level.area_points.find(self)
 	for connecting_area:AreaPoint in relations:
 		draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)
-		draw_string_outline(font, Vector2(0,20), str(Level.area_points.find(self)),0,-1,32,0.5,Color.BLACK)
+		if (Utils.generator_stage == 5):
+			draw_string_outline(font, Vector2(0,20), str(index),0,-1,32,0.5,Color.BLACK)

@@ -43,7 +43,7 @@ enum room_type {
 	SPAWN
 }
 
-static var area_colors : Array[Color] = [
+static var area_colors : Array[Color] = [ #TODO expand greatly
 	Color.RED,
 	Color.GREEN,
 	Color.BLUE,

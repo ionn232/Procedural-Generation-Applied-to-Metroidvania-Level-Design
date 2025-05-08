@@ -19,7 +19,7 @@ func _ready() -> void: ##level and map initializations
 	main_map.initialize_map()
 	Level.map = main_map
 	ui.stage_changed.connect(_stage_handler.bind())
-	#rng.seed = hash("test_seed")
+	rng.seed = hash("test_seed")
 
 func _stage_handler():
 	match(Utils.generator_stage):
@@ -32,7 +32,7 @@ func _stage_handler():
 		4:
 			step_4()
 		5:
-			pass
+			step_5()
 		6:
 			pass
 		7:
@@ -154,6 +154,46 @@ func join_stragglers():
 					closest_area_index = i
 			current_area.relations.push_back(Level.area_points[closest_area_index])
 			Level.area_points[closest_area_index].relations.push_back(current_area)
+
+func step_5(): ##designate area order by expanding from initial area
+	#struct inits
+	var ordered_areas:Array[AreaPoint] = []
+	var available_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
+	var backtrack_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]] TODO fill this
+	ordered_areas.resize(number_of_areas)
+	available_routes.resize(number_of_areas)
+	backtrack_routes.resize(number_of_areas)
+	#initial area (alredy known)
+	ordered_areas[0] = Level.initial_area
+	for route_dest:AreaPoint in ordered_areas[0].relations:
+		available_routes[0].push_back(route_dest)
+	#produce ordered areas array and list of backtrack routes
+	for i:int in range(number_of_areas):
+		if i==0: continue #TODO iterate over list without 0
+		var proceed:bool = false
+		var expanding_area_index:int
+		#roll expanding area
+		while !proceed:
+			proceed = true
+			expanding_area_index = rng.randi_range(0, i-1)
+			if len(available_routes[expanding_area_index]) == 0: proceed = false #area has no routes left to expand, reroll
+		#roll next area
+		var route_index:int = rng.randi_range(0, len(available_routes[expanding_area_index])-1)
+		var next_area:AreaPoint = available_routes[expanding_area_index][route_index]
+		ordered_areas[i] = next_area
+		#remove next area from elegibility
+		for route_list in available_routes:
+			route_list.erase(next_area)
+		#add routes from next area to unseen areas to table
+		for route_dest:AreaPoint in ordered_areas[i].relations:
+			if !ordered_areas.has(route_dest):
+				available_routes[i].push_back(route_dest)
+	#apply to singleton instance
+	Level.area_points = ordered_areas
+	#set area colors and redraw #TODO:do this better
+	for i:int in number_of_areas:
+		ordered_areas[i].set_point_color(Utils.area_colors[i])
+		ordered_areas[i].queue_redraw()
 
 func DEBUG_check_parity():
 	var parity = true

@@ -81,11 +81,12 @@ func step_3(): ##establish initial area
 	Level.initial_area.set_point_color(Utils.area_colors[0])
 
 func step_4(): ##establish area connections
-	#BUG: sometimes an area is isolated.
 	for i:int in range(number_of_areas):
+		var current_area:AreaPoint = Level.area_points[i]
 		compute_area_relations(i)
+		current_area.queue_redraw()
 	join_stragglers()
-	DEBUG_check_parity()
+	#DEBUG_check_parity()
 
 #TODO: tweak values
 const MIN_ANGULAR_DISTANCE:float = PI/2.5
@@ -116,7 +117,6 @@ func compute_area_relations(index:int):
 		if index==j: continue
 		current_area.relations.push_back(Level.area_points[j])
 		Level.area_points[j].relations.push_back(current_area)
-		current_area.queue_redraw()
 
 func decide_relations(current_area:AreaPoint, angles:Array, angle_candidates:Array):
 	#var max_distance :float = (map_size_x + map_size_y)*16 / float(number_of_areas * 0.1) #TODO: tweak n use this maybe
@@ -155,21 +155,29 @@ func join_stragglers():
 			current_area.relations.push_back(Level.area_points[closest_area_index])
 			Level.area_points[closest_area_index].relations.push_back(current_area)
 
-func step_5(): ##designate area order by expanding from initial area
+func step_5(): ##designate area order by expanding from initial area, designate areas as progression or backtracking
 	#struct inits
 	var ordered_areas:Array[AreaPoint] = []
 	var available_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
 	var backtrack_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]] TODO fill this
+	var progression_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]] TODO fill this
 	ordered_areas.resize(number_of_areas)
 	available_routes.resize(number_of_areas)
 	backtrack_routes.resize(number_of_areas)
-	#initial area (alredy known)
-	ordered_areas[0] = Level.initial_area
+	progression_routes.resize(number_of_areas)
+	#initial area (alredy known) #TODO:avoid repeating code, add to loop
+	var initial_area:AreaPoint = Level.initial_area
+	ordered_areas[0] = initial_area
+	initial_area.set_point_color(Utils.area_colors[0])
+	initial_area.area_index = 0
+	initial_area.relation_is_progress.resize(len(initial_area.relations))
+	initial_area.relation_is_progress.fill(false) #ts redundant, it's the default value
+	initial_area.queue_redraw()
 	for route_dest:AreaPoint in ordered_areas[0].relations:
 		available_routes[0].push_back(route_dest)
 	#produce ordered areas array and list of backtrack routes
 	for i:int in range(number_of_areas):
-		if i==0: continue #TODO iterate over list without 0
+		if i==0: continue
 		var proceed:bool = false
 		var expanding_area_index:int
 		#roll expanding area
@@ -179,21 +187,37 @@ func step_5(): ##designate area order by expanding from initial area
 			if len(available_routes[expanding_area_index]) == 0: proceed = false #area has no routes left to expand, reroll
 		#roll next area
 		var route_index:int = rng.randi_range(0, len(available_routes[expanding_area_index])-1)
-		var next_area:AreaPoint = available_routes[expanding_area_index][route_index]
-		ordered_areas[i] = next_area
-		#remove next area from elegibility
-		for route_list in available_routes:
-			route_list.erase(next_area)
+		var new_area:AreaPoint = available_routes[expanding_area_index][route_index]
+		#add new area to final lineup
+		ordered_areas[i] = new_area
+		new_area.set_point_color(Utils.area_colors[i])
+		new_area.area_index = i
+		new_area.relation_is_progress.resize(len(new_area.relations))
+		new_area.relation_is_progress.fill(false) #ts redundant, it's the default value
+		new_area.queue_redraw()
+		#remove next area from elegibility: store progression and backtracking routes
+		progression_routes[expanding_area_index].push_back(available_routes[expanding_area_index].pop_at(route_index))
+		for current_route_list in available_routes: #TODO: introduce randomness (allow multiple entries to new area)
+			#TODO decide if saved to progression or not instead of saving to backtracking
+			var index:int = current_route_list.find(new_area)
+			if index != -1:
+				backtrack_routes[i].push_back(current_route_list.pop_at(index))
 		#add routes from next area to unseen areas to table
 		for route_dest:AreaPoint in ordered_areas[i].relations:
 			if !ordered_areas.has(route_dest):
 				available_routes[i].push_back(route_dest)
+	
 	#apply to singleton instance
 	Level.area_points = ordered_areas
-	#set area colors and redraw #TODO:do this better
-	for i:int in number_of_areas:
-		ordered_areas[i].set_point_color(Utils.area_colors[i])
-		ordered_areas[i].queue_redraw()
+	
+	#store progression//backtracking information
+	for i:int in range(len(progression_routes)):
+		if len(progression_routes[i]) == 0: continue
+		var area_1:AreaPoint = ordered_areas[i]
+		for j:int in range(len(progression_routes[i])):
+			var area_2:AreaPoint = progression_routes[i][j]
+			area_1.relation_is_progress[area_1.relations.find(area_2)] = true
+			area_2.relation_is_progress[area_2.relations.find(area_1)] = true
 
 func DEBUG_check_parity():
 	var parity = true

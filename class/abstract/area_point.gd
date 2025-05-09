@@ -11,8 +11,13 @@ const font = preload("res://data/upheavtt.ttf")
 
 #its a node2D, position is stored in 'position'
 var pos : Vector2
-var relations : Array[AreaPoint]
+
 var area_index : int
+
+#parity in size, each i refers to the same area
+var relations : Array[AreaPoint]
+var relation_is_progress : Array[bool] #if not, it's backtracking route
+
 var has_hub : bool = false
 
 static func createNew(pos:Vector2, relations:Array[AreaPoint] = []) -> AreaPoint:
@@ -38,8 +43,15 @@ func _process(delta: float) -> void:
 	pass
 
 func _draw(): #USES LOCAL COORDINATES!
-	var index:int = Level.area_points.find(self)
-	for connecting_area:AreaPoint in relations:
-		draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)
+	#draw area index
+	if (Utils.generator_stage == 5):
+		draw_string_outline(font, Vector2(0,20), str(area_index),0,-1,32,0.5,Color.BLACK)
+	
+	#draw area relation lines
+	for i:int in range(len(relations)):
+		var connecting_area:AreaPoint = relations[i]
 		if (Utils.generator_stage == 5):
-			draw_string_outline(font, Vector2(0,20), str(index),0,-1,32,0.5,Color.BLACK)
+			var rel_color:Color = Color.WHITE if relation_is_progress[i] else Color.DIM_GRAY
+			draw_line(Vector2(0,0), to_local(connecting_area.pos), rel_color, 1, true)
+		else:
+			draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)

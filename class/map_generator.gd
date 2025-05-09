@@ -19,7 +19,7 @@ func _ready() -> void: ##level and map initializations
 	main_map.initialize_map()
 	Level.map = main_map
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("test_seed")
+	rng.seed = hash("test")
 
 func _stage_handler():
 	match(Utils.generator_stage):
@@ -198,18 +198,17 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 		#remove next area from elegibility: store progression and backtracking routes
 		progression_routes[expanding_area_index].push_back(available_routes[expanding_area_index].pop_at(route_index))
 		for current_route_list in available_routes: #TODO: introduce randomness (allow multiple entries to new area)
+			current_route_list.erase(new_area)
 			#TODO decide if saved to progression or not instead of saving to backtracking
-			var index:int = current_route_list.find(new_area)
-			if index != -1:
-				backtrack_routes[i].push_back(current_route_list.pop_at(index))
-		#add routes from next area to unseen areas to table
+			#var index:int = current_route_list.find(new_area)
+			#if index != -1:
+				#backtrack_routes[i].push_back(current_route_list.pop_at(index))
+		#fill table: add routes from next area to unseen areas
 		for route_dest:AreaPoint in ordered_areas[i].relations:
 			if !ordered_areas.has(route_dest):
 				available_routes[i].push_back(route_dest)
-	
 	#apply to singleton instance
 	Level.area_points = ordered_areas
-	
 	#store progression//backtracking information
 	for i:int in range(len(progression_routes)):
 		if len(progression_routes[i]) == 0: continue

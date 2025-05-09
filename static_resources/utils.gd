@@ -43,14 +43,32 @@ enum room_type {
 	SPAWN
 }
 
-static var area_colors : Array[Color] = [ #TODO expand greatly
+const area_colors : Array[Color] = [
 	Color.RED,
-	Color.GREEN,
-	Color.BLUE,
-	Color.ORANGE,
-	Color.PURPLE,
+	Color.TEAL,
 	Color.YELLOW,
-	Color.TEAL
+	Color.PURPLE,
+	Color.GREEN,
+	Color.ORANGE,
+	Color.BLUE,
+	Color.AQUA,
+	Color.MAGENTA,
+	Color.LIME,
+	Color.SKY_BLUE,
+	Color.MAROON,
+	Color.NAVY_BLUE,
+	Color.FUCHSIA,
+	Color.OLIVE,
+	Color.CYAN,
+	Color.BROWN,
+	Color.LIGHT_PINK,
+	Color.DARK_GREEN,
+	Color.GOLD,
+	Color.INDIGO,
+	Color.SILVER,
+	Color.DARK_ORANGE,
+	Color.DARK_TURQUOISE,
+	Color.CRIMSON
 ]
 
 static func direction_to_vec2i(input:direction) -> Vector2i:

@@ -43,15 +43,19 @@ func _process(delta: float) -> void:
 	pass
 
 func _draw(): #USES LOCAL COORDINATES!
-	#draw area index
-	if (Utils.generator_stage == 5):
-		draw_string_outline(font, Vector2(0,20), str(area_index),0,-1,32,0.5,Color.BLACK)
-	
 	#draw area relation lines
 	for i:int in range(len(relations)):
 		var connecting_area:AreaPoint = relations[i]
-		if (Utils.generator_stage == 5):
-			var rel_color:Color = Color.WHITE if relation_is_progress[i] else Color.DIM_GRAY
+		if (Utils.generator_stage >= 5):
+			var rel_color:Color = Color.WHITE if relation_is_progress[i] else Color.WEB_GRAY
 			draw_line(Vector2(0,0), to_local(connecting_area.pos), rel_color, 1, true)
 		else:
 			draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)
+	
+	#draw area index
+	if (Utils.generator_stage >= 5):
+		draw_string_outline(font, Vector2(0,20), str(area_index),0,-1,32,0.5,Color.BLACK)
+	
+	#circle hub-containing area
+	if self.has_hub:
+		draw_circle(Vector2(0,0), 10, Utils.area_colors[area_index], false, 2.0, true)

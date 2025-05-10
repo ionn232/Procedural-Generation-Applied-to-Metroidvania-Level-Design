@@ -7,5 +7,6 @@
 script = ExtResource("1_aycy7")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
+z_index = 1
 texture_filter = 1
 sprite_frames = ExtResource("2_bj010")

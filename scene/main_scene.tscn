@@ -11,10 +11,11 @@
 script = ExtResource("1_gbq8f")
 
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
-map_size_x = 60
+map_size_x = 100
 map_size_y = 60
-number_route_steps = 100
-number_of_areas = 12
+number_route_steps = 10
+number_of_areas = 10
+area_size_factor = 10.0
 
 [node name="LayoutDisplay" parent="." node_paths=PackedStringArray("generator") instance=ExtResource("2_qa15b")]
 generator = NodePath("../MapGenerator")
@@ -31,6 +32,7 @@ script = ExtResource("5_6cnhv")
 script = ExtResource("6_u3gya")
 
 [node name="UI" type="Control" parent="UI"]
+texture_filter = 1
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -69,5 +71,16 @@ offset_top = -23.0
 offset_right = 40.0
 grow_vertical = 0
 text = "Route Step Info"
+
+[node name="StepCounter" type="Label" parent="UI/UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -10.0
+offset_bottom = 23.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 32
+text = "0"
 
 [connection signal="button_down" from="UI/UI/AdvanceBtn" to="UI" method="_on_advance_btn_button_down"]

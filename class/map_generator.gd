@@ -8,7 +8,7 @@ extends Node2D
 
 @export var number_route_steps:int
 @export var number_of_areas:int
-#@export var area_size_factor:float
+@export var area_size_factor:float #area max size in rooms, square around origin (TODO improve) #TODO: this should not be manual i think
 
 var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 
@@ -39,15 +39,12 @@ func _stage_handler(): #TODO: queue redraws each step instead of arbitrarily
 		7:
 			step_7()
 		8:
-			pass
+			step_8()
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
 	area_points.resize(number_of_areas)
-	for i in range(number_of_areas):
-		#TODO better random procedure
-		var current_area_point = AreaPoint.createNew(Vector2(rng.randf_range(-map_size_x/2.0, map_size_x/2.0), rng.randf_range(-map_size_y/2.0, map_size_y/2.0))) #TODO: better randomness alg
-		area_points[i] = current_area_point
+	spawn_points(area_points, Vector2(map_size_x, map_size_y), true)
 	Level.area_points = area_points
 
 func step_2(): ##expand points from centroid and each other
@@ -82,12 +79,7 @@ func step_3(): ##establish initial area
 	Level.initial_area.set_point_color(Utils.area_colors[0])
 
 func step_4(): ##establish area connections
-	for i:int in range(number_of_areas):
-		var current_area:AreaPoint = Level.area_points[i]
-		compute_area_relations(i)
-		current_area.queue_redraw()
-	join_stragglers()
-	#DEBUG_check_parity()
+	connect_points(Level.area_points)
 
 func step_5(): ##designate area order by expanding from initial area, designate areas as progression or backtracking
 	#struct inits
@@ -208,12 +200,37 @@ func step_7(): ##establish area-rs relations
 		num_rs_left -= 1
 	#Apply results
 	Level.route_steps = route_steps
+	#show in UI
+	ui.display_rs_info()
 	#DEBUG report results
 	DEBUG_check_RSs()
 
+func step_8(): ##randomly place around area a point for each relation, one for fast-travel room and one extra for spawn room
+	for i:int in len(Level.area_points):
+		var current_area:AreaPoint = Level.area_points[i]
+		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 1 else 1))
+		#spawn points
+		spawn_points(current_area.subpoints, Vector2(area_size_factor, area_size_factor) * 16)
+		current_area.add_subarea_nodes()
+
+func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
+	for i in range(len(points)):
+		#TODO better random procedure
+		var random_pos = Vector2(rng.randf_range(-pixel_dimensions.x/2.0,pixel_dimensions.x/2.0), rng.randf_range(-pixel_dimensions.y/2.0, pixel_dimensions.y/2.0))
+		var current_point = AreaPoint.createNew(random_pos) if is_area else Point.createNew(random_pos)
+		points[i] = current_point
+		current_point.queue_redraw()
+
+func connect_points(points:Array):
+	for i:int in range(len(points)):
+		var current_point:Point = points[i]
+		compute_point_relations(i)
+		current_point.queue_redraw()
+	join_stragglers()
+
 #TODO: tweak values
 const MIN_ANGULAR_DISTANCE:float = PI/2.5
-func compute_area_relations(index:int):
+func compute_point_relations(index:int):
 	var angles:Array = [] #type: float | null
 	var angle_candidates:Array = [] #type: float | null
 	angles.resize(number_of_areas)

@@ -1,8 +1,6 @@
 class_name LayoutDisplay
 extends Node2D
 
-const AREA_POINT = preload("res://scene/area_point.tscn")
-
 @onready var ui: CanvasLayer = $"../UI"
 
 @onready var tilemap: TileMapLayer = $TileMapLayer
@@ -30,12 +28,12 @@ func _ready() -> void:
 func _stage_handler():
 	match(Utils.generator_stage):
 		1:
-			draw_area_points()
+			add_area_nodes()
 			pass
 		2:
 			pass
 
-func draw_area_points():
+func add_area_nodes():
 	for point:AreaPoint in Level.area_points:
 		add_child(point, true)
 

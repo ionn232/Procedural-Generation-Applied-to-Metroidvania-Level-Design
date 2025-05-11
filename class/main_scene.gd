@@ -15,7 +15,7 @@ func _process(delta: float) -> void:
 			selected_room_pos = null
 	
 	#UI
-	if Utils.generator_stage > 20:
+	if Utils.generator_stage > 99:
 		room_selection.text = 'Initial MU: ' + str(Level.initial_room.grid_pos)
 		if (selected_room_pos == null):
 			room_selection.text += '\nNo MU selected'

@@ -80,7 +80,7 @@ func _stage_handler(): #TODO: queue point redraws each step instead of whatever 
 		10:
 			step_10()
 		11:
-			pass
+			step_11()
 		12:
 			pass
 		13:
@@ -274,7 +274,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 	for area:AreaPoint in Level.area_points:
 		area.add_subarea_nodes()
 
-func step_10(): ##assign points as area connectors and establish relation
+func step_10(): ##assign points as area connectors and establish relation #TODO 1: remove points for areas with relations n:1
 	for i:int in range(len(Level.area_points)): ##TODO optimize. This currently assigns each relation twice.
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.relations)):
@@ -305,17 +305,21 @@ func step_10(): ##assign points as area connectors and establish relation
 			var connection_current:ConnectionPoint = ConnectionPoint.createNew(best_potential_current_connection.position)
 			var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.position)
 			var is_progress:bool = current_area.relation_is_progress[j]
+			connection_current.add_connector_realtion(connection_related, is_progress)
+			connection_related.add_connector_realtion(connection_current, is_progress)
 			current_area.subpoints.erase(best_potential_current_connection)
 			related_area.subpoints.erase(best_potential_related_connection)
 			best_potential_current_connection.queue_free()
 			best_potential_related_connection.queue_free()
-			connection_current.add_connector_realtion(connection_related, is_progress)
-			connection_related.add_connector_realtion(connection_current, is_progress)
 			current_area.subpoints.push_back(connection_current)
 			related_area.subpoints.push_back(connection_related)
 			current_area.add_subarea_nodes()
 			related_area.add_subarea_nodes()
 			current_area.queue_redraw() #TODO make redraws better
+
+func step_11(): ##establish relations between area subpoints
+	for current_area:AreaPoint in Level.area_points:
+		connect_points(current_area.subpoints)
 
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):
@@ -327,76 +331,76 @@ func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false):
 func connect_points(points:Array):
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
-		compute_point_relations(i)
+		compute_point_relations(points, i)
 		current_point.queue_redraw()
-	join_stragglers()
+	join_stragglers(points)
 
 #TODO: tweak values
 const MIN_ANGULAR_DISTANCE:float = PI/2.5
-func compute_point_relations(index:int):
+func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null
 	var angle_candidates:Array = [] #type: float | null
-	angles.resize(number_of_areas)
-	angle_candidates.resize(number_of_areas)
-	var current_area:AreaPoint = Level.area_points[index]
+	angles.resize(len(points))
+	angle_candidates.resize(len(points))
+	var current_point:Point = points[index]
 	#record relative angles
-	for j:int in range(number_of_areas):
-		var second_area:AreaPoint = Level.area_points[j]
-		if current_area == second_area: continue
-		var angle = current_area.pos.angle_to_point(second_area.pos)
+	for j:int in range(len(points)):
+		var second_point:Point = points[j]
+		if current_point == second_point: continue
+		var angle = current_point.global_position.angle_to_point(second_point.global_position)
 		angles[j] = angle
 	#import existing relations for computation, remove from relation arrays
-	for existing_relation:AreaPoint in current_area.relations:
-		var existing_index:int = Level.area_points.find(existing_relation)
+	for existing_relation:Point in current_point.relations:
+		var existing_index:int = points.find(existing_relation)
 		angle_candidates[existing_index] = angles[existing_index]
-		existing_relation.relations.erase(current_area)
-	current_area.relations.resize(0)
+		existing_relation.relations.erase(current_point)
+	current_point.relations.resize(0)
 	#compare angles and distances, decide area relations
-	decide_relations(current_area, angles, angle_candidates)
+	decide_relations(points, current_point, angles, angle_candidates)
 	#establish relations between current area and each final candidate
-	for j:int in range(number_of_areas):
+	for j:int in range(len(points)):
 		var final_candidate = angle_candidates[j] 
 		if !final_candidate: continue
 		if index==j: continue
-		current_area.relations.push_back(Level.area_points[j])
-		Level.area_points[j].relations.push_back(current_area)
+		current_point.relations.push_back(points[j])
+		points[j].relations.push_back(current_point)
 
-func decide_relations(current_area:AreaPoint, angles:Array, angle_candidates:Array):
+func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
 	#var max_distance :float = (map_size_x + map_size_y)*16 / float(number_of_areas * 0.1) #TODO: tweak n use this maybe
-	for j:int in range(number_of_areas):
+	for j:int in range(len(points)):
 		var second_area_angle = angles[j]
 		if !second_area_angle: continue
 		#check if area is suitable
 		var suitable = true
-		for k:int in range(number_of_areas):
+		for k:int in range(len(points)):
 			var existing_relation_angle = angle_candidates[k]
 			if j==k: continue
 			if !existing_relation_angle: continue 
 			if abs(existing_relation_angle - second_area_angle) < MIN_ANGULAR_DISTANCE:
 				suitable = false
-				var distance_existing:float = current_area.pos.distance_squared_to(Level.area_points[k].pos)
-				var distance_new:float = current_area.pos.distance_squared_to(Level.area_points[j].pos)
+				var distance_existing:float = current_point.pos.distance_squared_to(points[k].global_position)
+				var distance_new:float = current_point.pos.distance_squared_to(points[j].global_position)
 				if distance_new < distance_existing:
 					angle_candidates[k] = null
 					angle_candidates[j] = angles[j]
 		if suitable:
 			angle_candidates[j] = second_area_angle #TODO: introduce randomness to make it more interesting
 
-func join_stragglers():
-	for current_area:AreaPoint in Level.area_points:
-		if len(current_area.relations) == 0:
-			print('lone area: ', Level.area_points.find(current_area))
+func join_stragglers(points:Array):
+	for current_point:Point in points:
+		if len(current_point.relations) == 0:
+			print('straggling point: ', points.find(current_point))
 			var min_dist:float = INF
 			var closest_area_index:int
-			for i:int in range(number_of_areas):
-				var second_area:AreaPoint = Level.area_points[i]
-				if current_area == second_area: continue
-				var distance_sq:float = current_area.pos.distance_squared_to(second_area.pos)
+			for i:int in range(len(points)):
+				var second_point:Point = points[i]
+				if current_point == second_point: continue
+				var distance_sq:float = current_point.global_position.distance_squared_to(second_point.global_position)
 				if distance_sq < min_dist:
 					min_dist = distance_sq
 					closest_area_index = i
-			current_area.relations.push_back(Level.area_points[closest_area_index])
-			Level.area_points[closest_area_index].relations.push_back(current_area)
+			current_point.relations.push_back(points[closest_area_index])
+			points[closest_area_index].relations.push_back(current_point)
 
 func DEBUG_check_parity():
 	var parity = true

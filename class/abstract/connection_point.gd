@@ -14,8 +14,9 @@ static func createNew(pos:Vector2, relations:Array = []) -> ConnectionPoint:
 	return newPoint
 
 func add_connector_realtion(other_area_connector:ConnectionPoint, is_progress:bool):
-	area_relations.push_back(other_area_connector)
-	area_relation_is_progress.push_back(is_progress)
+	if !(area_relations.has(other_area_connector)):
+		area_relations.push_back(other_area_connector)
+		area_relation_is_progress.push_back(is_progress)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -26,6 +27,12 @@ func _process(delta: float) -> void:
 	pass
 
 func _draw():
-	for area_relation:ConnectionPoint in area_relations:
-		var rel_color:Color = Color.WHITE
-		draw_line(Vector2(0,0), to_local(area_relation.global_position), rel_color, 1, true)
+	#draw point relation lines
+	for i:int in range(len(relations)):
+		var connecting_point:Point = relations[i]
+		draw_line(Vector2(0,0), to_local(connecting_point.global_position), Color.WHITE, 1, true)
+	#draw connection relation lines
+	for i:int in range(len(area_relations)):
+		var connecting_relation_point:ConnectionPoint = area_relations[i]
+		var rel_color:Color = Color.WHITE if area_relation_is_progress[i] else Color.WEB_GRAY
+		draw_line(Vector2(0,0), to_local(connecting_relation_point.global_position), rel_color, 1, true)

@@ -13,9 +13,9 @@ script = ExtResource("1_gbq8f")
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
 map_size_x = 100
 map_size_y = 60
-number_route_steps = 10
-number_of_areas = 10
-area_size_factor = 10.0
+number_route_steps = 6
+number_of_areas = 8
+number_side_upgrades = 9
 
 [node name="LayoutDisplay" parent="." node_paths=PackedStringArray("generator") instance=ExtResource("2_qa15b")]
 generator = NodePath("../MapGenerator")

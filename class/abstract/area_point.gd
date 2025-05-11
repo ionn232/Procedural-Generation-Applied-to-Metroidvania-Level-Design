@@ -12,7 +12,8 @@ var has_hub : bool = false
 #parity in size to base class 'relations': each 'i' refers to the same area
 var relation_is_progress : Array[bool] #if not, it's backtracking route
 
-var subpoints:Array[Point]
+var subpoints:Array #type: Array[Point] or subclasses
+var upgrade_pool:Array #type: Array[Reward] or subclasses
 
 static func createNew(pos:Vector2, relations:Array = []) -> AreaPoint:
 	var newPoint = AREA_POINT.instantiate()
@@ -23,7 +24,8 @@ static func createNew(pos:Vector2, relations:Array = []) -> AreaPoint:
 
 func add_subarea_nodes():
 	for subpoint:Point in subpoints:
-		add_child(subpoint, true)
+		if !(subpoint.get_parent() == self):
+			add_child(subpoint, true)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

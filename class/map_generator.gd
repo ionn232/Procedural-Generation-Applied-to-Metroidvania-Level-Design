@@ -6,23 +6,58 @@ extends Node2D
 @export var map_size_x:int
 @export var map_size_y:int
 
-@export var number_route_steps:int
-@export var number_of_areas:int
-@export var area_size_factor:float #area max size in rooms, square around origin (TODO improve) #TODO: this should not be manual i think
+@export_range (1,25) var number_route_steps:int
+@export_range (1,25) var number_of_areas:int
+@export_range (0, 9) var number_side_upgrades:int
 
 var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 
+#TODO tweak and separate x, y
+var area_size:float
+
 func _ready() -> void: ##level, map initializations // rng seeding
+	ui.stage_changed.connect(_stage_handler.bind())
+	rng.seed = hash("1")
+	
+	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
 	var main_map:Map = Map.new()
 	main_map.initialize_map()
 	Level.map = main_map
 	
-	ui.stage_changed.connect(_stage_handler.bind())
-	#rng.seed = hash("test")
+	#TODO tweak and separate x, y
+	area_size = (map_size_x + map_size_y)*16 / float(number_of_areas * 1.5)
+	
+	#load reward pool
+	RewardPool.import_reward_pool()
+	#distribute rewards amongst route steps #TODO: stat upgrades, equipment and collectibles
+	var route_steps:Array[RouteStep]
+	route_steps.resize(number_route_steps)
+	var keyset_indexes:Array = range(len(RewardPool.keyset))
+	var side_indexes:Array = range(len(RewardPool.side_upgrades))
+	var side_upgrades_left:int = number_side_upgrades
+	for i:int in range(number_route_steps):
+		route_steps[i] = RouteStep.createNew(i)
+		#assign RS main key
+		var indexes_random_index:int = rng.randi_range(0, len(keyset_indexes)-1)
+		route_steps[i].add_key(RewardPool.keyset[keyset_indexes.pop_at(indexes_random_index)])
+		#assign side upgrades
+		var RS_side_weight:float = side_upgrades_left / float(number_route_steps - i)
+		while RS_side_weight > 1.0: #TODO: reuse procedure in step 8 to a separate function
+			indexes_random_index = rng.randi_range(0, len(side_indexes)-1)
+			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
+			side_upgrades_left -= 1
+			RS_side_weight -= 1.0
+		var roll = rng.randf()
+		if roll < RS_side_weight:
+			indexes_random_index = rng.randi_range(0, side_upgrades_left - 1)
+			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
+			var debug_val = route_steps[i].reward_pool
+			side_upgrades_left -= 1
+	Level.route_steps = route_steps
 
-func _stage_handler(): #TODO: queue redraws each step instead of arbitrarily
+func _stage_handler(): #TODO: queue point redraws each step instead of whatever is done now
 	match(Utils.generator_stage):
 		1:
 			step_1()
@@ -40,6 +75,8 @@ func _stage_handler(): #TODO: queue redraws each step instead of arbitrarily
 			step_7()
 		8:
 			step_8()
+		9:
+			step_9()
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
@@ -60,7 +97,6 @@ func step_2(): ##expand points from centroid and each other
 		current_point.update_position(current_point.pos + centroid_to_area * 16) 
 	#expand areas from each other
 	#TODO: tweak parameters
-	var min_distance:float = (map_size_x + map_size_y)*16 / float(number_of_areas * 1.5)
 	var clear = false
 	while (!clear): #TODO: clamp limits + avoid potential infinite loops
 		clear = true
@@ -68,9 +104,9 @@ func step_2(): ##expand points from centroid and each other
 			for second_point:AreaPoint in Level.area_points:
 				if current_point == second_point: continue
 				var distance:float = current_point.pos.distance_to(second_point.pos)
-				if (distance < min_distance):
+				if (distance < area_size):
 					var second_to_current = second_point.pos.direction_to(current_point.pos)
-					current_point.update_position(current_point.pos + second_to_current * (min_distance - distance + 1))
+					current_point.update_position(current_point.pos + second_to_current * (area_size - distance + 1))
 					clear = false
 
 func step_3(): ##establish initial area
@@ -78,10 +114,10 @@ func step_3(): ##establish initial area
 	Level.initial_area = Level.area_points[rand_index]
 	Level.initial_area.set_point_color(Utils.area_colors[0])
 
-func step_4(): ##establish area connections
+func step_4(): ##establish area connections #BUG: sometimes isolated segments are formed
 	connect_points(Level.area_points)
 
-func step_5(): ##designate area order by expanding from initial area, designate areas as progression or backtracking
+func step_5(): ##designate area order by expanding from initial area, designate areas as progression or backtracking #BUG crashes program when isolated segments (fix step 4)
 	#struct inits
 	var ordered_areas:Array[AreaPoint] = []
 	var available_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
@@ -163,12 +199,9 @@ func step_6(): ##establish hub-containing area
 func step_7(): ##establish area-rs relations
 	var num_areas_left:int = number_of_areas
 	var num_rs_left:int = number_route_steps
-	var route_steps:Array[RouteStep]
-	route_steps.resize(number_route_steps)
+	var route_steps:Array[RouteStep] = Level.route_steps
 	var area_index:int = 0
 	for i:int in range(number_route_steps):
-		#initialize route step
-		route_steps[i] = RouteStep.createNew(i)
 		#assign weight. for each whole 1.0 secures an area
 		var RS_weight:float = num_areas_left / float(num_rs_left)
 		var new_areas_this_iteration:int = 0 #used to prevent assigning the same area to a route step twice
@@ -190,7 +223,9 @@ func step_7(): ##establish area-rs relations
 			num_areas_left -= 1
 			area_index += 1
 		#unsuccesful roll --> assign from previous areas to route step
-		else:
+		else: 
+			#TODO: make num_prev_areas relate to the current RS reward pool.
+			#idea --> force RS with key items to be revisits, distribute amongst as many areas as key item units
 			var num_prev_areas:int = rng.randi_range(1, area_index - new_areas_this_iteration)
 			var available_indexes:Array = range(area_index - new_areas_this_iteration)
 			for j:int in range(num_prev_areas):
@@ -198,20 +233,37 @@ func step_7(): ##establish area-rs relations
 				var random_index = available_indexes.pop_at(index_list_random_index)
 				route_steps[i].areas.push_back(Level.area_points[random_index])
 		num_rs_left -= 1
-	#Apply results
-	Level.route_steps = route_steps
-	#show in UI
+	#display in UI
 	ui.display_rs_info()
-	#DEBUG report results
-	DEBUG_check_RSs()
 
-func step_8(): ##randomly place around area a point for each relation, one for fast-travel room and one extra for spawn room
+func step_8(): ##randomly place around areas a point for each relation, one for fast-travel room and one extra for spawn room
 	for i:int in len(Level.area_points):
 		var current_area:AreaPoint = Level.area_points[i]
 		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 1 else 1))
 		#spawn points
-		spawn_points(current_area.subpoints, Vector2(area_size_factor, area_size_factor) * 16)
+		spawn_points(current_area.subpoints, Vector2(area_size, area_size))
 		current_area.add_subarea_nodes()
+
+func step_9(): ##randomly place around areas a point for each main upgrade, key item unit and side upgrades.
+	for current_step:RouteStep in Level.route_steps:
+		if current_step.keyset[0] is MainUpgrade:
+			var main_upgrade:MainUpgrade = current_step.keyset[0]
+			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
+			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size/2.0,area_size/2.0), rng.randf_range(-area_size/2.0, area_size/2.0))
+			var new_point:Point = Point.createNew(random_pos)
+			chosen_area.upgrade_pool.push_back(main_upgrade)
+			chosen_area.subpoints.push_back(new_point)
+		elif current_step.keyset[0] is KeyItem:
+			var key_item:KeyItem = current_step.keyset[0]
+			for KIU:KeyItemUnit in key_item.kius:
+				var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
+				var random_pos = Vector2(rng.randf_range(-area_size/2.0,area_size/2.0), rng.randf_range(-area_size/2.0, area_size/2.0))
+				var new_point = Point.createNew(random_pos)
+				chosen_area.upgrade_pool.push_back(KIU)
+				chosen_area.subpoints.push_back(new_point)
+	#add new nodes
+	for area:AreaPoint in Level.area_points:
+		area.add_subarea_nodes()
 
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):
@@ -219,7 +271,6 @@ func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false):
 		var random_pos = Vector2(rng.randf_range(-pixel_dimensions.x/2.0,pixel_dimensions.x/2.0), rng.randf_range(-pixel_dimensions.y/2.0, pixel_dimensions.y/2.0))
 		var current_point = AreaPoint.createNew(random_pos) if is_area else Point.createNew(random_pos)
 		points[i] = current_point
-		current_point.queue_redraw()
 
 func connect_points(points:Array):
 	for i:int in range(len(points)):

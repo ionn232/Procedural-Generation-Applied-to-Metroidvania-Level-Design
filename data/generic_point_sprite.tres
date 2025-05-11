@@ -1,12 +1,12 @@
 [gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://pygr60a2djdc"]
 
-[ext_resource type="Texture2D" uid="uid://fcpg42halp7w" path="res://data/images/area_point_0.png" id="1_1o8ho"]
+[ext_resource type="Texture2D" uid="uid://brfk4ji0gmqeo" path="res://data/images/generic_point_0.png" id="1_wrtc6"]
 
 [resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_1o8ho")
+"texture": ExtResource("1_wrtc6")
 }],
 "loop": true,
 "name": &"default",

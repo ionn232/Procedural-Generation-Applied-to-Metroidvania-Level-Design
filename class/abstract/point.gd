@@ -25,6 +25,10 @@ func update_position(newPos:Vector2):
 
 func set_point_color(newColor:Color):
 	sprite.self_modulate = newColor
+	sprite.modulate = newColor
+
+func get_global_pos() -> Vector2:
+	return global_position
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

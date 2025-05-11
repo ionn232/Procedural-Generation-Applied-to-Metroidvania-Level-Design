@@ -17,7 +17,7 @@ var area_size:float
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("1")
+	rng.seed = hash("5")
 	
 	#initialize map
 	Level.map_size_x = map_size_x
@@ -77,6 +77,16 @@ func _stage_handler(): #TODO: queue point redraws each step instead of whatever 
 			step_8()
 		9:
 			step_9()
+		10:
+			step_10()
+		11:
+			pass
+		12:
+			pass
+		13:
+			pass
+		14:
+			pass
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
@@ -223,8 +233,7 @@ func step_7(): ##establish area-rs relations
 			num_areas_left -= 1
 			area_index += 1
 		#unsuccesful roll --> assign from previous areas to route step
-		else: 
-			#TODO: make num_prev_areas relate to the current RS reward pool.
+		elif new_areas_this_iteration == 0: 
 			#idea --> force RS with key items to be revisits, distribute amongst as many areas as key item units
 			var num_prev_areas:int = rng.randi_range(1, area_index - new_areas_this_iteration)
 			var available_indexes:Array = range(area_index - new_areas_this_iteration)
@@ -264,6 +273,49 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 	#add new nodes
 	for area:AreaPoint in Level.area_points:
 		area.add_subarea_nodes()
+
+func step_10(): ##assign points as area connectors and establish relation
+	for i:int in range(len(Level.area_points)): ##TODO optimize. This currently assigns each relation twice.
+		var current_area:AreaPoint = Level.area_points[i]
+		for j:int in range(len(current_area.relations)):
+			var related_area:AreaPoint = current_area.relations[j]
+			#get related area subpoint closest to current area point
+			var min_distance:float = INF
+			var best_potential_related_connection:Point
+			var best_potential_current_connection:Point
+			var current_area_pos:Vector2 = current_area.global_position
+			for k:int in range(len(related_area.subpoints)):
+				var potential_connection:Point = related_area.subpoints[k]
+				var potential_connection_pos:Vector2 = potential_connection.global_position
+				var distance_sq:float = current_area_pos.distance_to(potential_connection_pos)
+				if  distance_sq < min_distance:
+					best_potential_related_connection = potential_connection
+					min_distance = distance_sq
+			#get current area subpoint closest to related area point
+			min_distance = INF
+			var related_area_pos:Vector2 = related_area.global_position
+			for k:int in range(len(current_area.subpoints)):
+				var potential_connection:Point = current_area.subpoints[k]
+				var potential_connection_pos:Vector2 = potential_connection.global_position
+				var distance_sq:float = related_area_pos.distance_to(potential_connection_pos)
+				if  distance_sq < min_distance:
+					best_potential_current_connection = potential_connection
+					min_distance = distance_sq
+			#replace points for connection points, assign connection, add to areapoint
+			var connection_current:ConnectionPoint = ConnectionPoint.createNew(best_potential_current_connection.position)
+			var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.position)
+			var is_progress:bool = current_area.relation_is_progress[j]
+			current_area.subpoints.erase(best_potential_current_connection)
+			related_area.subpoints.erase(best_potential_related_connection)
+			best_potential_current_connection.queue_free()
+			best_potential_related_connection.queue_free()
+			connection_current.add_connector_realtion(connection_related, is_progress)
+			connection_related.add_connector_realtion(connection_current, is_progress)
+			current_area.subpoints.push_back(connection_current)
+			related_area.subpoints.push_back(connection_related)
+			current_area.add_subarea_nodes()
+			related_area.add_subarea_nodes()
+			current_area.queue_redraw() #TODO make redraws better
 
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):

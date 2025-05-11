@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://cg4fr0w1574r1"]
+
+[ext_resource type="Script" path="res://class/abstract/connection_point.gd" id="1_r1hgc"]
+[ext_resource type="SpriteFrames" uid="uid://isk4a1lv3gn2" path="res://data/connector_point_sprite.tres" id="2_ifdrm"]
+
+[node name="ConnectionPoint" type="Node2D"]
+script = ExtResource("1_r1hgc")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("2_ifdrm")

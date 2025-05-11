@@ -17,7 +17,7 @@ var area_size:float
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("5")
+	rng.seed = hash("3")
 	
 	#initialize map
 	Level.map_size_x = map_size_x
@@ -171,10 +171,6 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 		progression_routes[expanding_area_index].push_back(available_routes[expanding_area_index].pop_at(route_index))
 		for current_route_list in available_routes: #TODO: introduce randomness (allow multiple entries to new area)
 			current_route_list.erase(new_area)
-			#TODO decide if saved to progression or not instead of saving to backtracking
-			#var index:int = current_route_list.find(new_area)
-			#if index != -1:
-				#backtrack_routes[i].push_back(current_route_list.pop_at(index))
 		#fill table: add routes from next area to unseen areas
 		for route_dest:AreaPoint in ordered_areas[i].relations:
 			if !ordered_areas.has(route_dest):
@@ -301,21 +297,50 @@ func step_10(): ##assign points as area connectors and establish relation #TODO 
 				if  distance_sq < min_distance:
 					best_potential_current_connection = potential_connection
 					min_distance = distance_sq
-			#replace points for connection points, assign connection, add to areapoint
-			var connection_current:ConnectionPoint = ConnectionPoint.createNew(best_potential_current_connection.position)
-			var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.position)
+			
+			#replace points for connection points if applicable, assign connection, add to areapoint
 			var is_progress:bool = current_area.relation_is_progress[j]
-			connection_current.add_connector_realtion(connection_related, is_progress)
-			connection_related.add_connector_realtion(connection_current, is_progress)
-			current_area.subpoints.erase(best_potential_current_connection)
-			related_area.subpoints.erase(best_potential_related_connection)
-			best_potential_current_connection.queue_free()
-			best_potential_related_connection.queue_free()
-			current_area.subpoints.push_back(connection_current)
-			related_area.subpoints.push_back(connection_related)
-			current_area.add_subarea_nodes()
-			related_area.add_subarea_nodes()
-			current_area.queue_redraw() #TODO make redraws better
+			
+			if (best_potential_current_connection is ConnectionPoint) && !(best_potential_related_connection is ConnectionPoint):
+				var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.pos)
+				best_potential_current_connection.add_connector_relation(connection_related, is_progress)
+				connection_related.add_connector_relation(best_potential_current_connection, is_progress)
+				related_area.remove_child(best_potential_related_connection)
+				var index:int = related_area.subpoints.find(best_potential_related_connection)
+				related_area.subpoints[index] = connection_related
+				related_area.add_subarea_nodes()
+				best_potential_related_connection.queue_free()
+			elif !(best_potential_current_connection is ConnectionPoint) && (best_potential_related_connection is ConnectionPoint):
+				var connection_current:ConnectionPoint = ConnectionPoint.createNew(best_potential_current_connection.pos)
+				best_potential_related_connection.add_connector_relation(connection_current, is_progress)
+				connection_current.add_connector_relation(best_potential_related_connection, is_progress)
+				current_area.remove_child(best_potential_current_connection)
+				var index:int = current_area.subpoints.find(best_potential_current_connection)
+				current_area.subpoints[index] = connection_current
+				current_area.add_subarea_nodes()
+				best_potential_current_connection.queue_free()
+			elif (best_potential_current_connection is ConnectionPoint) && (best_potential_related_connection is ConnectionPoint):
+				best_potential_current_connection.add_connector_relation(best_potential_related_connection, is_progress)
+				best_potential_related_connection.add_connector_relation(best_potential_current_connection, is_progress)
+			else:
+				var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.pos)
+				var connection_current:ConnectionPoint = ConnectionPoint.createNew(best_potential_current_connection.pos)
+				connection_current.add_connector_relation(connection_related, is_progress)
+				current_area.remove_child(best_potential_current_connection)
+				var index:int = current_area.subpoints.find(best_potential_current_connection)
+				current_area.subpoints[index] = connection_current
+				current_area.add_subarea_nodes()
+				best_potential_current_connection.queue_free()
+				
+				connection_related.add_connector_relation(connection_current, is_progress)
+				related_area.remove_child(best_potential_related_connection)
+				index = related_area.subpoints.find(best_potential_related_connection)
+				related_area.subpoints[index] = connection_related
+				related_area.add_subarea_nodes()
+				best_potential_related_connection.queue_free()
+				
+			
+		current_area.queue_redraw()
 
 func step_11(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:
@@ -355,9 +380,9 @@ func compute_point_relations(points:Array, index:int):
 		angle_candidates[existing_index] = angles[existing_index]
 		existing_relation.relations.erase(current_point)
 	current_point.relations.resize(0)
-	#compare angles and distances, decide area relations
+	#compare angles and distances, decide point relations
 	decide_relations(points, current_point, angles, angle_candidates)
-	#establish relations between current area and each final candidate
+	#establish relations between current point and each final candidate
 	for j:int in range(len(points)):
 		var final_candidate = angle_candidates[j] 
 		if !final_candidate: continue
@@ -368,15 +393,15 @@ func compute_point_relations(points:Array, index:int):
 func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
 	#var max_distance :float = (map_size_x + map_size_y)*16 / float(number_of_areas * 0.1) #TODO: tweak n use this maybe
 	for j:int in range(len(points)):
-		var second_area_angle = angles[j]
-		if !second_area_angle: continue
-		#check if area is suitable
+		var second_point_angle = angles[j]
+		if !second_point_angle: continue
+		#check if point is suitable
 		var suitable = true
 		for k:int in range(len(points)):
 			var existing_relation_angle = angle_candidates[k]
 			if j==k: continue
 			if !existing_relation_angle: continue 
-			if abs(existing_relation_angle - second_area_angle) < MIN_ANGULAR_DISTANCE:
+			if abs(existing_relation_angle - second_point_angle) < MIN_ANGULAR_DISTANCE:
 				suitable = false
 				var distance_existing:float = current_point.pos.distance_squared_to(points[k].global_position)
 				var distance_new:float = current_point.pos.distance_squared_to(points[j].global_position)
@@ -384,23 +409,23 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 					angle_candidates[k] = null
 					angle_candidates[j] = angles[j]
 		if suitable:
-			angle_candidates[j] = second_area_angle #TODO: introduce randomness to make it more interesting
+			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting
 
 func join_stragglers(points:Array):
 	for current_point:Point in points:
 		if len(current_point.relations) == 0:
 			print('straggling point: ', points.find(current_point))
 			var min_dist:float = INF
-			var closest_area_index:int
+			var closest_point_index:int
 			for i:int in range(len(points)):
 				var second_point:Point = points[i]
 				if current_point == second_point: continue
 				var distance_sq:float = current_point.global_position.distance_squared_to(second_point.global_position)
 				if distance_sq < min_dist:
 					min_dist = distance_sq
-					closest_area_index = i
-			current_point.relations.push_back(points[closest_area_index])
-			points[closest_area_index].relations.push_back(current_point)
+					closest_point_index = i
+			current_point.relations.push_back(points[closest_point_index])
+			points[closest_point_index].relations.push_back(current_point)
 
 func DEBUG_check_parity():
 	var parity = true

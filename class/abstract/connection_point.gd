@@ -13,7 +13,7 @@ static func createNew(pos:Vector2, relations:Array = []) -> ConnectionPoint:
 	newPoint.relations = relations
 	return newPoint
 
-func add_connector_realtion(other_area_connector:ConnectionPoint, is_progress:bool):
+func add_connector_relation(other_area_connector:ConnectionPoint, is_progress:bool):
 	if !(area_relations.has(other_area_connector)):
 		area_relations.push_back(other_area_connector)
 		area_relation_is_progress.push_back(is_progress)

@@ -45,12 +45,12 @@ enum room_type {
 
 const area_colors : Array[Color] = [
 	Color.RED,
-	Color.TEAL,
+	Color.BLUE,
 	Color.YELLOW,
 	Color.PURPLE,
 	Color.GREEN,
 	Color.ORANGE,
-	Color.BLUE,
+	Color.LIGHT_PINK,
 	Color.AQUA,
 	Color.MAGENTA,
 	Color.LIME,
@@ -61,7 +61,7 @@ const area_colors : Array[Color] = [
 	Color.OLIVE,
 	Color.CYAN,
 	Color.BROWN,
-	Color.LIGHT_PINK,
+	Color.TEAL,
 	Color.DARK_GREEN,
 	Color.GOLD,
 	Color.INDIGO,

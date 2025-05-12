@@ -12,13 +12,15 @@ extends Node2D
 
 var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 
-#TODO tweak and separate x, y
+#from center to edge (more like area radiuses)
 var area_size:float
+var area_size_xy:Vector2
+
+const ROOM_SIZE:float = 16.0
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("3")
-	
+	rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -27,7 +29,10 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	Level.map = main_map
 	
 	#TODO tweak and separate x, y
-	area_size = (map_size_x + map_size_y)*16 / float(number_of_areas * 1.5)
+	area_size = ((map_size_x/2.0+map_size_y/2.0)*16/2.0)/float(number_of_areas)
+	#area size
+	var w_h_ratio:float = map_size_x/float(map_size_y)
+	area_size_xy = Vector2(map_size_x * w_h_ratio, map_size_y / w_h_ratio)
 	
 	#load reward pool
 	RewardPool.import_reward_pool()
@@ -53,11 +58,11 @@ func _ready() -> void: ##level, map initializations // rng seeding
 		if roll < RS_side_weight:
 			indexes_random_index = rng.randi_range(0, side_upgrades_left - 1)
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
-			var debug_val = route_steps[i].reward_pool
 			side_upgrades_left -= 1
 	Level.route_steps = route_steps
 
 func _stage_handler(): #TODO: queue point redraws each step instead of whatever is done now
+	queue_redraw()
 	match(Utils.generator_stage):
 		1:
 			step_1()
@@ -82,7 +87,7 @@ func _stage_handler(): #TODO: queue point redraws each step instead of whatever 
 		11:
 			step_11()
 		12:
-			pass
+			step_12()
 		13:
 			pass
 		14:
@@ -94,7 +99,7 @@ func step_1(): ##1: place as many points as the number of areas
 	spawn_points(area_points, Vector2(map_size_x, map_size_y), true)
 	Level.area_points = area_points
 
-func step_2(): ##expand points from centroid and each other
+func step_2(): ##expand points from centroid and ensure minimum distance
 	#calculate centroid
 	var centroid : Vector2 = Vector2(0,0)
 	for area_point:AreaPoint in Level.area_points:
@@ -102,29 +107,14 @@ func step_2(): ##expand points from centroid and each other
 	centroid.x /= len(Level.area_points)
 	centroid.y /= len(Level.area_points)
 	#expand areas from centroid
-	for current_point:AreaPoint in Level.area_points:
-		var centroid_to_area:Vector2 = current_point.pos - centroid
-		current_point.update_position(current_point.pos + centroid_to_area * 16) 
-	#expand areas from each other
-	#TODO: tweak parameters
-	var clear = false
-	while (!clear): #TODO: clamp limits + avoid potential infinite loops
-		clear = true
-		for current_point:AreaPoint in Level.area_points:
-			for second_point:AreaPoint in Level.area_points:
-				if current_point == second_point: continue
-				var distance:float = current_point.pos.distance_to(second_point.pos)
-				if (distance < area_size):
-					var second_to_current = second_point.pos.direction_to(current_point.pos)
-					current_point.update_position(current_point.pos + second_to_current * (area_size - distance + 1))
-					clear = false
+	expand_points(Level.area_points, centroid, 2*area_size, ROOM_SIZE)
 
 func step_3(): ##establish initial area
-	var rand_index :int = rng.randi_range(0, number_of_areas - 1) #TODO revisar rango esto. -1 o no??
+	var rand_index :int = rng.randi_range(0, number_of_areas - 1)
 	Level.initial_area = Level.area_points[rand_index]
 	Level.initial_area.set_point_color(Utils.area_colors[0])
 
-func step_4(): ##establish area connections #BUG: sometimes isolated segments are formed
+func step_4(): ##establish area connections 
 	connect_points(Level.area_points)
 
 func step_5(): ##designate area order by expanding from initial area, designate areas as progression or backtracking #BUG crashes program when isolated segments (fix step 4)
@@ -189,7 +179,7 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 func step_6(): ##establish hub-containing area
 	#get area with most progression relations
 	var hub_area:AreaPoint
-	var max_num_relations:int = 0
+	var max_num_relations:int = -1
 	for i:int in range(len(Level.area_points)):
 		var current_area = Level.area_points[i]
 		var num_relations:int = current_area.relation_is_progress.reduce(
@@ -244,7 +234,7 @@ func step_7(): ##establish area-rs relations
 func step_8(): ##randomly place around areas a point for each relation, one for fast-travel room and one extra for spawn room
 	for i:int in len(Level.area_points):
 		var current_area:AreaPoint = Level.area_points[i]
-		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 1 else 1))
+		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 0 else 1))
 		#spawn points
 		spawn_points(current_area.subpoints, Vector2(area_size, area_size))
 		current_area.add_subarea_nodes()
@@ -270,7 +260,12 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 	for area:AreaPoint in Level.area_points:
 		area.add_subarea_nodes()
 
-func step_10(): ##assign points as area connectors and establish relation #TODO 1: remove points for areas with relations n:1
+func step_10(): ##expand intra-area points
+	for current_area:AreaPoint in Level.area_points:
+		var intra_area_distance = area_size / float(len(current_area.subpoints))
+		expand_points(current_area.subpoints, current_area.pos, 2*intra_area_distance)
+
+func step_11(): ##assign points as area connectors and establish relation #TODO 1: remove points for areas with relations n:1
 	for i:int in range(len(Level.area_points)): ##TODO optimize. This currently assigns each relation twice.
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.relations)):
@@ -300,8 +295,11 @@ func step_10(): ##assign points as area connectors and establish relation #TODO 
 			
 			#replace points for connection points if applicable, assign connection, add to areapoint
 			var is_progress:bool = current_area.relation_is_progress[j]
-			
-			if (best_potential_current_connection is ConnectionPoint) && !(best_potential_related_connection is ConnectionPoint):
+			#TODO: clean this shit up bro
+			if (best_potential_current_connection is ConnectionPoint) && (best_potential_related_connection is ConnectionPoint):
+				best_potential_current_connection.add_connector_relation(best_potential_related_connection, is_progress)
+				best_potential_related_connection.add_connector_relation(best_potential_current_connection, is_progress)
+			elif (best_potential_current_connection is ConnectionPoint) && !(best_potential_related_connection is ConnectionPoint):
 				var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.pos)
 				best_potential_current_connection.add_connector_relation(connection_related, is_progress)
 				connection_related.add_connector_relation(best_potential_current_connection, is_progress)
@@ -319,9 +317,6 @@ func step_10(): ##assign points as area connectors and establish relation #TODO 
 				current_area.subpoints[index] = connection_current
 				current_area.add_subarea_nodes()
 				best_potential_current_connection.queue_free()
-			elif (best_potential_current_connection is ConnectionPoint) && (best_potential_related_connection is ConnectionPoint):
-				best_potential_current_connection.add_connector_relation(best_potential_related_connection, is_progress)
-				best_potential_related_connection.add_connector_relation(best_potential_current_connection, is_progress)
 			else:
 				var connection_related:ConnectionPoint = ConnectionPoint.createNew(best_potential_related_connection.pos)
 				var connection_current:ConnectionPoint = ConnectionPoint.createNew(best_potential_current_connection.pos)
@@ -339,10 +334,26 @@ func step_10(): ##assign points as area connectors and establish relation #TODO 
 				related_area.add_subarea_nodes()
 				best_potential_related_connection.queue_free()
 				
+		#BUG potencial loop aparte para no influenciar siguientes iteraciones
+		#remove points as needed if relations 1:n exist
+		var connector_count:int = current_area.subpoints.reduce(func(acc, val): return acc + int(val is ConnectionPoint), 0)
+		var connector_pool:int = len(current_area.relations)
+		var points_to_remove:int = connector_pool - connector_count
+		print(points_to_remove)
+		for j:int in range(points_to_remove):
+			var index:int = 0 #in case first point is connector
+			while true: #TODO fix cardinal sin
+				var removal_candidate = current_area.subpoints[index]
+				if !(removal_candidate is ConnectionPoint):
+					current_area.subpoints.pop_at(index)
+					current_area.remove_child(removal_candidate)
+					removal_candidate.queue_free()
+					break
+				index += 1
 			
 		current_area.queue_redraw()
 
-func step_11(): ##establish relations between area subpoints
+func step_12(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:
 		connect_points(current_area.subpoints)
 
@@ -353,15 +364,55 @@ func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false):
 		var current_point = AreaPoint.createNew(random_pos) if is_area else Point.createNew(random_pos)
 		points[i] = current_point
 
-func connect_points(points:Array):
+func expand_points(points:Array, center:Vector2, min_distance:float, expansion_factor:float = 0):
+	#expand areas from center
+	for current_point:Point in points:
+		var center_to_area:Vector2 = current_point.global_position - center
+		current_point.update_position(current_point.pos + center_to_area * expansion_factor) 
+	#expand areas from each other
+	#TODO: tweak parameters
+	var map_boundary_x:float = map_size_x*16/2.0
+	var map_boundary_y:float = map_size_y*16/2.0
+	var clear = false
+	var count:int = 0
+	while (!clear):
+		clear = true
+		count += 1
+		if (count == 1000):
+			print('WARNING! not enough space to correctly expand points')
+			print('results may be poor, please tweak parameters')
+			break
+		for current_point:Point in points:
+			##keep points inside grid (border mirroring)
+			if abs(current_point.global_position.x) > map_boundary_x:
+				var point_to_reflection:Vector2 = Vector2(1, 0) * (2 * (sign(current_point.global_position.x) * map_boundary_x - current_point.global_position.x))
+				current_point.update_position(current_point.pos + point_to_reflection)
+				clear = false
+			elif abs(current_point.global_position.y) > map_boundary_y:
+				var point_to_reflection:Vector2 = Vector2(0, 1) * (2 * (sign(current_point.global_position.y) * map_boundary_y - current_point.global_position.y))
+				current_point.update_position(current_point.pos + point_to_reflection)
+				clear = false
+			#check distance to other points
+			for second_point:Point in points:
+				if current_point == second_point: continue
+				var distance:float = current_point.global_position.distance_to(second_point.global_position)
+				#move point
+				if (distance <= min_distance):
+					var current_to_second:Vector2 = current_point.global_position.direction_to(second_point.global_position)
+					second_point.update_position(second_point.pos + current_to_second * (min_distance - distance + 0.1)) #DO NOT REMOVE THE 0.1
+					clear = false
+
+func connect_points(points:Array): #BUG: sometimes isolated segments are formed
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
+		print(current_point.name, ' : ' , current_point.relations)
 		compute_point_relations(points, i)
 		current_point.queue_redraw()
-	join_stragglers(points)
+	#join_stragglers(points)
+	print('------------------\n')
 
 #TODO: tweak values
-const MIN_ANGULAR_DISTANCE:float = PI/2.5
+const MIN_ANGULAR_DISTANCE:float = PI/2.0
 func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null
 	var angle_candidates:Array = [] #type: float | null
@@ -473,3 +524,10 @@ func DEBUG_check_borders(mu:MU):
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
+
+func _draw():
+	for current_area:AreaPoint in Level.area_points:
+		draw_circle(current_area.pos, area_size, Color.BLACK, false)
+		var intra_area_distance = area_size / float(len(current_area.subpoints))
+		for subpoint:Point in current_area.subpoints:
+			draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)

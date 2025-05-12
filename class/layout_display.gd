@@ -29,13 +29,16 @@ func _stage_handler():
 	match(Utils.generator_stage):
 		1:
 			add_area_nodes()
-			pass
-		2:
-			pass
+		11:
+			dim_area_nodes()
 
 func add_area_nodes():
-	for point:AreaPoint in Level.area_points:
-		add_child(point, true)
+	for area:AreaPoint in Level.area_points:
+		add_child(area, true)
+
+func dim_area_nodes():
+	for area:AreaPoint in Level.area_points:
+		area.set_point_color(Utils.area_colors[area.area_index] * Color(1,1,1, 0.4))
 
 func draw_rooms():
 	var map_grid = Level.map.MUs

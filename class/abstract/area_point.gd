@@ -49,7 +49,10 @@ func _draw(): #USES LOCAL COORDINATES!
 	#draw area index
 	if (Utils.generator_stage >= 5):
 		draw_string(font,Vector2(0,20), str(area_index), 0, -1, 32, Color.BLACK)
+	else:
+		var debug_index = Level.area_points.find(self)
+		draw_string(font,Vector2(0,20), str(debug_index), 0, -1, 32, Color.BLACK)
 	
 	#circle hub-containing area
 	if self.has_hub:
-		draw_circle(Vector2(0,0), 10, Utils.area_colors[area_index], false, 2.0, true)
+		draw_circle(Vector2(0,0), 10, Utils.area_colors[area_index] * Color(1,1,1,sprite.modulate.a), false, 2.0, true)

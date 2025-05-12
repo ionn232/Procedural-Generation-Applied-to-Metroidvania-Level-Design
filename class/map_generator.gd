@@ -17,6 +17,7 @@ var area_size:float
 var area_size_xy:Vector2
 
 const ROOM_SIZE:float = 16.0
+const MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
@@ -240,7 +241,9 @@ func step_8(): ##randomly place around areas a point for each relation, one for 
 		current_area.add_subarea_nodes()
 
 func step_9(): ##randomly place around areas a point for each main upgrade, key item unit and side upgrades.
+	#TODO: random spawns seem biased. investigate.
 	for current_step:RouteStep in Level.route_steps:
+		#main upgrades
 		if current_step.keyset[0] is MainUpgrade:
 			var main_upgrade:MainUpgrade = current_step.keyset[0]
 			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
@@ -248,6 +251,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.upgrade_pool.push_back(main_upgrade)
 			chosen_area.subpoints.push_back(new_point)
+		#key items
 		elif current_step.keyset[0] is KeyItem:
 			var key_item:KeyItem = current_step.keyset[0]
 			for KIU:KeyItemUnit in key_item.kius:
@@ -256,6 +260,14 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 				var new_point = Point.createNew(random_pos)
 				chosen_area.upgrade_pool.push_back(KIU)
 				chosen_area.subpoints.push_back(new_point)
+		#side upgrades
+		var rs_side_upgrades:Array[Reward] = current_step.get_side_upgrades()
+		for side_upgrade:SideUpgrade in rs_side_upgrades:
+			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
+			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size/2.0,area_size/2.0), rng.randf_range(-area_size/2.0, area_size/2.0))
+			var new_point:Point = Point.createNew(random_pos)
+			chosen_area.upgrade_pool.push_back(side_upgrade)
+			chosen_area.subpoints.push_back(new_point)
 	#add new nodes
 	for area:AreaPoint in Level.area_points:
 		area.add_subarea_nodes()
@@ -405,14 +417,10 @@ func expand_points(points:Array, center:Vector2, min_distance:float, expansion_f
 func connect_points(points:Array): #BUG: sometimes isolated segments are formed
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
-		print(current_point.name, ' : ' , current_point.relations)
 		compute_point_relations(points, i)
 		current_point.queue_redraw()
 	#join_stragglers(points)
-	print('------------------\n')
 
-#TODO: tweak values
-const MIN_ANGULAR_DISTANCE:float = PI/2.0
 func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null
 	var angle_candidates:Array = [] #type: float | null
@@ -440,19 +448,25 @@ func compute_point_relations(points:Array, index:int):
 		if index==j: continue
 		current_point.relations.push_back(points[j])
 		points[j].relations.push_back(current_point)
+		clear_incompatible_relations(points[j])
+		#if j < index: compute_point_relations(points, j)
 
 func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
 	#var max_distance :float = (map_size_x + map_size_y)*16 / float(number_of_areas * 0.1) #TODO: tweak n use this maybe
-	for j:int in range(len(points)):
+	var j:int = -1
+	while j < len(points)-1:
+		j += 1
 		var second_point_angle = angles[j]
 		if !second_point_angle: continue
 		#check if point is suitable
 		var suitable = true
-		for k:int in range(len(points)):
+		var k:int = -1
+		while k < len(points)-1:
+			k += 1
 			var existing_relation_angle = angle_candidates[k]
 			if j==k: continue
 			if !existing_relation_angle: continue 
-			if abs(existing_relation_angle - second_point_angle) < MIN_ANGULAR_DISTANCE:
+			if abs(second_point_angle - existing_relation_angle) < MIN_ANGULAR_DISTANCE: 
 				suitable = false
 				var distance_existing:float = current_point.pos.distance_squared_to(points[k].global_position)
 				var distance_new:float = current_point.pos.distance_squared_to(points[j].global_position)
@@ -460,7 +474,7 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 					angle_candidates[k] = null
 					angle_candidates[j] = angles[j]
 		if suitable:
-			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting
+			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting maybe
 
 func join_stragglers(points:Array):
 	for current_point:Point in points:
@@ -477,6 +491,25 @@ func join_stragglers(points:Array):
 					closest_point_index = i
 			current_point.relations.push_back(points[closest_point_index])
 			points[closest_point_index].relations.push_back(current_point)
+
+func clear_incompatible_relations(point:Point): #iterate over point relations. remove relation if it conflicts with any previous one
+	var relation_angles:Array[float]
+	relation_angles.resize(len(point.relations))
+	var relations_to_remove:Array[Point]
+	for i:int in range(len(point.relations)):
+		var relation = point.relations[i]
+		var angle = point.global_position.angle_to_point(relation.global_position)
+		relation_angles[i] = angle
+		for j:int in range(i):
+			var previous_relation = point.relations[j]
+			if previous_relation in relations_to_remove: continue
+			var previous_relation_angle = relation_angles[j]
+			if abs(previous_relation_angle - angle) < MIN_ANGULAR_DISTANCE: 
+				relations_to_remove.push_back(relation)
+				break
+	for deprecated_relation:Point in relations_to_remove:
+		point.relations.erase(deprecated_relation)
+		deprecated_relation.relations.erase(point)
 
 func DEBUG_check_parity():
 	var parity = true
@@ -529,5 +562,21 @@ func _draw():
 	for current_area:AreaPoint in Level.area_points:
 		draw_circle(current_area.pos, area_size, Color.BLACK, false)
 		var intra_area_distance = area_size / float(len(current_area.subpoints))
+		
+		for related_area:AreaPoint in current_area.relations:
+			var angle = current_area.global_position.angle_to_point(related_area.global_position)
+			var direction = Vector2(1,0)
+			var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
+			var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
+			draw_line(current_area.position, current_area.position + angle_1 * 100, Color.BLACK, 2, true)
+			draw_line(current_area.position, current_area.position + angle_2 * 100, Color.BLACK, 2, true)
+		
 		for subpoint:Point in current_area.subpoints:
 			draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)
+			for related_point:Point in subpoint.relations:
+				var angle = subpoint.global_position.angle_to_point(related_point.global_position)
+				var direction = Vector2(1,0)
+				var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
+				var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
+				draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 100, Color.BLACK, 2, true)
+				draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 100, Color.BLACK, 2, true)

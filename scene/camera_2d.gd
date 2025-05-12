@@ -8,7 +8,8 @@ func _ready() -> void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	position = Vector2(0,0) + get_global_mouse_position()*0.5
+	if Input.is_action_pressed("rClick"):
+		position = get_global_mouse_position()
 	
 	if Input.is_action_just_pressed("ZoomTick"):
 		self.zoom *= 2

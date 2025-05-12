@@ -14,6 +14,7 @@ var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 
 #from center to edge (more like area radiuses)
 var area_size:float
+var area_size_rooms:int
 var area_size_xy:Vector2
 
 const ROOM_SIZE:float = 16.0
@@ -30,10 +31,11 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	Level.map = main_map
 	
 	#TODO tweak and separate x, y
-	area_size = ((map_size_x/2.0+map_size_y/2.0)*16/2.0)/float(number_of_areas)
 	#area size
+	area_size = ((map_size_x+map_size_y)*16/2.0)/float(number_of_areas) #arbitrarily decided
 	var w_h_ratio:float = map_size_x/float(map_size_y)
 	area_size_xy = Vector2(map_size_x * w_h_ratio, map_size_y / w_h_ratio)
+	area_size_rooms = ceil(area_size / 16.0)
 	
 	#load reward pool
 	RewardPool.import_reward_pool()
@@ -63,7 +65,7 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	Level.route_steps = route_steps
 
 func _stage_handler(): #TODO: queue point redraws each step instead of whatever is done now
-	queue_redraw()
+	redraw_all()
 	match(Utils.generator_stage):
 		1:
 			step_1()
@@ -135,7 +137,6 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 	initial_area.area_index = 0
 	initial_area.relation_is_progress.resize(len(initial_area.relations))
 	initial_area.relation_is_progress.fill(false) #ts redundant, it's the default value
-	initial_area.queue_redraw()
 	for route_dest:AreaPoint in ordered_areas[0].relations:
 		available_routes[0].push_back(route_dest)
 	#produce ordered areas array and list of backtrack routes
@@ -157,7 +158,6 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 		new_area.area_index = i
 		new_area.relation_is_progress.resize(len(new_area.relations))
 		new_area.relation_is_progress.fill(false) #ts redundant, it's the default value
-		new_area.queue_redraw()
 		#remove next area from elegibility: store progression and backtracking routes
 		progression_routes[expanding_area_index].push_back(available_routes[expanding_area_index].pop_at(route_index))
 		for current_route_list in available_routes: #TODO: introduce randomness (allow multiple entries to new area)
@@ -191,7 +191,6 @@ func step_6(): ##establish hub-containing area
 			max_num_relations = num_relations
 	#apply result
 	hub_area.has_hub = true
-	hub_area.queue_redraw()
 
 func step_7(): ##establish area-rs relations
 	var num_areas_left:int = number_of_areas
@@ -237,17 +236,16 @@ func step_8(): ##randomly place around areas a point for each relation, one for 
 		var current_area:AreaPoint = Level.area_points[i]
 		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 0 else 1))
 		#spawn points
-		spawn_points(current_area.subpoints, Vector2(area_size, area_size))
+		spawn_points(current_area.subpoints, Vector2(area_size_rooms, area_size_rooms))
 		current_area.add_subarea_nodes()
 
 func step_9(): ##randomly place around areas a point for each main upgrade, key item unit and side upgrades.
-	#TODO: random spawns seem biased. investigate.
 	for current_step:RouteStep in Level.route_steps:
 		#main upgrades
 		if current_step.keyset[0] is MainUpgrade:
 			var main_upgrade:MainUpgrade = current_step.keyset[0]
 			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
-			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size/2.0,area_size/2.0), rng.randf_range(-area_size/2.0, area_size/2.0))
+			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.upgrade_pool.push_back(main_upgrade)
 			chosen_area.subpoints.push_back(new_point)
@@ -256,7 +254,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 			var key_item:KeyItem = current_step.keyset[0]
 			for KIU:KeyItemUnit in key_item.kius:
 				var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
-				var random_pos = Vector2(rng.randf_range(-area_size/2.0,area_size/2.0), rng.randf_range(-area_size/2.0, area_size/2.0))
+				var random_pos = Vector2(rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
 				var new_point = Point.createNew(random_pos)
 				chosen_area.upgrade_pool.push_back(KIU)
 				chosen_area.subpoints.push_back(new_point)
@@ -264,7 +262,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 		var rs_side_upgrades:Array[Reward] = current_step.get_side_upgrades()
 		for side_upgrade:SideUpgrade in rs_side_upgrades:
 			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
-			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size/2.0,area_size/2.0), rng.randf_range(-area_size/2.0, area_size/2.0))
+			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.upgrade_pool.push_back(side_upgrade)
 			chosen_area.subpoints.push_back(new_point)
@@ -275,9 +273,9 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 func step_10(): ##expand intra-area points
 	for current_area:AreaPoint in Level.area_points:
 		var intra_area_distance = area_size / float(len(current_area.subpoints))
-		expand_points(current_area.subpoints, current_area.pos, 2*intra_area_distance)
+		expand_points(current_area.subpoints, current_area.pos, 2*intra_area_distance, ROOM_SIZE)
 
-func step_11(): ##assign points as area connectors and establish relation #TODO 1: remove points for areas with relations n:1
+func step_11(): ##assign points as area connectors and establish relation
 	for i:int in range(len(Level.area_points)): ##TODO optimize. This currently assigns each relation twice.
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.relations)):
@@ -351,7 +349,6 @@ func step_11(): ##assign points as area connectors and establish relation #TODO 
 		var connector_count:int = current_area.subpoints.reduce(func(acc, val): return acc + int(val is ConnectionPoint), 0)
 		var connector_pool:int = len(current_area.relations)
 		var points_to_remove:int = connector_pool - connector_count
-		print(points_to_remove)
 		for j:int in range(points_to_remove):
 			var index:int = 0 #in case first point is connector
 			while true: #TODO fix cardinal sin
@@ -362,8 +359,6 @@ func step_11(): ##assign points as area connectors and establish relation #TODO 
 					removal_candidate.queue_free()
 					break
 				index += 1
-			
-		current_area.queue_redraw()
 
 func step_12(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:
@@ -395,7 +390,7 @@ func expand_points(points:Array, center:Vector2, min_distance:float, expansion_f
 			print('results may be poor, please tweak parameters')
 			break
 		for current_point:Point in points:
-			##keep points inside grid (border mirroring)
+			#keep point inside grid (border mirroring)
 			if abs(current_point.global_position.x) > map_boundary_x:
 				var point_to_reflection:Vector2 = Vector2(1, 0) * (2 * (sign(current_point.global_position.x) * map_boundary_x - current_point.global_position.x))
 				current_point.update_position(current_point.pos + point_to_reflection)
@@ -408,7 +403,7 @@ func expand_points(points:Array, center:Vector2, min_distance:float, expansion_f
 			for second_point:Point in points:
 				if current_point == second_point: continue
 				var distance:float = current_point.global_position.distance_to(second_point.global_position)
-				#move point
+				#move points in conflict to current
 				if (distance <= min_distance):
 					var current_to_second:Vector2 = current_point.global_position.direction_to(second_point.global_position)
 					second_point.update_position(second_point.pos + current_to_second * (min_distance - distance + 0.1)) #DO NOT REMOVE THE 0.1
@@ -418,7 +413,6 @@ func connect_points(points:Array): #BUG: sometimes isolated segments are formed
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		compute_point_relations(points, i)
-		current_point.queue_redraw()
 	#join_stragglers(points)
 
 func compute_point_relations(points:Array, index:int):
@@ -511,6 +505,13 @@ func clear_incompatible_relations(point:Point): #iterate over point relations. r
 		point.relations.erase(deprecated_relation)
 		deprecated_relation.relations.erase(point)
 
+func redraw_all():
+	queue_redraw()
+	for area:AreaPoint in Level.area_points:
+		area.queue_redraw()
+		for subpoint:Point in area.subpoints:
+			subpoint.queue_redraw()
+
 func DEBUG_check_parity():
 	var parity = true
 	for area:AreaPoint in Level.area_points:
@@ -558,6 +559,7 @@ func DEBUG_check_borders(mu:MU):
 func _process(delta: float) -> void:
 	pass
 
+const font = preload("res://data/upheavtt.ttf")
 func _draw():
 	for current_area:AreaPoint in Level.area_points:
 		draw_circle(current_area.pos, area_size, Color.BLACK, false)
@@ -568,15 +570,19 @@ func _draw():
 			var direction = Vector2(1,0)
 			var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
 			var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-			draw_line(current_area.position, current_area.position + angle_1 * 100, Color.BLACK, 2, true)
-			draw_line(current_area.position, current_area.position + angle_2 * 100, Color.BLACK, 2, true)
+			draw_line(current_area.position, current_area.position + angle_1 * 100, Color(0,0,0,0.3), 2, true)
+			draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, true)
 		
 		for subpoint:Point in current_area.subpoints:
 			draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)
+			
+			var debug_index = current_area.subpoints.find(subpoint)
+			draw_string(font , subpoint.global_position + Vector2(0,20), str(debug_index), 0, -1, 16, Color.BLACK)
+			
 			for related_point:Point in subpoint.relations:
 				var angle = subpoint.global_position.angle_to_point(related_point.global_position)
 				var direction = Vector2(1,0)
 				var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
 				var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-				draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 100, Color.BLACK, 2, true)
-				draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 100, Color.BLACK, 2, true)
+				draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 10, Color(0,0,0,0.8), 2, false)
+				draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 10, Color(0,0,0,0.8), 2, false)

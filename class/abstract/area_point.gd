@@ -40,7 +40,7 @@ func _draw(): #USES LOCAL COORDINATES!
 	#draw area relation lines
 	for i:int in range(len(relations)):
 		var connecting_area:AreaPoint = relations[i]
-		if Utils.generator_stage < 5:
+		if Utils.generator_stage < 5: ##TODO 5 <--> 6 i was debugging
 			draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)
 		elif (Utils.generator_stage >= 5 && Utils.generator_stage < 10):
 			var rel_color:Color = Color.WHITE if relation_is_progress[i] else Color.WEB_GRAY

@@ -413,7 +413,7 @@ func connect_points(points:Array): #BUG: sometimes isolated segments are formed
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		compute_point_relations(points, i)
-	#join_stragglers(points)
+	clean_islands(points)
 
 func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null
@@ -442,8 +442,8 @@ func compute_point_relations(points:Array, index:int):
 		if index==j: continue
 		current_point.relations.push_back(points[j])
 		points[j].relations.push_back(current_point)
-		clear_incompatible_relations(points[j])
 		#if j < index: compute_point_relations(points, j)
+		clear_incompatible_relations(points[j])
 
 func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
 	#var max_distance :float = (map_size_x + map_size_y)*16 / float(number_of_areas * 0.1) #TODO: tweak n use this maybe
@@ -485,6 +485,49 @@ func join_stragglers(points:Array):
 					closest_point_index = i
 			current_point.relations.push_back(points[closest_point_index])
 			points[closest_point_index].relations.push_back(current_point)
+
+func clean_islands(points:Array):
+	var remaining_points:Array = points.duplicate() #Array[Points]
+	var point_islands:Array[Array] #Array[Array[Point]]
+	
+	#get all point islands
+	for i:int in range(len(points)):
+		var current_point:Point = points[i]
+		if !(remaining_points.has(current_point)): continue
+		print('base call')
+		var island:Array[Point]
+		get_island(island, current_point)
+		for isl_point:Point in island:
+			remaining_points.erase(isl_point)
+		point_islands.push_back(island)
+	
+	#connect one island to the closest point of another until no islands left
+	while len(point_islands) > 1:
+		var min_dist:float = INF
+		var best_local_candidate:Point
+		var best_second_candidate:Point
+		for i:int in range(len(point_islands[0])):
+			var current_island_candidate:Point = point_islands[0][i]
+			for j:int in range(len(point_islands)):
+				if j==0: continue
+				var second_island:Array[Point] = point_islands[j]
+				for k:int in range(len(second_island)):
+					var second_island_candidate:Point = second_island[k]
+					var dist_sq:float = current_island_candidate.global_position.distance_squared_to(second_island_candidate.global_position)
+					if dist_sq < min_dist:
+						best_local_candidate = current_island_candidate
+						best_second_candidate = second_island_candidate
+						min_dist = dist_sq
+		best_local_candidate.relations.push_back(best_second_candidate)
+		best_second_candidate.relations.push_back(best_local_candidate)
+		point_islands.pop_front() #TODO better memory management: maybe have another fucking for loop who cares at this point
+
+func get_island(island_points:Array[Point], current_point:Point):
+	if island_points.has(current_point): return
+	island_points.push_back(current_point)
+	for i:int in range(len(current_point.relations)):
+		var relation = current_point.relations[i]
+		get_island(island_points, relation)
 
 func clear_incompatible_relations(point:Point): #iterate over point relations. remove relation if it conflicts with any previous one
 	var relation_angles:Array[float]
@@ -570,8 +613,8 @@ func _draw():
 			var direction = Vector2(1,0)
 			var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
 			var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-			draw_line(current_area.position, current_area.position + angle_1 * 100, Color(0,0,0,0.3), 2, true)
-			draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, true)
+			draw_line(current_area.position, current_area.position + angle_1 * 100, Color(0,0,0,0.3), 2, false)
+			draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, false)
 		
 		for subpoint:Point in current_area.subpoints:
 			draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)
@@ -584,5 +627,5 @@ func _draw():
 				var direction = Vector2(1,0)
 				var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
 				var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-				draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 10, Color(0,0,0,0.8), 2, false)
-				draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 10, Color(0,0,0,0.8), 2, false)
+				draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 50, Color(0,0,0,0.8), 1, false)
+				draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 50, Color(0,0,0,0.8), 1, false)

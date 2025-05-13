@@ -15,11 +15,12 @@ var relation_is_progress : Array[bool] #if not, it's backtracking route
 var subpoints:Array #type: Array[Point] or subclasses
 var upgrade_pool:Array #type: Array[Reward] or subclasses
 
-static func createNew(pos:Vector2, relations:Array = []) -> AreaPoint:
+static func createNew(pos:Vector2, generic_identity:Point = null) -> AreaPoint:
 	var newPoint = AREA_POINT.instantiate()
 	newPoint.position = pos
 	newPoint.pos = pos
-	newPoint.relations = relations
+	newPoint.relations = []
+	newPoint.is_generic = false
 	return newPoint
 
 func add_subarea_nodes():
@@ -49,9 +50,6 @@ func _draw(): #USES LOCAL COORDINATES!
 	#draw area index
 	if (Utils.generator_stage >= 5):
 		draw_string(font,Vector2(0,20), str(area_index), 0, -1, 32, Color.BLACK)
-	else:
-		var debug_index = Level.area_points.find(self)
-		draw_string(font,Vector2(0,20), str(debug_index), 0, -1, 32, Color.BLACK)
 	
 	#circle hub-containing area
 	if self.has_hub:

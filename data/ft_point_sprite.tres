@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://bbtylt6epw0oq"]
+
+[ext_resource type="Texture2D" uid="uid://eia7ptk2q004" path="res://data/images/ft_point_0.png" id="1_a3x6b"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_a3x6b")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

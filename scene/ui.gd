@@ -22,7 +22,43 @@ func display_rs_info():
 		for area in RS.areas:
 			route_step_info.text += str(area.area_index)
 
+const STEP_DESCRIPTIONS = [
+	'',
+	'Place area points',
+	'Expand area points',
+	'Establish initial area',
+	'Establish area connections',
+	'Designate area order',
+	'Establish hub-containing area if applicable',
+	'Distribute route steps',
+	'Place essential points',
+	'Place additional points for route step rewards',
+	'Expand area subpoints',
+	'Assign inter-area connection points',
+	'Establish area subpoint connections',
+	'Assign fast travel points',
+	'prepare hub zone',
+	'Assign main upgrade and key item unit points',
+	'Assign side upgrade points',
+	'',
+	'',
+	'',
+	'',
+	'',
+	'',
+	'',
+	'',
+	'',
+	'',
+	'',
+]
+
+func display_step_desc(current_stage:int):
+	step_counter.text = STEP_DESCRIPTIONS[current_stage]
+	step_counter.text += '\n' + str(Utils.generator_stage)
+
+
 func _on_advance_btn_button_down() -> void:
 	Utils.generator_stage += 1
-	step_counter.text = str(Utils.generator_stage)
+	display_step_desc(Utils.generator_stage)
 	stage_changed.emit()

@@ -11,11 +11,12 @@
 script = ExtResource("1_gbq8f")
 
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
-map_size_x = 80
-map_size_y = 80
-number_route_steps = 1
-number_of_areas = 8
-number_side_upgrades = 1
+map_size_x = 180
+map_size_y = 180
+number_route_steps = 8
+number_of_areas = 7
+number_side_upgrades = 4
+area_size_multiplier = 1.5
 
 [node name="LayoutDisplay" parent="." node_paths=PackedStringArray("generator") instance=ExtResource("2_qa15b")]
 generator = NodePath("../MapGenerator")
@@ -78,10 +79,13 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -10.0
-offset_bottom = 23.0
+offset_left = -32.0
+offset_right = -14.0
+offset_bottom = 45.0
 grow_horizontal = 0
 theme_override_font_sizes/font_size = 32
-text = "0"
+text = "Awaiting instructions
+0"
+horizontal_alignment = 2
 
 [connection signal="button_down" from="UI/UI/AdvanceBtn" to="UI" method="_on_advance_btn_button_down"]

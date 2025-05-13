@@ -6,11 +6,12 @@ const CONNECTION_POINT = preload("res://scene/points/connection_point.tscn")
 var area_relations:Array[ConnectionPoint]
 var area_relation_is_progress : Array[bool] #if not, it's backtracking route
 
-static func createNew(pos:Vector2, relations:Array = []) -> ConnectionPoint:
+static func createNew(pos:Vector2, generic_identity:Point = null) -> ConnectionPoint:
 	var newPoint = CONNECTION_POINT.instantiate()
 	newPoint.position = pos
 	newPoint.pos = pos
-	newPoint.relations = relations
+	newPoint.relations = []
+	newPoint.is_generic = false
 	return newPoint
 
 func add_connector_relation(other_area_connector:ConnectionPoint, is_progress:bool):

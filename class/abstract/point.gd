@@ -7,14 +7,16 @@ const font = preload("res://data/upheavtt.ttf")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 
-#its a node2D, position is stored in 'position'
+#its a node2D, position is stored in 'position'. #TODO i think this is redundant
 var pos : Vector2
+
+var is_generic:bool = true
 
 var relations : Array #type: Array[Point] (or subclass)
 
-static func createNew(pos:Vector2, relations:Array = []) -> Point:
+static func createNew(pos:Vector2, generic_identity:Point = null) -> Point:
 	var newPoint = POINT.instantiate()
-	newPoint.relations = relations
+	newPoint.relations = []
 	newPoint.position = pos
 	newPoint.pos = pos
 	return newPoint

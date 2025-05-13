@@ -9,6 +9,7 @@ extends Node2D
 @export_range (1,25) var number_route_steps:int
 @export_range (1,25) var number_of_areas:int
 @export_range (0, 9) var number_side_upgrades:int
+@export_range (0.1,3.0) var area_size_multiplier:float
 
 var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 
@@ -19,10 +20,11 @@ var area_size_xy:Vector2
 
 const ROOM_SIZE:float = 16.0
 const MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
+var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("1")
+	#rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -32,7 +34,7 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	
 	#TODO tweak and separate x, y
 	#area size
-	area_size = ((map_size_x+map_size_y)*16/2.0)/float(number_of_areas) #arbitrarily decided
+	area_size = ((map_size_x+map_size_y)*16/2.0)*area_size_multiplier/float(number_of_areas) #arbitrarily decided
 	var w_h_ratio:float = map_size_x/float(map_size_y)
 	area_size_xy = Vector2(map_size_x * w_h_ratio, map_size_y / w_h_ratio)
 	area_size_rooms = ceil(area_size / 16.0)
@@ -92,7 +94,7 @@ func _stage_handler(): #TODO: queue point redraws each step instead of whatever 
 		12:
 			step_12()
 		13:
-			pass
+			step_13()
 		14:
 			pass
 
@@ -364,6 +366,29 @@ func step_12(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:
 		connect_points(current_area.subpoints)
 
+func step_13(): ##assign points as fast-travel rooms
+	for i:int in range(len(Level.area_points)):
+		#identify unassigned subpoint with most relations
+		var current_area:AreaPoint = Level.area_points[i]
+		var best_candidate:Point
+		var max_num_relations:int = -1
+		for j:int in range(len(current_area.subpoints)):
+			var current_candidate:Point = current_area.subpoints[j]
+			if !(current_candidate.is_generic): continue
+			var num_relations:int = len(current_candidate.relations) #TODO: greater weight to generic points than connector points.
+			if num_relations > max_num_relations:
+				best_candidate = current_candidate
+				max_num_relations = num_relations
+		#create point and add to area
+		var fast_travel_point:FastTravelPoint = FastTravelPoint.createNew(best_candidate.position, best_candidate)
+		var replace_index:int = current_area.subpoints.find(best_candidate)
+		current_area.subpoints[replace_index] = fast_travel_point
+		#manage memory and scene tree
+		current_area.remove_child(best_candidate)
+		best_candidate.queue_free()
+		current_area.add_subarea_nodes()
+		
+
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):
 		#TODO better random procedure
@@ -494,7 +519,6 @@ func clean_islands(points:Array):
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		if !(remaining_points.has(current_point)): continue
-		print('base call')
 		var island:Array[Point]
 		get_island(island, current_point)
 		for isl_point:Point in island:
@@ -608,13 +632,14 @@ func _draw():
 		draw_circle(current_area.pos, area_size, Color.BLACK, false)
 		var intra_area_distance = area_size / float(len(current_area.subpoints))
 		
-		for related_area:AreaPoint in current_area.relations:
-			var angle = current_area.global_position.angle_to_point(related_area.global_position)
-			var direction = Vector2(1,0)
-			var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
-			var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-			draw_line(current_area.position, current_area.position + angle_1 * 100, Color(0,0,0,0.3), 2, false)
-			draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, false)
+		if draw_angles:
+			for related_area:AreaPoint in current_area.relations:
+				var angle = current_area.global_position.angle_to_point(related_area.global_position)
+				var direction = Vector2(1,0)
+				var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
+				var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
+				draw_line(current_area.position, current_area.position + angle_1 * 100, Color(0,0,0,0.3), 2, false)
+				draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, false)
 		
 		for subpoint:Point in current_area.subpoints:
 			draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)
@@ -622,10 +647,11 @@ func _draw():
 			var debug_index = current_area.subpoints.find(subpoint)
 			draw_string(font , subpoint.global_position + Vector2(0,20), str(debug_index), 0, -1, 16, Color.BLACK)
 			
-			for related_point:Point in subpoint.relations:
-				var angle = subpoint.global_position.angle_to_point(related_point.global_position)
-				var direction = Vector2(1,0)
-				var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
-				var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-				draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 50, Color(0,0,0,0.8), 1, false)
-				draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 50, Color(0,0,0,0.8), 1, false)
+			if draw_angles:
+				for related_point:Point in subpoint.relations:
+					var angle = subpoint.global_position.angle_to_point(related_point.global_position)
+					var direction = Vector2(1,0)
+					var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
+					var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
+					draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 50, Color(0,0,0,0.8), 1, false)
+					draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 50, Color(0,0,0,0.8), 1, false)

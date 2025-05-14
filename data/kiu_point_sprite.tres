@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://d2bfym6oedwkq"]
+
+[ext_resource type="Texture2D" uid="uid://d4gff60cfiguj" path="res://data/images/kiu_point_0.png" id="1_rmglx"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_rmglx")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

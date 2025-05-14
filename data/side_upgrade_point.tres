@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://c0abk1lr7bm6f"]
+
+[ext_resource type="Texture2D" uid="uid://5wurdgxup677" path="res://data/images/side_upgrade_point_0.png" id="1_ecf8r"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_ecf8r")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

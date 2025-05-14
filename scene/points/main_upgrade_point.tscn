@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://ikrqmpuhcu2q"]
+
+[ext_resource type="SpriteFrames" uid="uid://cgohia0s6au1" path="res://data/main_upgrade_point_sprite.tres" id="1_vn5op"]
+[ext_resource type="Script" path="res://class/abstract/main_upgrade_point.gd" id="2_ibab3"]
+
+[node name="MainUpgradePoint" type="Node2D"]
+script = ExtResource("2_ibab3")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("1_vn5op")

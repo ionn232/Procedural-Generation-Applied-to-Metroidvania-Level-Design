@@ -1,0 +1,14 @@
+[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://cfy6erfufjmwq"]
+
+[ext_resource type="Texture2D" uid="uid://xnwom0cysi44" path="res://data/images/spawn_point_0.png" id="1_fs2hw"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_fs2hw")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

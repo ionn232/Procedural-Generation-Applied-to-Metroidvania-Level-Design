@@ -13,7 +13,7 @@ var has_hub : bool = false
 var relation_is_progress : Array[bool] #if not, it's backtracking route
 
 var subpoints:Array #type: Array[Point] or subclasses
-var upgrade_pool:Array #type: Array[Reward] or subclasses
+var reward_pool:Array #type: Array[Reward] or subclasses
 
 static func createNew(pos:Vector2, generic_identity:Point = null) -> AreaPoint:
 	var newPoint = AREA_POINT.instantiate()

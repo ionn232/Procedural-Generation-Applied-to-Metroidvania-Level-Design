@@ -17,15 +17,20 @@ static func createNew(new_index:int = -1,new_areas:Array[AreaPoint] = [], new_ke
 func get_side_upgrades() -> Array: #return type: Array[SideUpgrade]
 	return reward_pool.filter(func(val): return val is SideUpgrade)
 
-#func _filter_side_upgrades(acc:Array[SideUpgrade], val:Reward):
-	#if val is SideUpgrade: acc.push_back(val)
-	#return
 
 func add_key(new_key:Reward):
 	keyset.push_back(new_key)
+	new_key.route_step = self
+	if new_key is KeyItem:
+		for i:int in range(len(new_key.kius)):
+			var kiu:KeyItemUnit = new_key.kius[i]
+			kiu.unit_index = i
+			kiu.route_step = self
+
 
 func add_reward(new_reward:Reward):
 	reward_pool.push_back(new_reward)
+	new_reward.route_step = self
 
 func _ready() -> void:
 	pass # Replace with function body.

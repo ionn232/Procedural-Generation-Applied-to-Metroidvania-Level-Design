@@ -470,7 +470,6 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 				var SU_point:SideUpgradePoint = SideUpgradePoint.createNew(generic_point.position, generic_point)
 				var replace_index:int = current_area.subpoints.find(generic_point)
 				current_area.subpoints[replace_index] = SU_point
-				area_step_points.erase(generic_point)
 				#manage memory and scene tree
 				current_area.remove_child(generic_point)
 				generic_point.queue_free()

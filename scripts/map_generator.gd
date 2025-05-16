@@ -25,7 +25,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("4")
+	rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -68,7 +68,8 @@ func _ready() -> void: ##level, map initializations // rng seeding
 			side_upgrades_left -= 1
 	Level.route_steps = route_steps
 
-func _stage_handler(): #TODO: queue point redraws each step instead of whatever is done now
+
+func _stage_handler():
 	redraw_all()
 	match(Utils.generator_stage):
 		1:
@@ -101,6 +102,10 @@ func _stage_handler(): #TODO: queue point redraws each step instead of whatever 
 			step_14()
 		15:
 			step_15()
+		16:
+			step_16()
+		17:
+			step_17()
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
@@ -475,6 +480,61 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 				generic_point.queue_free()
 				current_area.add_subarea_nodes()
 
+func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
+	for i:int in range(len(Level.area_points)):
+		var current_area:AreaPoint = Level.area_points[i]
+		for j:int in range(len(current_area.subpoints)):
+			var current_point:Point = current_area.subpoints[j]
+			var room_position:Vector2i = Utils.world_pos_to_room(current_point.global_position)
+			var room_dimensions:Vector2i = Vector2i(rng.randi_range(1, 3), rng.randi_range(1, 3)) #TODO discriminate by room type
+			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions) #TODO round? #BUG Rooms can go out of bounds.
+			new_room.createRoomMUs()
+			var random_room_mu:MU = get_random_MU(new_room)
+			
+			match(current_point):
+				_ when current_point is MainUpgradePoint || current_point is SideUpgradePoint:
+					random_room_mu.add_reward(current_point.key_value)
+				_ when current_point is KeyItemUnitPoint:
+					random_room_mu.add_reward(current_point.key_unit_value)
+				_ when current_point is SpawnPoint:
+					random_room_mu.is_spawn = true
+				_ when current_point is FastTravelPoint:
+					random_room_mu.is_fast_travel = true
+
+func step_17(): ##Place hub zone rooms
+	var hub_area:AreaPoint = Level.area_points.filter(func(val:AreaPoint): return val.has_hub)[0]
+	var hub_position:Vector2 = Utils.world_pos_to_room(hub_area.subpoints.filter(func(val:Point): return val is FastTravelPoint)[0].global_position)
+	var hub_room_1:Room = Level.map.MUs[hub_position.x][hub_position.y].parent_room
+	#use existing room if there is space
+	if hub_room_1.room_size.x * hub_room_1.room_size.y >= 3:
+		var shop_mu:MU = get_free_MU(hub_room_1)
+		shop_mu.is_shop = true
+		var save_mu:MU = get_free_MU(hub_room_1)
+		save_mu.is_save = true
+	#create and use new 2*2 room
+	else:
+		var rand_direction:Utils.direction = rng.randi_range(0, 3)
+		var rand_direction_vec:Vector2i = Utils.direction_to_vec2i(rand_direction)
+		var new_room_pos:Vector2i
+		var new_room_dimensions:Vector2i = Vector2i(2,2)
+		if rand_direction_vec.x < 0 || rand_direction_vec.y < 0:
+			new_room_pos = hub_room_1.grid_pos + rand_direction_vec * new_room_dimensions
+		else:
+			new_room_pos = hub_room_1.grid_pos + rand_direction_vec * hub_room_1.room_size
+		var shop_mu:MU = get_free_MU(hub_room_1)
+		shop_mu.is_shop = true
+		var save_mu:MU = get_free_MU(hub_room_1)
+		save_mu.is_save = true
+
+func get_random_MU(room:Room) -> MU: #TODO: move this to Room class, move rng to Utils
+	return room.room_MUs[rng.randi_range(0, len(room.room_MUs)-1)]
+
+func get_free_MU(room:Room) -> MU: #TODO make random
+	for room_mu:MU in room.room_MUs:
+		if len(room_mu.rewards) == 0 && !room_mu.is_fast_travel && !room_mu.is_save && !room_mu.is_shop && !room_mu.is_spawn:
+			return room_mu
+	return null
+
 func get_area_step_points(area:AreaPoint, number_of_points:int) -> Array[Point]:
 	#get starting point
 	var starting_point:Point
@@ -519,7 +579,6 @@ func get_intersection(arr1:Array, arr2:Array) -> Array:
 	for element in arr1:
 		if element in arr2: intersection.push_back(element)
 	return intersection
-
 
 func steps_to_crossroads(point:Point) -> int: #BUG: if points are unconnected. Can't happen but a fix wouldn't hurt.
 	#base case
@@ -763,8 +822,7 @@ func TEST_rooms():
 	initial_MU.define_pos(starting_coords)
 	Level.map.MUs[starting_coords.x][starting_coords.y] = initial_MU
 	initial_MU.assign_borders(Utils.border_type.WALL, Utils.border_type.WALL, Utils.border_type.WALL, Utils.border_type.WALL)
-	var initial_room = Room.createNew(Vector2i(1, 1))
-	initial_room.define_type(Utils.room_type.SPAWN)
+	var initial_room = Room.createNew(initial_MU.grid_pos, Vector2i(1, 1))
 	initial_room.add_MU(initial_MU)
 	initial_room.define_pos(initial_MU.grid_pos)
 	Level.initial_room = initial_room
@@ -772,7 +830,7 @@ func TEST_rooms():
 	
 	#second room TODO remove after tests
 	var new_coords = starting_coords + Vector2i(1,0)
-	var new_room = Room.createNew(Vector2i(5,4))
+	var new_room = Room.createNew(new_coords, Vector2i(5,4))
 	new_room.define_pos(new_coords)
 	new_room.createRoomMUs()
 	Level.rooms.push_back(new_room)

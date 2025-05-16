@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b3iqhas52623p"]
 
-[ext_resource type="Script" path="res://class/abstract/side_upgrade_point.gd" id="1_0nb6s"]
+[ext_resource type="Script" path="res://scripts/points/side_upgrade_point.gd" id="1_0nb6s"]
 [ext_resource type="SpriteFrames" uid="uid://c0abk1lr7bm6f" path="res://data/side_upgrade_point.tres" id="2_jf07k"]
 
 [node name="SideUpgradePoint" type="Node2D"]

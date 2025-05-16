@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dhsgqna7sjgl6"]
 
-[ext_resource type="Script" path="res://class/abstract/fast_travel_point.gd" id="1_jb88u"]
+[ext_resource type="Script" path="res://scripts/points/fast_travel_point.gd" id="1_jb88u"]
 [ext_resource type="SpriteFrames" uid="uid://bbtylt6epw0oq" path="res://data/ft_point_sprite.tres" id="1_xp6o2"]
 
 [node name="FastTravelPoint" type="Node2D"]

@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dektp51g3vp12"]
 
-[ext_resource type="Script" path="res://class/abstract/key_item_unit_point.gd" id="1_jt571"]
+[ext_resource type="Script" path="res://scripts/points/key_item_unit_point.gd" id="1_jt571"]
 [ext_resource type="SpriteFrames" uid="uid://d2bfym6oedwkq" path="res://data/kiu_point_sprite.tres" id="2_u6xa0"]
 
 [node name="KiuPoint" type="Node2D"]

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ynnprj64hsx0"]
 
-[ext_resource type="Script" path="res://class/locked_door.gd" id="1_1y87k"]
+[ext_resource type="Script" path="res://scripts/locked_door.gd" id="1_1y87k"]
 
 [node name="LockedDoor" type="Node2D"]
 script = ExtResource("1_1y87k")

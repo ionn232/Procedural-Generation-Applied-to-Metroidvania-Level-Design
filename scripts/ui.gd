@@ -39,7 +39,7 @@ const STEP_DESCRIPTIONS = [
 	'Assign fast travel points',
 	'Assign spawn point in initial area',
 	'Assign side upgrade, main upgrade and key item unit points',
-	'',
+	'Prepare hub zone',
 	'',
 	'',
 	'',

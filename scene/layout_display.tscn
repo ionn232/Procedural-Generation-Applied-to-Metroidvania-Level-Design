@@ -1,11 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://ocnc86sdjvvv"]
+[gd_scene load_steps=4 format=3 uid="uid://ocnc86sdjvvv"]
 
-[ext_resource type="Script" path="res://class/layout_display.gd" id="1_auwf0"]
+[ext_resource type="Script" path="res://scripts/layout_display.gd" id="1_auwf0"]
 [ext_resource type="TileSet" uid="uid://bb1r74h5164y5" path="res://game_specific_resources/layout_tilemaps/Style C/tileset.tres" id="2_6b0kb"]
+[ext_resource type="TileSet" uid="uid://c7dt66dbvlgs" path="res://game_specific_resources/tilemap_icons/tilemap_icons.tres" id="3_hy4o2"]
 
 [node name="LayoutDisplay" type="Node2D"]
 script = ExtResource("1_auwf0")
 
-[node name="TileMapLayer" type="TileMapLayer" parent="."]
+[node name="RoomLayout" type="TileMapLayer" parent="."]
 texture_filter = 1
 tile_set = ExtResource("2_6b0kb")
+
+[node name="RoomContent" type="TileMapLayer" parent="."]
+texture_filter = 1
+position = Vector2(-4, -4)
+tile_set = ExtResource("3_hy4o2")

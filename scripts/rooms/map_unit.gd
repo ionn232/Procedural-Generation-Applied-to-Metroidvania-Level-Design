@@ -3,20 +3,27 @@ extends Resource
 
 var grid_pos:Vector2i
 
+var parent_room:Room
+
 #up, down, left, right
 var borders:Array[Utils.border_type] = []
-var border_data:Array[LockedDoor] = [] #Array of LockedDoor or null
+var border_data:Array[LockedDoor] = [] #Array of LockedDoor or null, index parity with borders
 
-var data:String
+var rewards:Array
+
+var is_spawn:bool = false
+var is_save:bool = false
+var is_fast_travel:bool = false
+var is_shop:bool = false
 
 static var DEBUG_count1 = 0
 static var DEBUG_count2 = 0
 
 static func createNew() -> MU:
-	var newRoom = MU.new()
-	newRoom.borders.resize(4)
-	newRoom.border_data.resize(4)
-	return newRoom
+	var new_map_unit = MU.new()
+	new_map_unit.borders.resize(4)
+	new_map_unit.border_data.resize(4)
+	return new_map_unit
 
 func assign_borders(up: Utils.border_type, down: Utils.border_type, left: Utils.border_type, right: Utils.border_type): 
 	borders[Utils.direction.UP] = up
@@ -28,9 +35,8 @@ func assign_borders(up: Utils.border_type, down: Utils.border_type, left: Utils.
 func define_pos(pos:Vector2i):
 	grid_pos = pos
 
-#might need to do concatenate_data instead
-func define_data(newData:String):
-	data = newData
+func add_reward(new_reward:Reward):
+	rewards.push_back(new_reward)
 
 #assign a wall type to each direction. Checks map bounds. Ensures parity with adjacent, existing MUs.
 func roll_borders_first_pass():

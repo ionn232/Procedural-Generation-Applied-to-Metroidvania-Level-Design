@@ -9,7 +9,7 @@ var directionality : Utils.gate_directionality = Utils.gate_directionality.TWO_W
 # Always two positions.
 # [0]: player obtains associated key, [1]: player crosses it for the first time
 # if null, no transformation occurs
-var transformation_table: Array[Utils.gate_state] = []
+#var transformation_table: Array[Utils.gate_state] = []
 
 static func createNew(keys:Array[Key], final_state:Utils.gate_state, directionality:Utils.gate_directionality) -> LockedDoor:
 	var new_door = LockedDoor.new()

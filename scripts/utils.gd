@@ -37,12 +37,6 @@ enum gate_directionality {
 	ONE_WAY
 }
 
-enum room_type {
-	DEFAULT,
-	WARP,
-	SPAWN
-}
-
 const area_colors : Array[Color] = [
 	Color.RED,
 	Color.BLUE,
@@ -92,17 +86,19 @@ static func opposite_direction(dir:direction) -> direction:
 			return direction.UP
 		direction.LEFT:
 			return direction.RIGHT
-		_:
+		direction.RIGHT:
 			return direction.LEFT
+	print('❌ ERROR converting direction to opposite: input value -> ', dir)
+	return direction.UP
 
 static func is_pos_inside_map(pos:Vector2i) -> bool:
-	if (pos.x >= Level.map_size_x):
+	if (pos.x > Level.map_size_x/2):
 		return false
-	elif (pos.y >= Level.map_size_y):
+	elif (pos.y >= Level.map_size_y/2):
 		return false
-	elif (pos.x < 0):
+	elif (pos.x < -Level.map_size_x/2):
 		return false
-	elif (pos.y < 0):
+	elif (pos.y < -Level.map_size_y/2):
 		return false
 	return true
 	
@@ -110,3 +106,6 @@ static func room_index_to_world(index:int) -> int:
 	return index*16
 static func room_pos_to_world(pos:Vector2i) -> Vector2i:
 	return pos * 16
+static func world_pos_to_room(world_pos:Vector2) -> Vector2i:
+	return Vector2i(round((world_pos.x-4)/16.0), round((world_pos.y-4)/16.0))  
+	#(world_pos - Vector2(4,4))/16

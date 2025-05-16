@@ -1,11 +1,11 @@
 [gd_scene load_steps=7 format=3 uid="uid://du4oigwo0e2wf"]
 
 [ext_resource type="PackedScene" uid="uid://bj1kuktkg5o3x" path="res://scene/map_generator.tscn" id="1_6rntq"]
-[ext_resource type="Script" path="res://class/main_scene.gd" id="1_gbq8f"]
+[ext_resource type="Script" path="res://scripts/main_scene.gd" id="1_gbq8f"]
 [ext_resource type="PackedScene" uid="uid://ocnc86sdjvvv" path="res://scene/layout_display.tscn" id="2_qa15b"]
-[ext_resource type="Script" path="res://class/grid_display.gd" id="4_wqh5d"]
-[ext_resource type="Script" path="res://scene/camera_2d.gd" id="5_6cnhv"]
-[ext_resource type="Script" path="res://scene/ui.gd" id="6_u3gya"]
+[ext_resource type="Script" path="res://scripts/grid_display.gd" id="4_wqh5d"]
+[ext_resource type="Script" path="res://scripts/camera_2d.gd" id="5_6cnhv"]
+[ext_resource type="Script" path="res://scripts/ui.gd" id="6_u3gya"]
 
 [node name="MainScene" type="Node2D"]
 script = ExtResource("1_gbq8f")
@@ -13,10 +13,10 @@ script = ExtResource("1_gbq8f")
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
 map_size_x = 100
 map_size_y = 100
-number_route_steps = 7
-number_of_areas = 7
-number_side_upgrades = 9
-area_size_multiplier = 2.0
+number_route_steps = 14
+number_of_areas = 11
+number_side_upgrades = 6
+area_size_multiplier = 3.0
 
 [node name="LayoutDisplay" parent="." node_paths=PackedStringArray("generator") instance=ExtResource("2_qa15b")]
 generator = NodePath("../MapGenerator")
@@ -44,8 +44,16 @@ grow_vertical = 2
 
 [node name="RoomSelection" type="Label" parent="UI/UI"]
 layout_mode = 1
-offset_right = 160.0
-offset_bottom = 49.0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -49.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 2
 metadata/_edit_use_anchors_ = true
 
 [node name="AdvanceBtn" type="Button" parent="UI/UI"]

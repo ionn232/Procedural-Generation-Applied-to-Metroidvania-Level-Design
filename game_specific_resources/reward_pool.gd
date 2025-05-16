@@ -7,10 +7,12 @@ static func import_reward_pool():
 	var num_main_upgrades:int = len(main_upgrades)
 	for i:int in range(len(keyset)):
 		#add main upgrades
-		if i < num_main_upgrades - 1:
+		if i < num_main_upgrades:
 			keyset[i] = main_upgrades[i]
 		#add key items
 		else:
+			print(keyset)
+			var item = key_items[i - num_main_upgrades]
 			keyset[i] = key_items[i - num_main_upgrades]
 
 static func _make_key_item(name: String, desc: String, unit_names: Array[String]) -> KeyItem:

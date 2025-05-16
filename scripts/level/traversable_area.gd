@@ -9,7 +9,7 @@ static func exists_path(pos0:Vector2i, pos1:Vector2i) -> bool:
 	var queue : Array[MU] = []
 	var seen : Array[MU] = []
 	
-	if (!(is_room_valid(MUs, pos0) && is_room_valid(MUs, pos1))):
+	if (!(_is_room_valid(MUs, pos0) && _is_room_valid(MUs, pos1))):
 		print('❌ ERROR invalid position(s) at method traversableArea.exists_path for coords: ', pos0, pos1)
 		return false
 	
@@ -31,7 +31,7 @@ static func exists_path(pos0:Vector2i, pos1:Vector2i) -> bool:
 
 #internal use only. Do not call outside traversableArea script.
 #TODO: como coño se hace una funcion privada
-static func is_room_valid(MUs: Array[Array],pos:Vector2i) -> bool:
+static func _is_room_valid(MUs: Array[Array],pos:Vector2i) -> bool:
 	if (!Utils.is_pos_inside_map(pos)):
 		return false
 	if (!MUs[pos.x][pos.y]):

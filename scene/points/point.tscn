@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dj56iyt64y4kj"]
 
-[ext_resource type="Script" path="res://class/abstract/point.gd" id="1_mps03"]
+[ext_resource type="Script" path="res://scripts/points/point.gd" id="1_mps03"]
 [ext_resource type="SpriteFrames" uid="uid://pygr60a2djdc" path="res://data/generic_point_sprite.tres" id="2_bws0w"]
 
 [node name="Point" type="Node2D"]

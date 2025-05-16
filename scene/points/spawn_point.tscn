@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bt6jajtsyyqu1"]
 
-[ext_resource type="Script" path="res://class/abstract/spawn_point.gd" id="1_nomef"]
+[ext_resource type="Script" path="res://scripts/points/spawn_point.gd" id="1_nomef"]
 [ext_resource type="SpriteFrames" uid="uid://cfy6erfufjmwq" path="res://data/spawn_point_0.tres" id="2_w8waa"]
 
 [node name="SpawnPoint" type="Node2D"]

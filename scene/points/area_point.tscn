@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://ce62mxehadw0k"]
 
-[ext_resource type="Script" path="res://class/abstract/area_point.gd" id="1_lk0fn"]
+[ext_resource type="Script" path="res://scripts/points/area_point.gd" id="1_lk0fn"]
 [ext_resource type="SpriteFrames" uid="uid://cawgeaef33vik" path="res://data/area_point_sprite.tres" id="2_4mi82"]
 
 [node name="AreaPoint" type="Node2D"]

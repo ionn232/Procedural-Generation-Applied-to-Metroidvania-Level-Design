@@ -10,12 +10,15 @@ var room_size:Vector2i
 #MUs comprising the room
 var room_MUs : Array[MU] = []
 
-var room_type:Utils.room_type = Utils.room_type.DEFAULT
+#room types
+var is_trap:bool = false
 
-static func createNew(size:Vector2i) -> Room:
+static func createNew(pos:Vector2i, size:Vector2i = Vector2i(1,1)) -> Room:
 	var newRoom = Room.new()
+	newRoom.grid_pos = pos
 	newRoom.room_size = size
 	newRoom.room_MUs.resize(size.x * size.y)
+	Level.rooms.push_back(newRoom)
 	return newRoom
 
 func createRoomMUs():
@@ -30,14 +33,13 @@ func createRoomMUs():
 				Utils.border_type.WALL if i==0 else Utils.border_type.SAME_ROOM, 
 				Utils.border_type.WALL if i==room_size.x-1 else Utils.border_type.SAME_ROOM,
 				)
+			room_MUs.push_back(new_MU)
+			new_MU.parent_room = self
 			Level.map.MUs[newPos.x][newPos.y] = new_MU
 			add_MU(new_MU, i*room_size.y+j)
 
 func define_pos(pos:Vector2i):
 	grid_pos = pos
-
-func define_type(newType:Utils.room_type):
-	room_type = newType
 
 func add_MU(newMU:MU, index:int = 0):
 	room_MUs[index] = newMU

@@ -93,7 +93,7 @@ func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modu
 					_ when mu.rewards[0] is KeyItemUnit:
 						tilemap_content.set_cell(mu.grid_pos, 0, key_item_unit_atlas)
 					_ when mu.rewards[0] is SideUpgrade:
-						tilemap_content.set_cell(mu.grid_pos, 0, key_item_unit_atlas)
+						tilemap_content.set_cell(mu.grid_pos, 0, side_upgrade_atlas)
 					#TODO stat upgrades, equipment, collectibles
 			
 			#connecting grid cells

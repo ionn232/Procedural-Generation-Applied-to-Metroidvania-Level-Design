@@ -2,7 +2,6 @@ class_name SideUpgrade
 extends Reward
 
 
-
 static func createNew(name:String, desc:String) -> SideUpgrade:
 	var newRwrd = SideUpgrade.new()
 	newRwrd.name = name

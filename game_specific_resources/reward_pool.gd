@@ -11,7 +11,6 @@ static func import_reward_pool():
 			keyset[i] = main_upgrades[i]
 		#add key items
 		else:
-			print(keyset)
 			var item = key_items[i - num_main_upgrades]
 			keyset[i] = key_items[i - num_main_upgrades]
 
@@ -30,10 +29,10 @@ static var main_upgrades:Array = [
 	MainUpgrade.createNew('ground slam', 'enables a powerful downward slam while airborne'),
 	MainUpgrade.createNew('glide', 'slows fall speed and allows for longer horizontal movement'),
 	MainUpgrade.createNew('grapple', 'hook onto grapple points to swing or pull'),
-	MainUpgrade.createNew('time slow', 'temporarily slows down time for precise movements'),
+	MainUpgrade.createNew('time slow', 'temporarily slows down time'),
 	MainUpgrade.createNew('water boots', 'allows walking through water'),
 	MainUpgrade.createNew('charged attack', 'hold attack button to deal increased damage'),
-	MainUpgrade.createNew('magic dash', 'quick burst of speed that lets you cross magic barriers'),
+	MainUpgrade.createNew('pogo jump', 'allows jumping on enemies and spikes without taking damage'),
 	MainUpgrade.createNew('lava boots', 'walk on lava or hot surfaces without taking damage'),
 	MainUpgrade.createNew('water mantle', 'allows traversing through water as if it was air'),
 	MainUpgrade.createNew('blink', 'short-range teleport through obstacles'),

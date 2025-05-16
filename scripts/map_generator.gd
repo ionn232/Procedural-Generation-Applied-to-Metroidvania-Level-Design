@@ -25,7 +25,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	rng.seed = hash("1")
+	#rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -473,6 +473,7 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 				var generic_point:Point = area_step_points[k]
 				var SU_reward:Reward = area_step_SUs[k]
 				var SU_point:SideUpgradePoint = SideUpgradePoint.createNew(generic_point.position, generic_point)
+				SU_point.set_data(SU_reward, current_step)
 				var replace_index:int = current_area.subpoints.find(generic_point)
 				current_area.subpoints[replace_index] = SU_point
 				#manage memory and scene tree
@@ -487,7 +488,10 @@ func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 			var current_point:Point = current_area.subpoints[j]
 			var room_position:Vector2i = Utils.world_pos_to_room(current_point.global_position)
 			var room_dimensions:Vector2i = Vector2i(rng.randi_range(1, 3), rng.randi_range(1, 3)) #TODO discriminate by room type
-			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions) #TODO round? #BUG Rooms can go out of bounds.
+			#reroll size to avoid room superposition
+			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions):
+				room_dimensions = Vector2i(rng.randi_range(1, 3), rng.randi_range(1, 3)) #TODO discriminate by room type
+			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, room_dimensions) #TODO round?
 			new_room.createRoomMUs()
 			var random_room_mu:MU = get_random_MU(new_room)
 			
@@ -513,17 +517,25 @@ func step_17(): ##Place hub zone rooms
 		save_mu.is_save = true
 	#create and use new 2*2 room
 	else:
-		var rand_direction:Utils.direction = rng.randi_range(0, 3)
-		var rand_direction_vec:Vector2i = Utils.direction_to_vec2i(rand_direction)
+		var rand_direction:Utils.direction
+		var rand_direction_vec:Vector2i 
 		var new_room_pos:Vector2i
-		var new_room_dimensions:Vector2i = Vector2i(2,2)
-		if rand_direction_vec.x < 0 || rand_direction_vec.y < 0:
-			new_room_pos = hub_room_1.grid_pos + rand_direction_vec * new_room_dimensions
-		else:
-			new_room_pos = hub_room_1.grid_pos + rand_direction_vec * hub_room_1.room_size
-		var shop_mu:MU = get_free_MU(hub_room_1)
+		var new_room_dimensions:Vector2i 
+		#avoid superposition
+		while !Room.canCreate(new_room_pos, new_room_dimensions):
+			print('!')
+			rand_direction = rng.randi_range(0, 3)
+			rand_direction_vec = Utils.direction_to_vec2i(rand_direction)
+			new_room_dimensions = Vector2i(2,2)
+			if rand_direction_vec.x < 0 || rand_direction_vec.y < 0:
+				new_room_pos = hub_room_1.grid_pos + rand_direction_vec * new_room_dimensions
+			else:
+				new_room_pos = hub_room_1.grid_pos + rand_direction_vec * hub_room_1.room_size
+		var hub_room_2:Room = Room.createNew(new_room_pos, hub_area.area_index, new_room_dimensions)
+		hub_room_2.createRoomMUs()
+		var shop_mu:MU = get_free_MU(hub_room_2)
 		shop_mu.is_shop = true
-		var save_mu:MU = get_free_MU(hub_room_1)
+		var save_mu:MU = get_free_MU(hub_room_2)
 		save_mu.is_save = true
 
 func get_random_MU(room:Room) -> MU: #TODO: move this to Room class, move rng to Utils
@@ -814,26 +826,6 @@ func DEBUG_check_RSs():
 		print('RS', RS.index, ' with areas: ')
 		for area in RS.areas:
 			print(area.area_index)
-
-func TEST_rooms():
-	#spawn room initialization
-	var starting_coords:Vector2i = Vector2i(5, 5)
-	var initial_MU = MU.createNew()
-	initial_MU.define_pos(starting_coords)
-	Level.map.MUs[starting_coords.x][starting_coords.y] = initial_MU
-	initial_MU.assign_borders(Utils.border_type.WALL, Utils.border_type.WALL, Utils.border_type.WALL, Utils.border_type.WALL)
-	var initial_room = Room.createNew(initial_MU.grid_pos, Vector2i(1, 1))
-	initial_room.add_MU(initial_MU)
-	initial_room.define_pos(initial_MU.grid_pos)
-	Level.initial_room = initial_room
-	Level.rooms.push_back(initial_room)
-	
-	#second room TODO remove after tests
-	var new_coords = starting_coords + Vector2i(1,0)
-	var new_room = Room.createNew(new_coords, Vector2i(5,4))
-	new_room.define_pos(new_coords)
-	new_room.createRoomMUs()
-	Level.rooms.push_back(new_room)
 
 func DEBUG_check_borders(mu:MU):
 	print('up: ', mu.borders[Utils.direction.UP])

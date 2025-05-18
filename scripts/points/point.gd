@@ -13,6 +13,9 @@ var pos : Vector2
 var is_generic:bool = true
 
 var relations : Array #type: Array[Point] (or subclass)
+var relation_is_mapped : Array[bool] #index parity ^, relation rooms built? 
+
+var associated_room:Room
 
 static func createNew(pos:Vector2, generic_identity:Point = null) -> Point:
 	var newPoint = POINT.instantiate()
@@ -27,6 +30,7 @@ func update_position(newPos:Vector2):
 
 func set_point_color(newColor:Color):
 	sprite.modulate = newColor
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

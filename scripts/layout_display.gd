@@ -12,12 +12,17 @@ extends Node2D
 @export var generator: MapGenerator
 
 const empty_atlas := Vector2i(4, 2)
+const full_atlas := Vector2i(5,4)
 const start_atlas := Vector2i(3, 4)
 const gate_Y_atlas := Vector2i(1,4)
 const gate_X_atlas := Vector2i(2,4)
 const wall_X_atlas := Vector2i(0,1)
 const wall_Y_atlas := Vector2i(1,0)
 const room_inside_atlas := Vector2i(3,2)
+const gate_up_atlas := Vector2i(5,0)
+const gate_down_atlas := Vector2i(5,2)
+const gate_left_atlas := Vector2i(5,3)
+const gate_right_atlas := Vector2i(5,1)
 
 const challenge_room_atlas := Vector2i(0,0)
 const save_point_atlas := Vector2i(1,0)
@@ -42,7 +47,9 @@ func _ready() -> void:
 	pass
 
 func _stage_handler():
-	draw_rooms() #TODO: only draw on specific steps
+	tilemap_content.clear()
+	tilemap_layout.clear()
+	draw_rooms() #TODO:only when rooms updated
 	match(Utils.generator_stage):
 		1:
 			add_area_nodes()
@@ -61,19 +68,13 @@ func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modu
 	var map_grid = Level.map.MUs
 	var rooms = Level.rooms
 	for room:Room in rooms:
-		var limits = get_room_limits(room)
+		var limits:Array[Vector2i] = get_room_limits(room)
 		tilemap_layout.set_cells_terrain_connect(limits, 0, 0)
 		fill_room_spots(room)
 		
 		#TODO: room type, is trap modulate
-		
-		
 		for mu:MU in room.room_MUs:
 			var current_tilemap_layout_pos:Vector2i = mu.grid_pos*2
-			#var layout_neighbours = get_adjacent_cells(current_tilemap_layout_pos)
-			#layout center
-			tilemap_layout.set_cell(current_tilemap_layout_pos, 0, empty_atlas)
-			
 			#mu type
 			match(mu):
 				_ when mu.is_spawn:
@@ -96,24 +97,23 @@ func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modu
 						tilemap_content.set_cell(mu.grid_pos, 0, side_upgrade_atlas)
 					#TODO stat upgrades, equipment, collectibles
 			
-			#connecting grid cells
-			var direction:Utils.direction = Utils.direction.UP
-			for border_type in mu.borders:
+			#room borders
+			for direction:Utils.direction in range(4):
 				var border_pos = current_tilemap_layout_pos + Utils.direction_to_vec2i(direction)
-				match border_type:
-					Utils.border_type.EMPTY:
-						tilemap_layout.set_cell(border_pos, 0, empty_atlas)
-						pass
-					Utils.border_type.SAME_ROOM:
-						tilemap_layout.set_cell(border_pos, 0, empty_atlas)
-					Utils.border_type.LOCKED_DOOR:
-						tilemap_layout.set_cell(border_pos, 0, gate_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else gate_X_atlas)
-						pass
-					Utils.border_type.WALL:
-						tilemap_layout.set_cell(border_pos, 0, wall_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else wall_X_atlas)
-					_:
-						pass
-				direction += 1
+				if border_pos in limits:
+					match mu.borders[direction]:
+						Utils.border_type.EMPTY:
+							tilemap_layout.set_cell(border_pos, 0, empty_atlas)
+						Utils.border_type.SAME_ROOM: #shouldnt happen
+							print('WARNING: error in layout display')
+							tilemap_layout.set_cell(border_pos, 0, empty_atlas)
+						Utils.border_type.LOCKED_DOOR:
+							if mu.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY:
+								tilemap_layout.set_cell(border_pos, 0, gate_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else gate_X_atlas)
+							else:
+								tilemap_layout.set_cell(border_pos, 0, gate_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else gate_X_atlas)
+						Utils.border_type.WALL:
+							tilemap_layout.set_cell(border_pos, 0, wall_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else wall_X_atlas)
 
 func get_adjacent_cells(pos:Vector2i) -> Array[Vector2i]:
 	var cells:Array[Vector2i] = []
@@ -133,7 +133,7 @@ func get_room_limits(room:Room) -> Array[Vector2i]:
 	var cells:Array[Vector2i] = []
 	cells.resize(4*room.room_size.x + 4*room.room_size.y + 2)
 	var starting_tilemap_layout_pos = room.grid_pos*2 - Vector2i(1,1)
-	for i in range(room.room_size.x * 2 + 2):
+	for i in range(room.room_size.x * 2 + 1):
 		cells[i] = starting_tilemap_layout_pos + Vector2i(i, 0)
 		cells[room.room_size.x*2 + 1 + i] = starting_tilemap_layout_pos + Vector2i(i, 2*room.room_size.y)
 	for j in range(room.room_size.y * 2):
@@ -141,9 +141,10 @@ func get_room_limits(room:Room) -> Array[Vector2i]:
 		cells[4 * room.room_size.x + 2 + room.room_size.y*2 + j] = starting_tilemap_layout_pos + Vector2i(2*room.room_size.x, j+1)
 	return cells
 
-#separates MUs with little dots when a room is larger than 2*2
+
 func fill_room_spots(room:Room):
-	var starting_tilemap_layout_pos = room.grid_pos*2 + Vector2i(1,1)
-	for i in range(room.room_size.x - 1):
-		for j in range(room.room_size.y - 1):
-			tilemap_layout.set_cell(starting_tilemap_layout_pos + Vector2i(i*2, 0) + Vector2i(0, j*2), 0, room_inside_atlas)
+	var starting_tilemap_layout_pos = room.grid_pos*2
+	for i in range(room.room_size.x*2 - 1):
+		for j in range(room.room_size.y*2 - 1):
+			var current_tilemap_layout_pos = starting_tilemap_layout_pos + Vector2i(i, 0) + Vector2i(0, j)
+			tilemap_layout.set_cell(current_tilemap_layout_pos, 0, empty_atlas)

@@ -60,8 +60,8 @@ func roll_borders_first_pass():
 
 func assign_door(direction: Utils.direction) -> void:
 	borders[direction] = Utils.border_type.LOCKED_DOOR
-	var keys : Array[Key] = []
-	keys.resize(1)
-	keys[0] = RewardPool.keyset[0] #TODO: change
-	var new_door = LockedDoor.createNew(keys, Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
+	#var keys : Array[Key] = []
+	#keys.resize(1)
+	#keys[0] = RewardPool.keyset[0] #TODO: change
+	var new_door = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
 	border_data[direction] = new_door

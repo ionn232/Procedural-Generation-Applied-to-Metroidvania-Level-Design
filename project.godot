@@ -43,6 +43,10 @@ rClick={
 ]
 }
 
+[network]
+
+limits/debugger/max_chars_per_second=43008
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

@@ -2,6 +2,7 @@ class_name Room
 extends Resource
 
 var area_index:int
+var step_index:int
 
 #upper leftmost MU dictates room position
 var grid_pos:Vector2i
@@ -25,6 +26,9 @@ static func createNew(pos:Vector2i, area_i:int, size:Vector2i = Vector2i(1,1)) -
 
 static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1)) -> bool:
 	if size.x == 0 && size.y == 0: return false #uninitialized room
+	elif pos.x + size.x > Level.map_size_x/2 || pos.x < -Level.map_size_x/2: return false #out of bounds - x
+	elif pos.y + size.y > Level.map_size_y/2 || pos.y < -Level.map_size_y/2: return false #out of bounds - y
+	
 	var current_pos:Vector2i
 	for i in range(size.x):
 		for j in range(size.y):
@@ -44,10 +48,23 @@ func createRoomMUs():
 				Utils.border_type.WALL if i==0 else Utils.border_type.SAME_ROOM, 
 				Utils.border_type.WALL if i==room_size.x-1 else Utils.border_type.SAME_ROOM,
 				)
-			room_MUs.push_back(new_MU)
 			new_MU.parent_room = self
 			Level.map.MUs[newPos.x][newPos.y] = new_MU
 			add_MU(new_MU, i*room_size.y+j)
+
+func get_mu_towards(direction:Utils.direction) -> MU:
+	match(direction):
+		Utils.direction.UP:
+			return Level.map.get_mu_at(grid_pos + Vector2i(Utils.rng.randi_range(0, room_size.x-1), 0))
+		Utils.direction.DOWN:
+			return Level.map.get_mu_at(grid_pos + Vector2i(Utils.rng.randi_range(0, room_size.x-1), room_size.y-1))
+		Utils.direction.LEFT:
+			return Level.map.get_mu_at(grid_pos + Vector2i(0, Utils.rng.randi_range(0, room_size.y-1)))
+		Utils.direction.RIGHT:
+			return Level.map.get_mu_at(grid_pos + Vector2i(room_size.x-1, Utils.rng.randi_range(0, room_size.y-1)))
+	print('invalid direction given!!')
+	return null
+	
 
 func define_pos(pos:Vector2i):
 	grid_pos = pos

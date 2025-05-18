@@ -35,3 +35,20 @@ func _process(delta: float) -> void:
 		
 		for unlock:Reward in mu.rewards:
 			room_selection.text += '\n' + unlock.name
+		
+		room_selection.text += '\nborder data:'
+		
+		for i:int in range(4):
+			var border = mu.borders[i]
+			room_selection.text += '\nborder ' + str(i) + ':  '
+			match(border):
+				Utils.border_type.EMPTY:
+					room_selection.text += 'Empty'
+				Utils.border_type.SAME_ROOM:
+					room_selection.text += 'Same room'
+				Utils.border_type.WALL:
+					room_selection.text += 'Wall'
+				Utils.border_type.DEATH_ZONE:
+					room_selection.text += 'Death zone'
+				Utils.border_type.LOCKED_DOOR:
+					room_selection.text += 'Gate'

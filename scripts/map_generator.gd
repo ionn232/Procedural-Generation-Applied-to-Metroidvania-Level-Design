@@ -11,7 +11,7 @@ extends Node2D
 @export_range (0, 9) var number_side_upgrades:int
 @export_range (0.1,3.0) var area_size_multiplier:float
 
-var rng : RandomNumberGenerator = RandomNumberGenerator.new()
+
 
 #area size DIAMETER
 var area_size:float
@@ -25,7 +25,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	#rng.seed = hash("1")
+	Utils.rng.seed = hash("3")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -52,18 +52,18 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	for i:int in range(number_route_steps):
 		route_steps[i] = RouteStep.createNew(i)
 		#assign RS main key
-		var indexes_random_index:int = rng.randi_range(0, len(keyset_indexes)-1)
+		var indexes_random_index:int = Utils.rng.randi_range(0, len(keyset_indexes)-1)
 		route_steps[i].add_key(RewardPool.keyset[keyset_indexes.pop_at(indexes_random_index)])
 		#assign side upgrades
 		var RS_side_weight:float = side_upgrades_left / float(number_route_steps - i)
 		while RS_side_weight > 1.0: #TODO: reuse procedure in step 8 to a separate function
-			indexes_random_index = rng.randi_range(0, len(side_indexes)-1)
+			indexes_random_index = Utils.rng.randi_range(0, len(side_indexes)-1)
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
 			side_upgrades_left -= 1
 			RS_side_weight -= 1.0
-		var roll = rng.randf()
+		var roll = Utils.rng.randf()
 		if roll < RS_side_weight:
-			indexes_random_index = rng.randi_range(0, side_upgrades_left - 1)
+			indexes_random_index = Utils.rng.randi_range(0, side_upgrades_left - 1)
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
 			side_upgrades_left -= 1
 	Level.route_steps = route_steps
@@ -106,6 +106,10 @@ func _stage_handler():
 			step_16()
 		17:
 			step_17()
+		18:
+			step_18()
+		19:
+			step_19()
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
@@ -124,7 +128,7 @@ func step_2(): ##expand points from centroid and ensure minimum distance
 	expand_points(Level.area_points, centroid, area_size, ROOM_SIZE)
 
 func step_3(): ##establish initial area
-	var rand_index :int = rng.randi_range(0, number_of_areas - 1)
+	var rand_index :int = Utils.rng.randi_range(0, number_of_areas - 1)
 	Level.initial_area = Level.area_points[rand_index]
 	Level.initial_area.set_point_color(Utils.area_colors[0])
 
@@ -135,11 +139,9 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 	#struct inits
 	var ordered_areas:Array[AreaPoint] = []
 	var available_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
-	var backtrack_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]] TODO fill this
-	var progression_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]] TODO fill this
+	var progression_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
 	ordered_areas.resize(number_of_areas)
 	available_routes.resize(number_of_areas)
-	backtrack_routes.resize(number_of_areas)
 	progression_routes.resize(number_of_areas)
 	#initial area (alredy known) #TODO:avoid repeating code, add to loop
 	var initial_area:AreaPoint = Level.initial_area
@@ -158,10 +160,10 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 		#roll expanding area
 		while !proceed:
 			proceed = true
-			expanding_area_index = rng.randi_range(0, i-1)
+			expanding_area_index = Utils.rng.randi_range(0, i-1)
 			if len(available_routes[expanding_area_index]) == 0: proceed = false #area has no routes left to expand, reroll
 		#roll next area
-		var route_index:int = rng.randi_range(0, len(available_routes[expanding_area_index])-1)
+		var route_index:int = Utils.rng.randi_range(0, len(available_routes[expanding_area_index])-1)
 		var new_area:AreaPoint = available_routes[expanding_area_index][route_index]
 		#add new area to final lineup
 		ordered_areas[i] = new_area
@@ -218,7 +220,7 @@ func step_7(): ##establish area-rs relations
 			area_index += 1
 			RS_weight -= 1.0
 			new_areas_this_iteration += 1
-		var roll = rng.randf()
+		var roll = Utils.rng.randf()
 		#successful roll --> assigns new area to route step
 		if roll < RS_weight:
 			route_steps[i].areas.push_back(Level.area_points[area_index])
@@ -232,10 +234,10 @@ func step_7(): ##establish area-rs relations
 		#unsuccesful roll --> assign from previous areas to route step
 		elif new_areas_this_iteration == 0: 
 			#idea --> force RS with key items to be revisits, distribute amongst as many areas as key item units
-			var num_prev_areas:int = rng.randi_range(1, area_index - new_areas_this_iteration)
+			var num_prev_areas:int = Utils.rng.randi_range(1, area_index - new_areas_this_iteration)
 			var available_indexes:Array = range(area_index - new_areas_this_iteration)
 			for j:int in range(num_prev_areas):
-				var index_list_random_index:int = rng.randi_range(0, len(available_indexes)-1)
+				var index_list_random_index:int = Utils.rng.randi_range(0, len(available_indexes)-1)
 				var random_index = available_indexes.pop_at(index_list_random_index)
 				route_steps[i].areas.push_back(Level.area_points[random_index])
 		num_rs_left -= 1
@@ -255,8 +257,8 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 		#main upgrades
 		if current_step.keyset[0] is MainUpgrade:
 			var main_upgrade:MainUpgrade = current_step.keyset[0]
-			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
-			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
+			var chosen_area:AreaPoint = current_step.areas[Utils.rng.randi_range(0, len(current_step.areas) - 1)]
+			var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), Utils.rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.reward_pool.push_back(main_upgrade)
 			chosen_area.subpoints.push_back(new_point)
@@ -264,16 +266,16 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 		elif current_step.keyset[0] is KeyItem:
 			var key_item:KeyItem = current_step.keyset[0]
 			for KIU:KeyItemUnit in key_item.kius:
-				var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
-				var random_pos = Vector2(rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
+				var chosen_area:AreaPoint = current_step.areas[Utils.rng.randi_range(0, len(current_step.areas) - 1)]
+				var random_pos = Vector2(Utils.rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), Utils.rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
 				var new_point = Point.createNew(random_pos)
 				chosen_area.reward_pool.push_back(KIU)
 				chosen_area.subpoints.push_back(new_point)
 		#side upgrades
 		var rs_side_upgrades:Array[Reward] = current_step.get_side_upgrades()
 		for side_upgrade:SideUpgrade in rs_side_upgrades:
-			var chosen_area:AreaPoint = current_step.areas[rng.randi_range(0, len(current_step.areas) - 1)]
-			var random_pos:Vector2 = Vector2(rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
+			var chosen_area:AreaPoint = current_step.areas[Utils.rng.randi_range(0, len(current_step.areas) - 1)]
+			var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), Utils.rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.reward_pool.push_back(side_upgrade)
 			chosen_area.subpoints.push_back(new_point)
@@ -487,12 +489,13 @@ func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 		for j:int in range(len(current_area.subpoints)):
 			var current_point:Point = current_area.subpoints[j]
 			var room_position:Vector2i = Utils.world_pos_to_room(current_point.global_position)
-			var room_dimensions:Vector2i = Vector2i(rng.randi_range(1, 3), rng.randi_range(1, 3)) #TODO discriminate by room type
+			var room_dimensions:Vector2i = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
 			#reroll size to avoid room superposition
-			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions):
-				room_dimensions = Vector2i(rng.randi_range(1, 3), rng.randi_range(1, 3)) #TODO discriminate by room type
+			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions): #TODO fix, still crashes sometimes ("2", 100*100, 5, 5, 2, 2)
+				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
 			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, room_dimensions) #TODO round?
 			new_room.createRoomMUs()
+			current_point.associated_room = new_room
 			var random_room_mu:MU = get_random_MU(new_room)
 			
 			match(current_point):
@@ -523,8 +526,7 @@ func step_17(): ##Place hub zone rooms
 		var new_room_dimensions:Vector2i 
 		#avoid superposition
 		while !Room.canCreate(new_room_pos, new_room_dimensions):
-			print('!')
-			rand_direction = rng.randi_range(0, 3)
+			rand_direction = Utils.rng.randi_range(0, 3)
 			rand_direction_vec = Utils.direction_to_vec2i(rand_direction)
 			new_room_dimensions = Vector2i(2,2)
 			if rand_direction_vec.x < 0 || rand_direction_vec.y < 0:
@@ -537,9 +539,176 @@ func step_17(): ##Place hub zone rooms
 		shop_mu.is_shop = true
 		var save_mu:MU = get_free_MU(hub_room_2)
 		save_mu.is_save = true
+		connect_adjacent_rooms(hub_room_1, hub_room_2)
 
-func get_random_MU(room:Room) -> MU: #TODO: move this to Room class, move rng to Utils
-	return room.room_MUs[rng.randi_range(0, len(room.room_MUs)-1)]
+func step_18(): ##Map out intra-area connections
+	#TODO: do this before now when assigning relations
+	for area:AreaPoint in Level.area_points:
+		for subpoint:Point in area.subpoints:
+			subpoint.relation_is_mapped.resize(len(subpoint.relations))
+			subpoint.relation_is_mapped.fill(false) #TODO this is redundant ?
+	
+	#map out subpoint connections for each area
+	for current_area:AreaPoint in Level.area_points:
+		for current_point:Point in current_area.subpoints:
+			for i:int in range(len(current_point.relations)):
+				if !current_point.relation_is_mapped[i]:
+					var relation:Point = current_point.relations[i]
+					connect_rooms(current_point.associated_room, relation.associated_room)
+					current_point.relation_is_mapped[i] = true
+					relation.relation_is_mapped[relation.relations.find(current_point)] = true
+
+func step_19(): ##Map out inter-area connections
+	pass
+
+func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): #TODO fix crash
+	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
+	var r1_candidates:Array[Vector2i]
+	var x_candidates:Array #either x or y is always length 1 (different for each call)
+	var y_candidates:Array
+	var overlap:int
+	var connection_gate:LockedDoor
+	var direction_vec:Vector2i
+	#create default gate if not given
+	if gate == null:
+		connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
+	else:
+		connection_gate = gate
+	#compute candidate MUs in r1 adjacent to r2
+	if r1_to_r2.x < 0:
+		overlap = r2.grid_pos.x + r2.room_size.x - r1.grid_pos.x
+		if overlap == 0: overlap = 1
+		else: direction_vec = Vector2i(0, 1 * sign(r1_to_r2.y))
+		x_candidates = range(overlap)
+	elif r1_to_r2.x == 0:
+		overlap = min(r1.room_size.x, r2.room_size.x)
+		direction_vec = Vector2i(0, 1 * sign(r1_to_r2.y))
+		x_candidates = range(overlap)
+	else:
+		overlap = r1.grid_pos.x + r1.room_size.x - r2.grid_pos.x
+		if overlap == 0: overlap = 1
+		else: direction_vec = Vector2i(0, 1 * sign(r1_to_r2.y))
+		x_candidates = range(r1.room_size.x - overlap, r1.room_size.x)
+	if r1_to_r2.y < 0:
+		overlap = r2.grid_pos.y + r2.room_size.y - r1.grid_pos.y
+		if overlap == 0: overlap = 1
+		else: direction_vec = Vector2i(1 * sign(r1_to_r2.x), 0)
+		y_candidates = range(overlap)
+	elif r1_to_r2.y == 0:
+		overlap = min(r1.room_size.y, r2.room_size.y)
+		direction_vec = Vector2i(1 * sign(r1_to_r2.x), 0)
+		y_candidates = range(overlap)
+	else:
+		overlap = r1.grid_pos.y + r1.room_size.y - r2.grid_pos.y
+		if overlap == 0: overlap = 1
+		else: direction_vec = Vector2i(1 * sign(r1_to_r2.x), 0)
+		y_candidates = range(r1.room_size.y - overlap, r1.room_size.y)
+	r1_candidates.resize(len(x_candidates) * len(y_candidates))
+	var index:int = 0
+	for x_candidate in x_candidates:
+		for y_candidate in y_candidates:
+			r1_candidates[index] = Vector2i(x_candidate, y_candidate)
+			index += 1
+	#roll MU and r2 correspondant
+	var rand_index:int = Utils.rng.randf_range(0, len(r1_candidates)-1)
+	var r1_mu:MU = Level.map.get_mu_at(r1.grid_pos + r1_candidates[rand_index])
+	var r2_mu:MU = Level.map.get_mu_at(r1_mu.grid_pos + direction_vec)
+	#connect rooms by selected MUs
+	var direction = Utils.vec2i_to_direction(direction_vec)
+	r1_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
+	r1_mu.border_data[direction] = connection_gate
+	var neg_direction:Utils.direction = Utils.opposite_direction(direction)
+	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
+	r2_mu.border_data[neg_direction] = connection_gate
+
+func connect_rooms(origin:Room, destination:Room):
+	var current_room:Room = origin
+	var previous_room:Room = null
+	var current_MU:MU
+	var direction:Utils.direction
+	var current_pos:Vector2i
+	var direction_vec:Vector2i
+	#step 0, get non-randomized direction
+	direction_vec = Utils.absolute_direction(origin.grid_pos, destination.grid_pos) #BUG
+	direction = Utils.vec2i_to_direction(direction_vec)
+	
+	var count:int = 0
+	while true:
+		count +=1
+		if count == 1000:
+			print('LIMIT REACHED')
+			return
+		elif current_room == destination:
+			print('dest - debug (shouldnt happen)')
+			return
+		
+		#weighted random walk: decide direction
+		if count > 1:
+			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
+			direction_vec = Utils.direction_to_vec2i(direction)
+		#adjacent room exists
+		current_MU = current_room.get_mu_towards(direction)
+		current_pos = current_MU.grid_pos
+		var target_mu:MU = Level.map.get_mu_at(current_pos + direction_vec)
+		if target_mu != null:
+			if target_mu.parent_room == destination:
+				connect_adjacent_rooms(current_room, target_mu.parent_room)
+				return
+			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms TODO: more memory (second previous)
+				continue #reroll
+			#TODO 1: discard if different area index, barriers if lower step index (TODO: register step indexes)
+			else:
+				connect_adjacent_rooms(current_room, target_mu.parent_room)
+				previous_room = current_room
+				current_room = target_mu.parent_room
+		else:
+		#create room in chosen direction
+			var room_position:Vector2i 
+			var room_dimensions:Vector2i 
+			#avoid room superposition
+			while !Room.canCreate(room_position, room_dimensions):
+				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3))
+				if direction_vec.x < 0 || direction_vec.y < 0:
+					room_position = current_pos + direction_vec * room_dimensions
+				else:
+					room_position = current_pos + direction_vec
+			var new_room:Room = Room.createNew(room_position, origin.area_index, room_dimensions) 
+			new_room.createRoomMUs()
+			connect_adjacent_rooms(current_room, new_room)
+			previous_room = current_room
+			current_room = new_room
+			current_pos = current_room.grid_pos #room position used only for direction computation
+
+func weighted_random_walk_dir(current_pos:Vector2i, destination:Vector2i) -> Utils.direction:
+	var direction:Utils.direction
+	var weights:Array[float] = compute_direction_weighs(current_pos, destination)
+	var roll = Utils.rng.randf_range(0,1)
+	var sum:float = 0
+	for i:int in range(4):
+		sum += weights[i]
+		if sum > roll:
+			direction = i
+			break
+	var test = (Utils.absolute_direction(current_pos, destination))
+	return direction
+
+func compute_direction_weighs(position:Vector2i, objective:Vector2i) -> Array[float]:
+	var direction_to_objective:Vector2 = Vector2(objective - position)
+	var result:Array[float]
+	result.resize(4)
+	var sum:float = 0.0
+	#get weight for each direction
+	for direction:Utils.direction in range(4):
+		var direction_vector:Vector2 = Utils.direction_to_vec2i(direction)
+		var weight:float = clampf(direction_vector.dot(direction_to_objective), 0.01, 1.0) #TODO: tweak min
+		result[direction] = weight
+		sum += weight
+	for i:int in range(4):
+		result[i] = result[i] / sum
+	return result
+
+func get_random_MU(room:Room) -> MU: #TODO: move this to Room class, move Utils.rng to Utils
+	return room.room_MUs[Utils.rng.randi_range(0, len(room.room_MUs)-1)]
 
 func get_free_MU(room:Room) -> MU: #TODO make random
 	for room_mu:MU in room.room_MUs:
@@ -606,7 +775,7 @@ func steps_to_crossroads(point:Point) -> int: #BUG: if points are unconnected. C
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):
 		#TODO better random procedure
-		var random_pos = Vector2(rng.randf_range(-pixel_dimensions.x/2.0,pixel_dimensions.x/2.0), rng.randf_range(-pixel_dimensions.y/2.0, pixel_dimensions.y/2.0))
+		var random_pos = Vector2(Utils.rng.randf_range(-pixel_dimensions.x/2.0,pixel_dimensions.x/2.0), Utils.rng.randf_range(-pixel_dimensions.y/2.0, pixel_dimensions.y/2.0))
 		var current_point = AreaPoint.createNew(random_pos) if is_area else Point.createNew(random_pos)
 		points[i] = current_point
 

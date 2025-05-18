@@ -2,6 +2,7 @@ class_name Utils
 extends Resource
 
 static var generator_stage : int = 0
+static var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 
 enum border_type {
 	EMPTY,
@@ -78,6 +79,19 @@ static func direction_to_vec2i(input:direction) -> Vector2i:
 	print('❌ ERROR converting direction to vec2i: input value -> ', input)
 	return Vector2i(-5, -5)
 
+static func vec2i_to_direction(input:Vector2i) -> direction:
+	match input:
+		Vector2i(0,-1):
+			return direction.UP
+		Vector2i(0,1):
+			return direction.DOWN
+		Vector2i(-1,0):
+			return direction.LEFT
+		Vector2i(1,0):
+			return direction.RIGHT
+	print('❌ ERROR converting vec2i to direction: input value -> ', input)
+	return 0
+
 static func opposite_direction(dir:direction) -> direction:
 	match dir:
 		direction.UP:
@@ -108,4 +122,9 @@ static func room_pos_to_world(pos:Vector2i) -> Vector2i:
 	return pos * 16
 static func world_pos_to_room(world_pos:Vector2) -> Vector2i:
 	return Vector2i(round((world_pos.x-4)/16.0), round((world_pos.y-4)/16.0))  
-	#(world_pos - Vector2(4,4))/16
+static func absolute_direction(pos1:Vector2i, pos2:Vector2i) -> Vector2i:
+	var direction_vec:Vector2i
+	var step1:Vector2i = (pos2-pos1)
+	var step2:Vector2i = step1.abs()
+	direction_vec[step2.max_axis_index()] = 1 * sign(step1[step2.max_axis_index()])
+	return direction_vec

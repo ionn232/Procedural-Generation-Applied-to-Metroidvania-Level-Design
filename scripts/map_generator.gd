@@ -98,9 +98,6 @@ func _stage_handler():
 			step_12()
 		13:
 			step_13()
-		14:
-			pass
-			#step_14()
 		15:
 			step_15()
 		16:
@@ -109,8 +106,7 @@ func _stage_handler():
 			step_17()
 		18:
 			step_18()
-		19:
-			step_19()
+
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
@@ -405,29 +401,29 @@ func step_13(): ##assign points as fast-travel rooms
 				#TODO 1: flat, not scaling. Behaves weird for large areas.
 				ensure_min_dist_around(fast_travel_point, current_area.subpoints, intra_area_distance*1.5)
 
-func step_14(): ##assign spawn point TODO remove, this is deprecated
-	var initial_area:AreaPoint = Level.area_points[0]
-	var best_candidate:Point
-	var max_steps_to_crossroads:int = -1
-	#scan for most isolated point within the first area-step
-	for i:int in range(len(initial_area.subpoints)):
-		var current_candidate:Point = initial_area.subpoints[i]
-		if !(current_candidate.is_generic): continue
-		var crossroad_step_distance:int = steps_to_crossroads(current_candidate)
-		if crossroad_step_distance > max_steps_to_crossroads:
-			best_candidate = current_candidate
-			max_steps_to_crossroads = crossroad_step_distance
-	#create point and add to area
-	var spawn_point = SpawnPoint.createNew(best_candidate.position, best_candidate)
-	var replace_index:int = initial_area.subpoints.find(best_candidate)
-	spawn_point.associated_step = Level.route_steps[0]
-	initial_area.subpoints[replace_index] = spawn_point
-	#manage memory and scene tree
-	initial_area.remove_child(best_candidate)
-	best_candidate.queue_free()
-	initial_area.add_subarea_nodes()
+#func step_14(): ##assign spawn point TODO remove, this is deprecated
+	#var initial_area:AreaPoint = Level.area_points[0]
+	#var best_candidate:Point
+	#var max_steps_to_crossroads:int = -1
+	##scan for most isolated point within the first area-step
+	#for i:int in range(len(initial_area.subpoints)):
+		#var current_candidate:Point = initial_area.subpoints[i]
+		#if !(current_candidate.is_generic): continue
+		#var crossroad_step_distance:int = steps_to_crossroads(current_candidate)
+		#if crossroad_step_distance > max_steps_to_crossroads:
+			#best_candidate = current_candidate
+			#max_steps_to_crossroads = crossroad_step_distance
+	##create point and add to area
+	#var spawn_point = SpawnPoint.createNew(best_candidate.position, best_candidate)
+	#var replace_index:int = initial_area.subpoints.find(best_candidate)
+	#spawn_point.associated_step = Level.route_steps[0]
+	#initial_area.subpoints[replace_index] = spawn_point
+	##manage memory and scene tree
+	#initial_area.remove_child(best_candidate)
+	#best_candidate.queue_free()
+	#initial_area.add_subarea_nodes()
 
-func step_15(): ##assign points as spawn point, side upgrades, main upgrades and key item units
+func step_14(): ##assign points as spawn point, side upgrades, main upgrades and key item units
 	var spawn_placed:bool = false
 	for i:int in range(len(Level.route_steps)):
 		var current_step:RouteStep = Level.route_steps[i]
@@ -513,7 +509,7 @@ func step_15(): ##assign points as spawn point, side upgrades, main upgrades and
 				generic_point.queue_free()
 				current_area.add_subarea_nodes()
 
-func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
+func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
 	#necessary computations for next steps
 	var current_area_index:int = -1
 	for current_step:RouteStep in Level.route_steps:
@@ -526,9 +522,7 @@ func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 					subpoint.relation_is_mapped.fill(false) #TODO this is redundant ?
 					#assign step indexes for connector points and fast travel points
 					if (subpoint is ConnectionPoint) || (subpoint is FastTravelPoint):
-						var min_neighbor_step_index = INF
-						for relation:Point in subpoint.relations:
-							if relation.associated_step != null && relation.associated_step.index < min_neighbor_step_index: min_neighbor_step_index = relation.associated_step.index
+						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
 	
 	for i:int in range(len(Level.area_points)):
@@ -556,7 +550,7 @@ func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 				_ when current_point is FastTravelPoint:
 					random_room_mu.is_fast_travel = true
 
-func step_17(): ##Place hub zone rooms
+func step_16(): ##Place hub zone rooms
 	var hub_area:AreaPoint = Level.area_points.filter(func(val:AreaPoint): return val.has_hub)[0]
 	var hub_position:Vector2 = Utils.world_pos_to_room(hub_area.subpoints.filter(func(val:Point): return val is FastTravelPoint)[0].global_position)
 	var hub_room_1:Room = Level.map.MUs[hub_position.x][hub_position.y].parent_room
@@ -589,7 +583,7 @@ func step_17(): ##Place hub zone rooms
 		save_mu.is_save = true
 		connect_adjacent_rooms(hub_room_1, hub_room_2)
 
-func step_18(): ##Map out intra-area connections
+func step_17(): ##Map out intra-area connections
 	#get step-area points
 	for i:int in range(len(Level.route_steps)):
 		var current_step:RouteStep
@@ -613,8 +607,25 @@ func step_18(): ##Map out intra-area connections
 						current_point.relation_is_mapped[k] = true
 						relation.relation_is_mapped[relation.relations.find(current_point)] = true
 
-func step_19(): ##Map out inter-area connections
+func step_18(): ##Map out inter-area connections
 	pass
+
+
+func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int: #propagates over other indexless points
+	seen_points.push_back(point)
+	#base case
+	if point.associated_step != null:
+		return point.associated_step.index
+	#recursive case
+	else:
+		var index:int
+		var min_index = INF
+		for relation:Point in point.relations:
+			if !seen_points.has(relation):
+				index = min_neighbor_step_index(relation, seen_points)
+				if index < min_index:
+					min_index = index
+		return index
 
 func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 	var route_step_index:int = origin.step_index

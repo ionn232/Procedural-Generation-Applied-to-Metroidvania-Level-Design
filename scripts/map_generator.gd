@@ -99,7 +99,8 @@ func _stage_handler():
 		13:
 			step_13()
 		14:
-			step_14()
+			pass
+			#step_14()
 		15:
 			step_15()
 		16:
@@ -408,7 +409,7 @@ func step_14(): ##assign spawn point
 	var initial_area:AreaPoint = Level.area_points[0]
 	var best_candidate:Point
 	var max_steps_to_crossroads:int = -1
-	#scan for most isolated point
+	#scan for most isolated point within the first area-step
 	for i:int in range(len(initial_area.subpoints)):
 		var current_candidate:Point = initial_area.subpoints[i]
 		if !(current_candidate.is_generic): continue
@@ -426,7 +427,8 @@ func step_14(): ##assign spawn point
 	best_candidate.queue_free()
 	initial_area.add_subarea_nodes()
 
-func step_15(): ##assign points as side upgrades, main upgrades and key item units
+func step_15(): ##assign points as spawn point, side upgrades, main upgrades and key item units
+	var spawn_placed:bool = false
 	for i:int in range(len(Level.route_steps)):
 		var current_step:RouteStep = Level.route_steps[i]
 		var step_keyset_flat:Array = current_step.keyset.reduce(
@@ -442,10 +444,32 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 			var area_step_keyset:Array = get_intersection(step_keyset_flat, current_area.reward_pool)
 			#Array[SideUpgrade]
 			var area_step_SUs:Array = get_intersection(current_step.reward_pool, current_area.reward_pool).filter(func(val): return val is SideUpgrade)
-			var area_step_points:Array[Point] = get_area_step_points(current_area, len(area_step_keyset) + len(area_step_SUs))
-			#set point route step
+			var area_step_points:Array[Point] = get_area_step_points(current_area, len(area_step_keyset) + len(area_step_SUs) + (1 if !spawn_placed else 0), spawn_placed)
 			
-			#assign main upgrade points
+			#assign spawn point TODO:fuse with keyset points procedure (its the same)
+			if !spawn_placed:
+				var best_candidate:Point = null
+				var max_steps_to_crossroads:int = -1
+				for l:int in range(len(area_step_points)):
+					var current_candidate:Point = area_step_points[l]
+					if !(current_candidate.is_generic): continue
+					var crossroad_step_distance:int = steps_to_crossroads(current_candidate)
+					if crossroad_step_distance > max_steps_to_crossroads:
+						best_candidate = current_candidate
+						max_steps_to_crossroads = crossroad_step_distance
+				#create point and add to area
+				var spawn_point = SpawnPoint.createNew(best_candidate.position, best_candidate)
+				var replace_index:int = current_area.subpoints.find(best_candidate)
+				spawn_point.associated_step = current_step
+				current_area.subpoints[replace_index] = spawn_point
+				area_step_points.erase(best_candidate)
+				#manage memory and scene tree
+				current_area.remove_child(best_candidate)
+				best_candidate.queue_free()
+				current_area.add_subarea_nodes()
+				spawn_placed = true
+			
+			#assign keyset points
 			for k:int in range(len(area_step_keyset)):
 				var current_reward:Reward = area_step_keyset[k]
 				#identify most isolated unassigned subpoint for major rewards
@@ -772,11 +796,29 @@ func get_free_MU(room:Room) -> MU: #TODO make random
 			return room_mu
 	return null
 
-func get_area_step_points(area:AreaPoint, number_of_points:int) -> Array[Point]:
+func get_area_step_points(area:AreaPoint, number_of_points:int, spawn_placed:bool = true) -> Array[Point]:
 	#get starting point
 	var starting_point:Point
-	if area.area_index == 0:
+	#first step of initial area includes connector to next area (to prevent softlocks)
+	if area.area_index == 0 && !spawn_placed:
+		var point_candidates:Array = area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
+		#single area world, choose point at random TODO:most isolated instead of random
+		if len(point_candidates) == 0:
+			var subpoint_index = Utils.rng.randi_range(0, len(area.subpoints)-1)
+			starting_point = area.subpoints[subpoint_index]
+		#find connector to second area
+		else:
+			var second_area:AreaPoint = Level.area_points[1]
+			var second_area_connectors:Array = second_area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
+			var second_area_inter_connectors = second_area_connectors.reduce(
+				func(acc:Array, val:ConnectionPoint): 
+				return acc + val.area_relations 
+				, [])
+			starting_point = get_intersection(point_candidates, second_area_inter_connectors)[0]
+	#step in first area, expand from spawn
+	elif area.area_index == 0:
 		starting_point = area.subpoints.filter(func(val): return val is SpawnPoint)[0]
+	#first step includes connector to previous area
 	else:
 		var point_candidates:Array = area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
 		#find previous area
@@ -787,7 +829,7 @@ func get_area_step_points(area:AreaPoint, number_of_points:int) -> Array[Point]:
 			if relation.area_index < area.area_index && is_progress: #always one in current implementation
 				previous_area = relation
 				break
-		
+		#find current area's connector to previous area
 		var previous_area_connectors:Array = previous_area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
 		var previous_area_inter_connectors = previous_area_connectors.reduce(
 			func(acc:Array, val:ConnectionPoint): 
@@ -869,8 +911,8 @@ func expand_points(points:Array, center:Vector2, min_distance:float, expansion_f
 		current_point.update_position(current_point.pos + center_to_area * expansion_factor) 
 	#expand areas from each other
 	#TODO: tweak parameters
-	var map_boundary_x:float = map_size_x*16/2.0
-	var map_boundary_y:float = map_size_y*16/2.0
+	var map_boundary_x:float = map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_y:float = map_size_y*16/2.0 - 4.0
 	var clear = false
 	var count:int = 0
 	while !clear && min_distance > 0.0:

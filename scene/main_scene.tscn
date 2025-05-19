@@ -14,8 +14,8 @@ script = ExtResource("1_gbq8f")
 map_size_x = 100
 map_size_y = 100
 number_route_steps = 5
-number_of_areas = 2
-number_side_upgrades = 5
+number_of_areas = 1
+number_side_upgrades = 2
 area_size_multiplier = 1.0
 
 [node name="LayoutDisplay" parent="." node_paths=PackedStringArray("generator") instance=ExtResource("2_qa15b")]

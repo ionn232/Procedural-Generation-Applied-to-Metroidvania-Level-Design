@@ -36,7 +36,7 @@ static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1), origin_point:
 	elif pos.x + size.x > Level.map_size_x/2 || pos.x < -Level.map_size_x/2: return false #out of bounds - x
 	elif pos.y + size.y > Level.map_size_y/2 || pos.y < -Level.map_size_y/2: return false #out of bounds - y
 	
-	#check if MU exists in this position already
+	#check if MU exists in this position already.
 	if origin_point != null:
 		var point_mu:MU = Level.map.get_mu_at(Utils.world_pos_to_room(origin_point.global_position))
 		if point_mu != null: #This mu is alredy occupied by another room. Move point.

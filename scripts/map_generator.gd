@@ -405,7 +405,7 @@ func step_13(): ##assign points as fast-travel rooms
 				#TODO 1: flat, not scaling. Behaves weird for large areas.
 				ensure_min_dist_around(fast_travel_point, current_area.subpoints, intra_area_distance*1.5)
 
-func step_14(): ##assign spawn point
+func step_14(): ##assign spawn point TODO remove, this is deprecated
 	var initial_area:AreaPoint = Level.area_points[0]
 	var best_candidate:Point
 	var max_steps_to_crossroads:int = -1
@@ -635,8 +635,6 @@ func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 					var neg_direction:Utils.direction = Utils.opposite_direction(direction)
 					adjacent_connected_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 					adjacent_connected_mu.border_data[neg_direction] = connection_gate
-					print('\ngate here: ', current_mu.grid_pos, ' to ', adjacent_connected_mu.grid_pos, ' // key: ', previous_step_keyset[0].name)
-					print('indexes: ', origin.step_index, ' -> ', adjacent_connected_mu.parent_room.step_index)
 
 func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): #TODO fix crash
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
@@ -705,12 +703,20 @@ func connect_rooms(origin:Room, destination:Room):
 	var direction:Utils.direction
 	var current_pos:Vector2i
 	var direction_vec:Vector2i
+	
+	var different_steps:bool = false
+	var create_gate:bool = false
+	var destination_previous_step_keyset:Array[Reward] = Level.route_steps[destination.step_index - 1].keyset
+	if origin.step_index < destination.step_index: #TODO: test if it can be higher i think it shouldnt
+		different_steps = true
+		create_gate = true
+	
 	#step 0, get non-randomized direction
 	direction_vec = Utils.absolute_direction(origin.grid_pos, destination.grid_pos) #BUG
 	direction = Utils.vec2i_to_direction(direction_vec)
-	
 	var count:int = 0
 	while true:
+		#debug instructions
 		count +=1
 		if count == 1000:
 			print('LIMIT REACHED')
@@ -718,28 +724,34 @@ func connect_rooms(origin:Room, destination:Room):
 		elif current_room == destination:
 			print('dest - debug (shouldnt happen)')
 			return
-		
 		#weighted random walk: decide direction
 		if count > 1:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
 			direction_vec = Utils.direction_to_vec2i(direction)
-		#adjacent room exists
 		current_MU = current_room.get_mu_towards(direction)
 		current_pos = current_MU.grid_pos
 		var target_mu:MU = Level.map.get_mu_at(current_pos + direction_vec)
+		#adjacent room exists
 		if target_mu != null:
 			if target_mu.parent_room == destination:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				return
 			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms
 				continue #reroll
-			#TODO barriers if lower step index here AND when creating new room from here (TODO: register step indexes)
+			##TODO barriers if lower step index here AND when creating new room from here (TODO: register step indexes) ##note: ascending order, objective will never have lower step index
+			#TODO: create gate when first creating new room and when entering an existing room (this resets the first condition) (only create when first entering new room) (only if current and origin have diff step index)
+			elif different_steps && !create_gate:
+				var connection_gate:LockedDoor = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+				connect_adjacent_rooms(current_room, target_mu.parent_room)
+				previous_room = current_room
+				current_room = target_mu.parent_room
+				create_gate = true
 			else:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				previous_room = current_room
 				current_room = target_mu.parent_room
-		else:
 		#create room in chosen direction
+		else:
 			var room_position:Vector2i 
 			var room_dimensions:Vector2i 
 			#avoid room superposition
@@ -754,7 +766,12 @@ func connect_rooms(origin:Room, destination:Room):
 					room_position = current_pos + direction_vec
 			var new_room:Room = Room.createNew(room_position, origin.area_index, origin.associated_point.associated_step.index, room_dimensions) 
 			new_room.createRoomMUs()
-			connect_adjacent_rooms(current_room, new_room)
+			#create gate to connect if necessary
+			var connection_gate:LockedDoor = null
+			if create_gate:
+				connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+				create_gate = false
+			connect_adjacent_rooms(current_room, new_room, connection_gate)
 			previous_room = current_room
 			current_room = new_room
 			current_pos = current_room.grid_pos #room position used only for direction computation

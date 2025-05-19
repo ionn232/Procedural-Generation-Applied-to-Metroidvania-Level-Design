@@ -14,8 +14,8 @@ extends Node2D
 const empty_atlas := Vector2i(4, 2)
 const full_atlas := Vector2i(5,4)
 const start_atlas := Vector2i(3, 4)
-const gate_Y_atlas := Vector2i(1,4)
-const gate_X_atlas := Vector2i(2,4)
+const gate_atlas := Vector2i(1,4)
+const gate_key_atlas := Vector2i(2,4)
 const wall_X_atlas := Vector2i(0,1)
 const wall_Y_atlas := Vector2i(1,0)
 const room_inside_atlas := Vector2i(3,2)
@@ -23,6 +23,10 @@ const gate_up_atlas := Vector2i(5,0)
 const gate_down_atlas := Vector2i(5,2)
 const gate_left_atlas := Vector2i(5,3)
 const gate_right_atlas := Vector2i(5,1)
+const gate_key_up_atlas := Vector2i(6,0)
+const gate_key_down_atlas := Vector2i(6,2)
+const gate_key_left_atlas := Vector2i(6,3)
+const gate_key_right_atlas := Vector2i(6,1)
 
 const challenge_room_atlas := Vector2i(0,0)
 const save_point_atlas := Vector2i(1,0)
@@ -108,10 +112,11 @@ func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modu
 							print('WARNING: error in layout display')
 							tilemap_layout.set_cell(border_pos, 0, empty_atlas)
 						Utils.border_type.LOCKED_DOOR:
+							var has_key:bool = len(mu.border_data[direction].keyset) >= 1
 							if mu.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY:
-								tilemap_layout.set_cell(border_pos, 0, gate_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else gate_X_atlas)
+								tilemap_layout.set_cell(border_pos, 0, gate_atlas if !has_key else gate_key_atlas)
 							else:
-								tilemap_layout.set_cell(border_pos, 0, gate_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else gate_X_atlas)
+								tilemap_layout.set_cell(border_pos, 0, get_direction_oneway_atlas(direction, has_key))
 						Utils.border_type.WALL:
 							tilemap_layout.set_cell(border_pos, 0, wall_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else wall_X_atlas)
 
@@ -148,3 +153,15 @@ func fill_room_spots(room:Room):
 		for j in range(room.room_size.y*2 - 1):
 			var current_tilemap_layout_pos = starting_tilemap_layout_pos + Vector2i(i, 0) + Vector2i(0, j)
 			tilemap_layout.set_cell(current_tilemap_layout_pos, 0, empty_atlas)
+
+func get_direction_oneway_atlas(direction:Utils.direction, has_key:bool = false):
+	match direction:
+		Utils.direction.UP:
+			return gate_up_atlas if !has_key else gate_key_up_atlas
+		Utils.direction.DOWN:
+			return gate_down_atlas if !has_key else gate_key_down_atlas
+		Utils.direction.LEFT:
+			return gate_left_atlas if !has_key else gate_key_left_atlas
+		Utils.direction.RIGHT:
+			return gate_right_atlas if !has_key else gate_key_right_atlas
+			

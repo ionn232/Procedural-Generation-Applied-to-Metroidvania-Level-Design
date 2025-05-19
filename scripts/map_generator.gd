@@ -605,6 +605,12 @@ func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 				var direction_vec:Vector2i = Utils.direction_to_vec2i(direction)
 				var adjacent_connected_mu:MU = Level.map.get_mu_at(current_mu.grid_pos + direction_vec)
 				if adjacent_connected_mu.parent_room.step_index != origin.step_index:
+					var connection_gate:LockedDoor = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, previous_step_keyset)
+					current_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
+					current_mu.border_data[direction] = connection_gate
+					var neg_direction:Utils.direction = Utils.opposite_direction(direction)
+					adjacent_connected_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
+					adjacent_connected_mu.border_data[neg_direction] = connection_gate
 					print('\ngate here: ', current_mu.grid_pos, ' to ', adjacent_connected_mu.grid_pos, ' // key: ', previous_step_keyset[0].name)
 					print('indexes: ', origin.step_index, ' -> ', adjacent_connected_mu.parent_room.step_index)
 

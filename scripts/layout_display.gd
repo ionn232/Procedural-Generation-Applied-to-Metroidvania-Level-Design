@@ -68,7 +68,7 @@ func dim_area_nodes():
 	for area:AreaPoint in Level.area_points:
 		area.set_point_color(Utils.area_colors[area.area_index] * Color(1,1,1, 0.4))
 
-func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modulate colors
+func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modulate colors. COLOR BY AREAS OR BY STEPS || RENDER BY STEPS (input index)
 	var map_grid = Level.map.MUs
 	var rooms = Level.rooms
 	for room:Room in rooms:

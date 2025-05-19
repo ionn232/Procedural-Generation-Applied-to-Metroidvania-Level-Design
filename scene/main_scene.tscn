@@ -13,7 +13,7 @@ script = ExtResource("1_gbq8f")
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
 map_size_x = 100
 map_size_y = 100
-number_route_steps = 10
+number_route_steps = 5
 number_of_areas = 2
 number_side_upgrades = 5
 area_size_multiplier = 1.0
@@ -95,5 +95,10 @@ theme_override_font_sizes/font_size = 32
 text = "Awaiting instructions
 0"
 horizontal_alignment = 2
+
+[node name="RouteStepsKeyset" type="Label" parent="UI/UI"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
 
 [connection signal="button_down" from="UI/UI/AdvanceBtn" to="UI" method="_on_advance_btn_button_down"]

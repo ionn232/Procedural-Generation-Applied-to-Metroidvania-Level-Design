@@ -1,7 +1,8 @@
 extends Node2D
 
-@onready var room_selection: Label = $UI/UI/RoomSelection
 @onready var layout_display: Node2D = $LayoutDisplay
+@onready var room_selection: Label = $UI/UI/RoomSelection
+@onready var route_steps_keyset: Label = $UI/UI/RouteStepsKeyset
 
 var selected_room_pos = null
 
@@ -14,9 +15,17 @@ func _process(delta: float) -> void:
 		else:
 			selected_room_pos = null
 	
-	#UI
-	#TODO: info on room and borders
-	#room_selection.text = str(mouse_room_coords)
+	#UI TODO:move to ui script, call on signal new room selected
+	route_steps_keyset.text = ''
+	for route_step:RouteStep in Level.route_steps:
+		route_steps_keyset.text += '\n------------------------------- ' + 'step ' + str(route_step.index)
+		route_steps_keyset.text += '\nkeys: '
+		for key:Reward in route_step.keyset:
+			route_steps_keyset.text += key.name + ', '
+		route_steps_keyset.text += '\nupgrades: '
+		for upgrade:Reward in route_step.reward_pool:
+			route_steps_keyset.text += upgrade.name + ', '
+	
 	if !selected_room_pos:
 		room_selection.text = 'no room selected'
 	else:
@@ -39,8 +48,8 @@ func _process(delta: float) -> void:
 		room_selection.text += '\nborder data:'
 		
 		for i:int in range(4):
+			room_selection.text += '\n'
 			var border = mu.borders[i]
-			room_selection.text += '\nborder ' + str(i) + ':  '
 			match(border):
 				Utils.border_type.EMPTY:
 					room_selection.text += 'Empty'
@@ -51,4 +60,7 @@ func _process(delta: float) -> void:
 				Utils.border_type.DEATH_ZONE:
 					room_selection.text += 'Death zone'
 				Utils.border_type.LOCKED_DOOR:
+					if len(mu.border_data[i].keyset) > 0:
+						for key in mu.border_data[i].keyset:
+							room_selection.text += str(key.name) + ' // '
 					room_selection.text += 'Gate'

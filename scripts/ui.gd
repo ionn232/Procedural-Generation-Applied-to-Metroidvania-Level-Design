@@ -2,6 +2,7 @@ extends CanvasLayer
 
 @onready var step_counter: Label = $UI/StepCounter
 @onready var route_step_info: Label = $UI/RouteStepInfo
+@onready var route_steps_keyset: Label = $UI/RouteStepsKeyset
 
 signal stage_changed()
 @onready var advance_btn: Button = $AdvanceBtn

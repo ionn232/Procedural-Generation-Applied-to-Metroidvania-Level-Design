@@ -3,6 +3,7 @@ extends Resource
 
 var area_index:int
 var step_index:int
+var associated_point:Point = null
 
 #upper leftmost MU dictates room position
 var grid_pos:Vector2i
@@ -16,18 +17,31 @@ var room_MUs : Array[MU] = []
 #room types
 var is_trap:bool = false
 
-static func createNew(pos:Vector2i, area_i:int, size:Vector2i = Vector2i(1,1)) -> Room:
+static func createNew(pos:Vector2i, area_i:int, step_i:int, size:Vector2i = Vector2i(1,1), point:Point = null) -> Room:
 	var newRoom = Room.new()
 	newRoom.grid_pos = pos
 	newRoom.room_size = size
 	newRoom.room_MUs.resize(size.x * size.y)
+	
+	newRoom.area_index = area_i
+	newRoom.step_index = step_i
+	if (point != null):
+		newRoom.associated_point = point
+	
 	Level.rooms.push_back(newRoom)
 	return newRoom
 
-static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1)) -> bool:
+static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1), origin_point:Point = null) -> bool:
 	if size.x == 0 && size.y == 0: return false #uninitialized room
 	elif pos.x + size.x > Level.map_size_x/2 || pos.x < -Level.map_size_x/2: return false #out of bounds - x
 	elif pos.y + size.y > Level.map_size_y/2 || pos.y < -Level.map_size_y/2: return false #out of bounds - y
+	
+	#check if MU exists in this position already
+	if origin_point != null:
+		var point_mu:MU = Level.map.get_mu_at(Utils.world_pos_to_room(origin_point.global_position))
+		if point_mu != null: #This mu is alredy occupied by another room. Move point.
+			origin_point.update_position(origin_point.pos + Vector2(Utils.rng.randf_range(1.0, 2.0) * 16, Utils.rng.randf_range(1.0, 2.0) * 16)) #16 -> room size TODO make global
+			return false #create room next iteration
 	
 	var current_pos:Vector2i
 	for i in range(size.x):

@@ -41,7 +41,7 @@ const STEP_DESCRIPTIONS = [
 	'Assign side upgrade, main upgrade and key item unit points',
 	'Place rooms for all points',
 	'Prepare hub zone',
-	'',
+	'Establish point connections',
 	'',
 	'',
 	'',

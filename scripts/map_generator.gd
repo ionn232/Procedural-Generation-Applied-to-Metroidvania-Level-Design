@@ -25,7 +25,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("3")
+	Utils.rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -289,7 +289,7 @@ func step_10(): ##expand intra-area points
 		expand_points(current_area.subpoints, current_area.pos, intra_area_distance, ROOM_SIZE)
 
 func step_11(): ##assign points as area connectors and establish relation
-	for i:int in range(len(Level.area_points)): ##TODO optimize. This currently assigns each relation twice.
+	for i:int in range(len(Level.area_points)):
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.relations)):
 			var related_area:AreaPoint = current_area.relations[j]
@@ -378,36 +378,37 @@ func step_12(): ##establish relations between area subpoints
 		connect_points(current_area.subpoints)
 
 func step_13(): ##assign points as fast-travel rooms
-	for i:int in range(len(Level.area_points)):
-		#identify unassigned subpoint with most relations
-		var current_area:AreaPoint = Level.area_points[i]
-		var best_candidate:Point
-		var max_num_relations:int = -1
-		for j:int in range(len(current_area.subpoints)):
-			var current_candidate:Point = current_area.subpoints[j]
-			if !(current_candidate.is_generic): continue
-			var num_relations:int = len(current_candidate.relations) #TODO: greater weight to generic points than connector points.
-			if num_relations > max_num_relations:
-				best_candidate = current_candidate
-				max_num_relations = num_relations
-		#create point and add to area
-		var fast_travel_point:FastTravelPoint = FastTravelPoint.createNew(best_candidate.position, best_candidate)
-		var replace_index:int = current_area.subpoints.find(best_candidate)
-		current_area.subpoints[replace_index] = fast_travel_point
-		#manage memory and scene tree
-		current_area.remove_child(best_candidate)
-		best_candidate.queue_free()
-		current_area.add_subarea_nodes()
-		# prepare for hub zone if applicable
-		if current_area.has_hub:
-			var intra_area_distance = area_size / float(len(current_area.subpoints))
-			#TODO 1: flat, not scaling. Behaves weird for large areas.
-			ensure_min_dist_around(fast_travel_point, current_area.subpoints, intra_area_distance*1.5)
+		for j:int in range(len(Level.area_points)):
+			#identify unassigned subpoint with most relations
+			var current_area:AreaPoint = Level.area_points[j]
+			var best_candidate:Point
+			var max_num_relations:int = -1
+			for k:int in range(len(current_area.subpoints)):
+				var current_candidate:Point = current_area.subpoints[k]
+				if !(current_candidate.is_generic): continue
+				var num_relations:int = len(current_candidate.relations) #TODO: greater weight to generic points than connector points.
+				if num_relations > max_num_relations:
+					best_candidate = current_candidate
+					max_num_relations = num_relations
+			#create point and add to area
+			var fast_travel_point:FastTravelPoint = FastTravelPoint.createNew(best_candidate.position, best_candidate)
+			var replace_index:int = current_area.subpoints.find(best_candidate)
+			current_area.subpoints[replace_index] = fast_travel_point
+			#manage memory and scene tree
+			current_area.remove_child(best_candidate)
+			best_candidate.queue_free()
+			current_area.add_subarea_nodes()
+			# prepare for hub zone if applicable
+			if current_area.has_hub:
+				var intra_area_distance = area_size / float(len(current_area.subpoints))
+				#TODO 1: flat, not scaling. Behaves weird for large areas.
+				ensure_min_dist_around(fast_travel_point, current_area.subpoints, intra_area_distance*1.5)
 
 func step_14(): ##assign spawn point
 	var initial_area:AreaPoint = Level.area_points[0]
 	var best_candidate:Point
 	var max_steps_to_crossroads:int = -1
+	#scan for most isolated point
 	for i:int in range(len(initial_area.subpoints)):
 		var current_candidate:Point = initial_area.subpoints[i]
 		if !(current_candidate.is_generic): continue
@@ -418,6 +419,7 @@ func step_14(): ##assign spawn point
 	#create point and add to area
 	var spawn_point = SpawnPoint.createNew(best_candidate.position, best_candidate)
 	var replace_index:int = initial_area.subpoints.find(best_candidate)
+	spawn_point.associated_step = Level.route_steps[0]
 	initial_area.subpoints[replace_index] = spawn_point
 	#manage memory and scene tree
 	initial_area.remove_child(best_candidate)
@@ -441,6 +443,8 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 			#Array[SideUpgrade]
 			var area_step_SUs:Array = get_intersection(current_step.reward_pool, current_area.reward_pool).filter(func(val): return val is SideUpgrade)
 			var area_step_points:Array[Point] = get_area_step_points(current_area, len(area_step_keyset) + len(area_step_SUs))
+			#set point route step
+			
 			#assign main upgrade points
 			for k:int in range(len(area_step_keyset)):
 				var current_reward:Reward = area_step_keyset[k]
@@ -464,6 +468,7 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 						key_point = KeyItemUnitPoint.createNew(best_candidate.position, best_candidate)
 						key_point.set_data(current_reward.key,current_reward, current_step)
 					var replace_index:int = current_area.subpoints.find(best_candidate)
+					key_point.associated_step = current_step
 					current_area.subpoints[replace_index] = key_point
 					area_step_points.erase(best_candidate)
 					#manage memory and scene tree
@@ -477,6 +482,7 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 				var SU_point:SideUpgradePoint = SideUpgradePoint.createNew(generic_point.position, generic_point)
 				SU_point.set_data(SU_reward, current_step)
 				var replace_index:int = current_area.subpoints.find(generic_point)
+				SU_point.associated_step = current_step
 				current_area.subpoints[replace_index] = SU_point
 				#manage memory and scene tree
 				current_area.remove_child(generic_point)
@@ -484,6 +490,23 @@ func step_15(): ##assign points as side upgrades, main upgrades and key item uni
 				current_area.add_subarea_nodes()
 
 func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
+	#necessary computations for next steps
+	var current_area_index:int = -1
+	for current_step:RouteStep in Level.route_steps:
+		for current_area:AreaPoint in current_step.areas:
+			if current_area.area_index > current_area_index:
+				current_area_index = current_area.area_index
+				for subpoint:Point in current_area.subpoints:
+					#allocate memory for point relation tracking
+					subpoint.relation_is_mapped.resize(len(subpoint.relations))
+					subpoint.relation_is_mapped.fill(false) #TODO this is redundant ?
+					#assign step indexes for connector points and fast travel points
+					if (subpoint is ConnectionPoint) || (subpoint is FastTravelPoint):
+						var min_neighbor_step_index = INF
+						for relation:Point in subpoint.relations:
+							if relation.associated_step != null && relation.associated_step.index < min_neighbor_step_index: min_neighbor_step_index = relation.associated_step.index
+						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
+	
 	for i:int in range(len(Level.area_points)):
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.subpoints)):
@@ -491,9 +514,10 @@ func step_16(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 			var room_position:Vector2i = Utils.world_pos_to_room(current_point.global_position)
 			var room_dimensions:Vector2i = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
 			#reroll size to avoid room superposition
-			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions): #TODO fix, still crashes sometimes ("2", 100*100, 5, 5, 2, 2)
+			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions, current_point):
 				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
-			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, room_dimensions) #TODO round?
+				room_position = Utils.world_pos_to_room(current_point.global_position)
+			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, current_point.associated_step.index , room_dimensions, current_point) #TODO round?
 			new_room.createRoomMUs()
 			current_point.associated_room = new_room
 			var random_room_mu:MU = get_random_MU(new_room)
@@ -533,7 +557,7 @@ func step_17(): ##Place hub zone rooms
 				new_room_pos = hub_room_1.grid_pos + rand_direction_vec * new_room_dimensions
 			else:
 				new_room_pos = hub_room_1.grid_pos + rand_direction_vec * hub_room_1.room_size
-		var hub_room_2:Room = Room.createNew(new_room_pos, hub_area.area_index, new_room_dimensions)
+		var hub_room_2:Room = Room.createNew(new_room_pos, hub_area.area_index, hub_room_1.step_index , new_room_dimensions)
 		hub_room_2.createRoomMUs()
 		var shop_mu:MU = get_free_MU(hub_room_2)
 		shop_mu.is_shop = true
@@ -542,24 +566,47 @@ func step_17(): ##Place hub zone rooms
 		connect_adjacent_rooms(hub_room_1, hub_room_2)
 
 func step_18(): ##Map out intra-area connections
-	#TODO: do this before now when assigning relations
-	for area:AreaPoint in Level.area_points:
-		for subpoint:Point in area.subpoints:
-			subpoint.relation_is_mapped.resize(len(subpoint.relations))
-			subpoint.relation_is_mapped.fill(false) #TODO this is redundant ?
-	
-	#map out subpoint connections for each area
-	for current_area:AreaPoint in Level.area_points:
-		for current_point:Point in current_area.subpoints:
-			for i:int in range(len(current_point.relations)):
-				if !current_point.relation_is_mapped[i]:
-					var relation:Point = current_point.relations[i]
-					connect_rooms(current_point.associated_room, relation.associated_room)
-					current_point.relation_is_mapped[i] = true
-					relation.relation_is_mapped[relation.relations.find(current_point)] = true
+	#get step-area points
+	for i:int in range(len(Level.route_steps)):
+		var current_step:RouteStep
+		current_step = Level.route_steps[i]
+		var previous_step_keyset = (Level.route_steps[i-1] if i>0 else null)
+		for j:int in range(len(current_step.areas)):
+			#map out subpoint connections for each area
+			var current_area:AreaPoint = current_step.areas[j]
+			var area_step_points:Array = current_area.subpoints.filter(func(val:Point): return val.associated_step == current_step )
+			for current_point:Point in area_step_points:
+				var current_point_room:Room = current_point.associated_room
+				#gate adjacent rooms to avoid sequence breaking
+				gate_adjacent_rooms(current_point_room, current_step)
+				
+				for k:int in range(len(current_point.relations)):
+					var relation:Point = current_point.relations[k]
+					var relation_room:Room = relation.associated_room
+					
+					if !current_point.relation_is_mapped[k]:
+						connect_rooms(current_point.associated_room, relation.associated_room)
+						current_point.relation_is_mapped[k] = true
+						relation.relation_is_mapped[relation.relations.find(current_point)] = true
 
 func step_19(): ##Map out inter-area connections
 	pass
+
+func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
+	var route_step_index:int = origin.step_index
+	var debug = Level.rooms
+	if route_step_index == 0: return #first connections, no previous keys, no gates necessary
+	var previous_step_keyset:Array[Reward] = Level.route_steps[route_step_index-1].keyset
+	
+	for current_mu:MU in origin.room_MUs:
+		for direction:Utils.direction in range(4):
+			var border:Utils.border_type = current_mu.borders[direction]
+			if border == Utils.border_type.LOCKED_DOOR:
+				var direction_vec:Vector2i = Utils.direction_to_vec2i(direction)
+				var adjacent_connected_mu:MU = Level.map.get_mu_at(current_mu.grid_pos + direction_vec)
+				if adjacent_connected_mu.parent_room.step_index != origin.step_index:
+					print('\ngate here: ', current_mu.grid_pos, ' to ', adjacent_connected_mu.grid_pos, ' // key: ', previous_step_keyset[0].name)
+					print('indexes: ', origin.step_index, ' -> ', adjacent_connected_mu.parent_room.step_index)
 
 func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): #TODO fix crash
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
@@ -654,9 +701,9 @@ func connect_rooms(origin:Room, destination:Room):
 			if target_mu.parent_room == destination:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				return
-			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms TODO: more memory (second previous)
+			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms
 				continue #reroll
-			#TODO 1: discard if different area index, barriers if lower step index (TODO: register step indexes)
+			#TODO barriers if lower step index here AND when creating new room from here (TODO: register step indexes)
 			else:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				previous_room = current_room
@@ -667,12 +714,15 @@ func connect_rooms(origin:Room, destination:Room):
 			var room_dimensions:Vector2i 
 			#avoid room superposition
 			while !Room.canCreate(room_position, room_dimensions):
-				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3))
+				#reroll direction to avoid crashing on map limit
+				direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
+				direction_vec = Utils.direction_to_vec2i(direction)
+				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO: weights based on position difference current->objective
 				if direction_vec.x < 0 || direction_vec.y < 0:
 					room_position = current_pos + direction_vec * room_dimensions
 				else:
 					room_position = current_pos + direction_vec
-			var new_room:Room = Room.createNew(room_position, origin.area_index, room_dimensions) 
+			var new_room:Room = Room.createNew(room_position, origin.area_index, origin.associated_point.associated_step.index, room_dimensions) 
 			new_room.createRoomMUs()
 			connect_adjacent_rooms(current_room, new_room)
 			previous_room = current_room
@@ -700,7 +750,7 @@ func compute_direction_weighs(position:Vector2i, objective:Vector2i) -> Array[fl
 	#get weight for each direction
 	for direction:Utils.direction in range(4):
 		var direction_vector:Vector2 = Utils.direction_to_vec2i(direction)
-		var weight:float = clampf(direction_vector.dot(direction_to_objective), 0.01, 1.0) #TODO: tweak min
+		var weight:float = clampf(direction_vector.dot(direction_to_objective), 0.05, 1.0) #TODO: tweak min
 		result[direction] = weight
 		sum += weight
 	for i:int in range(4):
@@ -761,16 +811,25 @@ func get_intersection(arr1:Array, arr2:Array) -> Array:
 		if element in arr2: intersection.push_back(element)
 	return intersection
 
-func steps_to_crossroads(point:Point) -> int: #BUG: if points are unconnected. Can't happen but a fix wouldn't hurt.
+func steps_to_crossroads(point:Point, seen_points:Array[Point] = []) -> int:
+	seen_points.push_back(point)
 	#base case
-	if len(point.relations) > 1:
-		return 0
+	if len(point.relations) > 2:
+		return 1
 	#recursive case
 	else:
-		var sum:int = 1
-		for relation:Point in point.relations: #should always be 1 relation
-			sum += steps_to_crossroads(relation)
-		return sum
+		var steps:int
+		var min_steps = INF
+		var dead_end:bool=true
+		for relation:Point in point.relations:
+			if !seen_points.has(relation):
+				steps = steps_to_crossroads(relation, seen_points)
+				dead_end = false
+				if steps < min_steps:
+					min_steps = steps
+		if dead_end: steps = 0
+		else: steps = min_steps + 1
+		return steps
 
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):
@@ -1028,6 +1087,9 @@ func _draw():
 			
 			var debug_index = current_area.subpoints.find(subpoint)
 			draw_string(font , subpoint.global_position + Vector2(0,20), str(debug_index), 0, -1, 16, Color.BLACK)
+			
+			if subpoint.associated_step != null:
+				draw_string(font , subpoint.global_position + Vector2(0,-40), str(subpoint.associated_step.index), 0, -1, 16, Color.DEEP_PINK)
 			
 			if subpoint is FastTravelPoint and current_area.has_hub:
 				draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)

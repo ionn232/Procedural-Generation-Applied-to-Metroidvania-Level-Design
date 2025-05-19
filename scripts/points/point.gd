@@ -17,6 +17,8 @@ var relation_is_mapped : Array[bool] #index parity ^, relation rooms built?
 
 var associated_room:Room
 
+var associated_step:RouteStep
+
 static func createNew(pos:Vector2, generic_identity:Point = null) -> Point:
 	var newPoint = POINT.instantiate()
 	newPoint.relations = []

@@ -11,8 +11,6 @@ extends Node2D
 @export_range (0, 9) var number_side_upgrades:int
 @export_range (0.1,3.0) var area_size_multiplier:float
 
-#DEBUG
-@onready var layout_display: LayoutDisplay = $"../LayoutDisplay"
 
 #area size DIAMETER
 var area_size:float
@@ -40,6 +38,8 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	var w_h_ratio:float = map_size_x/float(map_size_y)
 	area_size_xy = Vector2(map_size_x * w_h_ratio, map_size_y / w_h_ratio)
 	area_size_rooms = ceil(area_size / 16.0)
+	Level.num_areas = number_of_areas
+	Level.num_route_steps = number_route_steps
 	
 	#load reward pool
 	RewardPool.import_reward_pool()

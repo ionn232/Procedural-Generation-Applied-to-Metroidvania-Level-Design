@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://dscphoch3nqjy"]
+
+[ext_resource type="TileSet" uid="uid://bb1r74h5164y5" path="res://game_specific_resources/layout_tilemaps/Style C/tileset.tres" id="1_a8mph"]
+
+[node name="RoomLayout" type="TileMapLayer"]
+texture_filter = 1
+tile_set = ExtResource("1_a8mph")

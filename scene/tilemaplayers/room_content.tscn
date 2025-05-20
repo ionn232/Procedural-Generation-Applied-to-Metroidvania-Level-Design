@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://bpuvuqcdvabib"]
+
+[ext_resource type="TileSet" uid="uid://c7dt66dbvlgs" path="res://game_specific_resources/tilemap_icons/tilemap_icons.tres" id="1_noukr"]
+
+[node name="RoomContent" type="TileMapLayer"]
+texture_filter = 1
+position = Vector2(-4, -4)
+tile_set = ExtResource("1_noukr")

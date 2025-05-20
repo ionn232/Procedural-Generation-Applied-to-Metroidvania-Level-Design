@@ -53,4 +53,4 @@ func _draw(): #USES LOCAL COORDINATES!
 	
 	#circle hub-containing area
 	if self.has_hub:
-		draw_circle(Vector2(0,0), 10, Utils.area_colors[area_index] * Color(1,1,1,sprite.modulate.a), false, 2.0, true)
+		draw_circle(Vector2(0,0), 10, Utils.area_colors[area_index] * Color(1,1,1,sprite.modulate.a*0.5), false, 2.0, true)

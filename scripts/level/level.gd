@@ -14,8 +14,10 @@ static var map_size_x:int
 static var map_size_y:int
 
 #area points
+static var num_areas:int
 static var area_points:Array[AreaPoint]
 static var initial_area:AreaPoint
 
 #route steps
+static var num_route_steps:int
 static var route_steps:Array[RouteStep]

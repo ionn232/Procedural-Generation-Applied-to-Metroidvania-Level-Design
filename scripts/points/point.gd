@@ -11,6 +11,7 @@ const font = preload("res://data/upheavtt.ttf")
 var pos : Vector2
 
 var is_generic:bool = true
+var is_protected:bool = false
 
 var relations : Array #type: Array[Point] (or subclass)
 var relation_is_mapped : Array[bool] #index parity ^, relation rooms built? 
@@ -31,7 +32,8 @@ func update_position(newPos:Vector2):
 	position = newPos
 
 func set_point_color(newColor:Color):
-	sprite.modulate = newColor
+	#sprite.modulate = newColor
+	sprite.self_modulate = newColor
 
 
 # Called when the node enters the scene tree for the first time.

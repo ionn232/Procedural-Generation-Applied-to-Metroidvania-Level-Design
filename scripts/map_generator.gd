@@ -25,7 +25,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("1")
+	Utils.rng.seed = hash("2")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -425,7 +425,58 @@ func step_13(): ##assign points as fast-travel rooms
 	#best_candidate.queue_free()
 	#initial_area.add_subarea_nodes()
 
+func protect_required_subpoints(area:AreaPoint): #protect smallest series of points that connects area connectors with progression
+	#get origin and destination
+	var protected_points:Array[Point]
+	var valid_area_connectors:Array = area.subpoints.filter(
+		func(val:Point): return (val is ConnectionPoint) && val.area_relation_is_progress.has(true)
+		)
+	if len(valid_area_connectors) <= 1: return
+	var origin:ConnectionPoint = valid_area_connectors[0]
+	var destination:ConnectionPoint = valid_area_connectors[len(valid_area_connectors)-1]
+	#variables for shortest path problem with unweighted graph
+	var visited = {}
+	var parent = {}
+	var queue:Array[Point] = []
+	var distance = {}
+	#initialize dictionary
+	for point:Point in area.subpoints:
+		visited[point] = false
+		distance[point] = -1
+		parent[point] = null
+	visited[origin] = true
+	distance[origin] = 0
+	queue.append(origin)
+	#bfs algorithm on subpoints graph
+	print('\n path for area ', area.area_index, ':')
+	while queue.size() > 0:
+		var current = queue.pop_front()
+		#shortest path found, protect points
+		if current == destination:
+			var step:Point = destination
+			while step != null:
+				print(step.name)
+				step.is_protected = true
+				step = parent[step]
+			return
+		#bfs iteration
+		for neighbor in current.relations:
+			if not visited[neighbor]:
+				visited[neighbor] = true
+				distance[neighbor] = distance[current] + 1
+				parent[neighbor] = current
+				queue.append(neighbor)
+	# No path found
+	print('DEBUG: no protected points in area: ', area.area_index)
+
 func step_14(): ##assign points as spawn point, side upgrades, main upgrades and key item units
+	#identify protected points for each area beyond initial
+	for current_area:AreaPoint in Level.area_points:
+		if current_area.area_index == 0: continue #spawn point placement procedure takes care of the problem
+		protect_required_subpoints(current_area)
+		
+	
+	#assign points
 	var spawn_placed:bool = false
 	for i:int in range(len(Level.route_steps)):
 		var current_step:RouteStep = Level.route_steps[i]
@@ -525,6 +576,11 @@ func step_14(): ##assign points as spawn point, side upgrades, main upgrades and
 					if (subpoint is ConnectionPoint) || (subpoint is FastTravelPoint):
 						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
+	
+	#debug
+	for area:AreaPoint in Level.area_points:
+		for subpoint:Point in area.subpoints:
+			if subpoint.is_protected: subpoint.set_point_color(Color.BLACK) #debug
 
 func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
 	for i:int in range(len(Level.area_points)):
@@ -613,7 +669,6 @@ func step_18(): ##Map out inter-area connections
 	for current_area:AreaPoint in Level.area_points:
 		var connectors:Array = current_area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
 		#for current_connector:ConnectionPoint in connectors:
-			
 
 
 func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int: #propagates over other indexless points

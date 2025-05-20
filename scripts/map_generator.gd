@@ -98,6 +98,8 @@ func _stage_handler():
 			step_12()
 		13:
 			step_13()
+		14:
+			step_14()
 		15:
 			step_15()
 		16:
@@ -508,8 +510,7 @@ func step_14(): ##assign points as spawn point, side upgrades, main upgrades and
 				current_area.remove_child(generic_point)
 				generic_point.queue_free()
 				current_area.add_subarea_nodes()
-
-func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
+				
 	#necessary computations for next steps
 	var current_area_index:int = -1
 	for current_step:RouteStep in Level.route_steps:
@@ -524,7 +525,8 @@ func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 					if (subpoint is ConnectionPoint) || (subpoint is FastTravelPoint):
 						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
-	
+
+func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
 	for i:int in range(len(Level.area_points)):
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.subpoints)):
@@ -608,7 +610,10 @@ func step_17(): ##Map out intra-area connections
 						relation.relation_is_mapped[relation.relations.find(current_point)] = true
 
 func step_18(): ##Map out inter-area connections
-	pass
+	for current_area:AreaPoint in Level.area_points:
+		var connectors:Array = current_area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
+		#for current_connector:ConnectionPoint in connectors:
+			
 
 
 func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int: #propagates over other indexless points
@@ -618,14 +623,17 @@ func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int:
 		return point.associated_step.index
 	#recursive case
 	else:
-		var index:int
+		var index 
 		var min_index = INF
+		var dead_end:bool = true
 		for relation:Point in point.relations:
 			if !seen_points.has(relation):
+				dead_end = false
 				index = min_neighbor_step_index(relation, seen_points)
 				if index < min_index:
 					min_index = index
-		return index
+		if dead_end: return 9999 #note: int(INF) cast results in negative number, fucks up calculation, return this instead
+		else: return min_index
 
 func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 	var route_step_index:int = origin.step_index
@@ -715,12 +723,12 @@ func connect_rooms(origin:Room, destination:Room):
 	var current_pos:Vector2i
 	var direction_vec:Vector2i
 	
-	var different_steps:bool = false
-	var create_gate:bool = false
+	#var different_steps:bool = false
+	var on_existing_path:bool = false
 	var destination_previous_step_keyset:Array[Reward] = Level.route_steps[destination.step_index - 1].keyset
 	if origin.step_index < destination.step_index: #TODO: test if it can be higher i think it shouldnt
-		different_steps = true
-		create_gate = true
+		#different_steps = true
+		on_existing_path = true
 	
 	#step 0, get non-randomized direction
 	direction_vec = Utils.absolute_direction(origin.grid_pos, destination.grid_pos) #BUG
@@ -751,12 +759,13 @@ func connect_rooms(origin:Room, destination:Room):
 				continue #reroll
 			##TODO barriers if lower step index here AND when creating new room from here (TODO: register step indexes) ##note: ascending order, objective will never have lower step index
 			#TODO: create gate when first creating new room and when entering an existing room (this resets the first condition) (only create when first entering new room) (only if current and origin have diff step index)
-			elif different_steps && !create_gate:
+			#elif different_steps && !create_gate:
+			if !on_existing_path && (origin.step_index > target_mu.parent_room.step_index):
 				var connection_gate:LockedDoor = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				previous_room = current_room
 				current_room = target_mu.parent_room
-				create_gate = true
+				on_existing_path = true
 			else:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				previous_room = current_room
@@ -779,9 +788,9 @@ func connect_rooms(origin:Room, destination:Room):
 			new_room.createRoomMUs()
 			#create gate to connect if necessary
 			var connection_gate:LockedDoor = null
-			if create_gate:
+			if on_existing_path:
 				connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
-				create_gate = false
+				on_existing_path = false
 			connect_adjacent_rooms(current_room, new_room, connection_gate)
 			previous_room = current_room
 			current_room = new_room

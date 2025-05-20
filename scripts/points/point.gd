@@ -35,6 +35,13 @@ func set_point_color(newColor:Color):
 	#sprite.modulate = newColor
 	sprite.self_modulate = newColor
 
+func absorb_relations(original_point:Point):
+	#restore relations from previous generic point to self and relations
+	self.relations = original_point.relations
+	for existing_relation:Point in original_point.relations:
+		var relation_relations:Array = existing_relation.relations
+		var index = relation_relations.find(original_point)
+		relation_relations[index] = self
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

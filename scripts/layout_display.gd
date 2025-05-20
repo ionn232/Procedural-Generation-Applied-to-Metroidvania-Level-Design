@@ -9,7 +9,6 @@ extends Node2D
 @onready var tilemap_content: TileMapLayer = $RoomContent
 @onready var tileset_content = tilemap_content.tile_set
 
-@export var generator: MapGenerator
 
 const empty_atlas := Vector2i(4, 2)
 const full_atlas := Vector2i(5,4)

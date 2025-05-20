@@ -13,14 +13,8 @@ static func createNew(pos:Vector2, generic_identity:Point = null) -> SideUpgrade
 	var newPoint = SIDE_UPGRADE_POINT.instantiate()
 	newPoint.position = pos
 	newPoint.pos = pos
-	newPoint.relations = generic_identity.relations
+	#newPoint.relations = generic_identity.relations
 	newPoint.is_generic = false
-	
-	#restore relations from previous generic point to self and relations
-	for existing_relation:Point in generic_identity.relations:
-		var relation_relations:Array = existing_relation.relations
-		var index = relation_relations.find(generic_identity)
-		relation_relations[index] = newPoint
 	
 	return newPoint
 

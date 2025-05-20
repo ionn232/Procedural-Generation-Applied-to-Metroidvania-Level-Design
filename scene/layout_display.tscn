@@ -15,3 +15,7 @@ tile_set = ExtResource("2_6b0kb")
 texture_filter = 1
 position = Vector2(-4, -4)
 tile_set = ExtResource("3_hy4o2")
+
+[node name="RoomLayoutContainer" type="Node2D" parent="."]
+
+[node name="RoomContentContainer" type="Node2D" parent="."]

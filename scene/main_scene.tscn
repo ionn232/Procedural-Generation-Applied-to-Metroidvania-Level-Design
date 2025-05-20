@@ -15,11 +15,10 @@ map_size_x = 100
 map_size_y = 100
 number_route_steps = 9
 number_of_areas = 7
-number_side_upgrades = 5
-area_size_multiplier = 2.5
+number_side_upgrades = 9
+area_size_multiplier = 2.2
 
-[node name="LayoutDisplay" parent="." node_paths=PackedStringArray("generator") instance=ExtResource("2_qa15b")]
-generator = NodePath("../MapGenerator")
+[node name="LayoutDisplay" parent="." instance=ExtResource("2_qa15b")]
 
 [node name="Grid" type="Node2D" parent="."]
 z_index = -1

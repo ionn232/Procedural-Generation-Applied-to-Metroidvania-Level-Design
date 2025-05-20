@@ -11,7 +11,8 @@ extends Node2D
 @export_range (0, 9) var number_side_upgrades:int
 @export_range (0.1,3.0) var area_size_multiplier:float
 
-
+#DEBUG
+@onready var layout_display: LayoutDisplay = $"../LayoutDisplay"
 
 #area size DIAMETER
 var area_size:float
@@ -25,7 +26,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("2")
+	#Utils.rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -403,35 +404,11 @@ func step_13(): ##assign points as fast-travel rooms
 				#TODO 1: flat, not scaling. Behaves weird for large areas.
 				ensure_min_dist_around(fast_travel_point, current_area.subpoints, intra_area_distance*1.5)
 
-#func step_14(): ##assign spawn point TODO remove, this is deprecated
-	#var initial_area:AreaPoint = Level.area_points[0]
-	#var best_candidate:Point
-	#var max_steps_to_crossroads:int = -1
-	##scan for most isolated point within the first area-step
-	#for i:int in range(len(initial_area.subpoints)):
-		#var current_candidate:Point = initial_area.subpoints[i]
-		#if !(current_candidate.is_generic): continue
-		#var crossroad_step_distance:int = steps_to_crossroads(current_candidate)
-		#if crossroad_step_distance > max_steps_to_crossroads:
-			#best_candidate = current_candidate
-			#max_steps_to_crossroads = crossroad_step_distance
-	##create point and add to area
-	#var spawn_point = SpawnPoint.createNew(best_candidate.position, best_candidate)
-	#var replace_index:int = initial_area.subpoints.find(best_candidate)
-	#spawn_point.associated_step = Level.route_steps[0]
-	#initial_area.subpoints[replace_index] = spawn_point
-	##manage memory and scene tree
-	#initial_area.remove_child(best_candidate)
-	#best_candidate.queue_free()
-	#initial_area.add_subarea_nodes()
-
 func step_14(): ##assign points as spawn point, side upgrades, main upgrades and key item units
 	#identify protected points for each area beyond initial
 	for current_area:AreaPoint in Level.area_points:
 		if current_area.area_index == 0: continue #spawn point placement procedure takes care of the problem
 		set_protected_points(current_area)
-		
-	
 	#assign points
 	var spawn_placed:bool = false
 	for i:int in range(len(Level.route_steps)):
@@ -504,13 +481,8 @@ func step_14(): ##assign points as spawn point, side upgrades, main upgrades and
 				var SU_reward:Reward = area_step_SUs[k]
 				var SU_point:SideUpgradePoint = SideUpgradePoint.createNew(generic_point.position, generic_point)
 				SU_point.set_data(SU_reward, current_step)
-				var replace_index:int = current_area.subpoints.find(generic_point)
 				SU_point.associated_step = current_step
-				current_area.subpoints[replace_index] = SU_point
-				#manage memory and scene tree
-				current_area.remove_child(generic_point)
-				generic_point.queue_free()
-				current_area.add_subarea_nodes()
+				check_protect_point(generic_point, SU_point, current_area)
 	
 	#necessary computations for next steps
 	var current_area_index:int = -1
@@ -523,43 +495,14 @@ func step_14(): ##assign points as spawn point, side upgrades, main upgrades and
 					subpoint.relation_is_mapped.resize(len(subpoint.relations))
 					subpoint.relation_is_mapped.fill(false) #TODO this is redundant ?
 					#assign step indexes for connector points and fast travel points
-					if (subpoint is ConnectionPoint) || (subpoint is FastTravelPoint):
+					if (subpoint is FastTravelPoint):
 						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
-	
-	#debug
-	for area:AreaPoint in Level.area_points:
-		for subpoint:Point in area.subpoints:
-			if subpoint.is_protected: subpoint.set_point_color(Color.BLACK) #debug
-
-func check_protect_point(original:Point, new_point, area:AreaPoint, area_step_points:Array[Point]):
-	#check if point can be replaced
-	if original.is_protected:
-		var original_required_step_index:int = min_neighbor_step_index(original)
-		var new_step_index:int = new_point.associated_step.index
-		#if cant replace protected point, new point is connected to it instead of replacing
-		if new_step_index > original_required_step_index:
-			#add new point to area
-			area.subpoints.push_back(new_point)
-			original.relations.push_back(new_point)
-			new_point.relations.push_back(original)
-			area.add_subarea_nodes()
-			#set step and remove from elegible pool
-			original.is_generic = false #even though it's still generic, a new point is created so this keeps the total available balanced
-			original.associated_step = Level.route_steps[original_required_step_index]
-			area_step_points.erase(original)
-			#move new point a room over in a random direction so it doesen't overlap with original
-			new_point.update_position(new_point.pos + (Utils.direction_to_vec2i(Utils.rng.randi_range(0, 3)) * ROOM_SIZE))
-			return
-	#replace original point for new point
-	new_point.absorb_relations(original)
-	var replace_index:int = area.subpoints.find(original)
-	area.subpoints[replace_index] = new_point
-	area_step_points.erase(original)
-	#manage memory and scene tree
-	area.remove_child(original)
-	original.queue_free()
-	area.add_subarea_nodes()
+					elif (subpoint is ConnectionPoint):
+						subpoint.area_relation_is_mapped.resize(len(subpoint.area_relations))
+						subpoint.area_relation_is_mapped.fill(false) #TODO this is redundant ?
+						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
+						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
 
 func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
 	for i:int in range(len(Level.area_points)):
@@ -620,7 +563,7 @@ func step_16(): ##Place hub zone rooms
 		save_mu.is_save = true
 		connect_adjacent_rooms(hub_room_1, hub_room_2)
 
-func step_17(): ##Map out intra-area connections
+func step_17(): ##Map out connections
 	#get step-area points
 	for i:int in range(len(Level.route_steps)):
 		var current_step:RouteStep
@@ -632,17 +575,26 @@ func step_17(): ##Map out intra-area connections
 			var area_step_points:Array = current_area.subpoints.filter(func(val:Point): return val.associated_step == current_step )
 			for current_point:Point in area_step_points:
 				var current_point_room:Room = current_point.associated_room
+				#if current_point is FastTravelPoint: return
 				#gate adjacent rooms to avoid sequence breaking
 				gate_adjacent_rooms(current_point_room, current_step)
-				
+				#intra-area connections
 				for k:int in range(len(current_point.relations)):
 					var relation:Point = current_point.relations[k]
 					var relation_room:Room = relation.associated_room
-					
 					if !current_point.relation_is_mapped[k]:
-						connect_rooms(current_point.associated_room, relation.associated_room)
+						connect_rooms(current_point.associated_room, relation_room)
 						current_point.relation_is_mapped[k] = true
 						relation.relation_is_mapped[relation.relations.find(current_point)] = true
+				#inter-area connections
+				if current_point is ConnectionPoint:
+					for k:int in range(len(current_point.area_relations)):
+						var area_relation:Point = current_point.area_relations[k]
+						var relation_room:Room = area_relation.associated_room
+						if !current_point.area_relation_is_mapped[k]:
+							connect_rooms(current_point.associated_room, relation_room, current_point.area_relation_is_progress[k])
+							current_point.area_relation_is_mapped[k] = true
+							area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
 
 func step_18(): ##Map out inter-area connections
 	for current_area:AreaPoint in Level.area_points:
@@ -655,7 +607,11 @@ func set_protected_points(area:AreaPoint): #protect smallest series of points th
 	var valid_area_connectors:Array = area.subpoints.filter(
 		func(val:Point): return (val is ConnectionPoint) && val.area_relation_is_progress.has(true)
 		)
-	if len(valid_area_connectors) <= 1: return
+	if len(valid_area_connectors) < 1: 
+		return
+	elif len(valid_area_connectors) == 1:
+		set_area_origin_step(area, valid_area_connectors[0])
+		return
 	var origin:ConnectionPoint = valid_area_connectors[0]
 	var destination:ConnectionPoint = valid_area_connectors[len(valid_area_connectors)-1]
 	#variables for shortest path problem with unweighted graph
@@ -680,6 +636,7 @@ func set_protected_points(area:AreaPoint): #protect smallest series of points th
 			while step != null:
 				step.is_protected = true
 				step = parent[step]
+			set_area_origin_step(area, origin)
 			return
 		#bfs iteration
 		for neighbor in current.relations:
@@ -688,6 +645,44 @@ func set_protected_points(area:AreaPoint): #protect smallest series of points th
 				distance[neighbor] = distance[current] + 1
 				parent[neighbor] = current
 				queue.append(neighbor)
+
+func set_area_origin_step(area:AreaPoint, origin:Point):
+	for route_step:RouteStep in Level.route_steps:
+		if area in route_step.areas:
+			origin.associated_step = route_step
+			return
+	print('ERROR area ', area.area_index, ' not present in any steps!')
+
+func check_protect_point(original:Point, new_point:Point, area:AreaPoint, area_step_points:Array[Point] = []):
+	#check if point can be replaced
+	if original.is_protected:
+		var original_required_step_index:int = min_neighbor_step_index(original)
+		var new_step_index:int = new_point.associated_step.index
+		#if cant replace protected point, new point is connected to it instead of replacing
+		if new_step_index > original_required_step_index:
+			#add new point to area
+			area.subpoints.push_back(new_point)
+			original.relations.push_back(new_point)
+			new_point.relations.push_back(original)
+			area.add_subarea_nodes()
+			#set step and remove from elegible pool
+			original.is_generic = false #even though it's still generic, a new point is created so this keeps the total available balanced
+			original.associated_step = Level.route_steps[original_required_step_index]
+			area_step_points.erase(original)
+			#move new point in a random direction so it doesen't overlap with original
+			var intra_area_distance = area_size / float(len(area.subpoints))
+			new_point.update_position(new_point.pos + Vector2(Utils.rng.randf_range(-1, 1), Utils.rng.randf_range(-1, 1)).normalized() * intra_area_distance)
+			return
+	#replace original point for new point
+	new_point.absorb_relations(original)
+	new_point.is_protected = original.is_protected #just for visualization purposes
+	var replace_index:int = area.subpoints.find(original)
+	area.subpoints[replace_index] = new_point
+	area_step_points.erase(original)
+	#manage memory and scene tree
+	area.remove_child(original)
+	original.queue_free()
+	area.add_subarea_nodes()
 
 func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int: #propagates over other indexless points
 	seen_points.push_back(point)
@@ -788,7 +783,7 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): #TODO fix
 	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 	r2_mu.border_data[neg_direction] = connection_gate
 
-func connect_rooms(origin:Room, destination:Room):
+func connect_rooms(origin:Room, destination:Room, is_progress:bool = true):
 	var current_room:Room = origin
 	var previous_room:Room = null
 	var current_MU:MU
@@ -796,11 +791,9 @@ func connect_rooms(origin:Room, destination:Room):
 	var current_pos:Vector2i
 	var direction_vec:Vector2i
 	
-	#var different_steps:bool = false
 	var on_existing_path:bool = false
 	var destination_previous_step_keyset:Array[Reward] = Level.route_steps[destination.step_index - 1].keyset
-	if origin.step_index < destination.step_index: #TODO: test if it can be higher i think it shouldnt
-		#different_steps = true
+	if origin.step_index < destination.step_index:
 		on_existing_path = true
 	
 	#step 0, get non-randomized direction
@@ -813,9 +806,6 @@ func connect_rooms(origin:Room, destination:Room):
 		if count == 1000:
 			print('LIMIT REACHED')
 			return
-		elif current_room == destination:
-			print('dest - debug (shouldnt happen)')
-			return
 		#weighted random walk: decide direction
 		if count > 1:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
@@ -825,17 +815,34 @@ func connect_rooms(origin:Room, destination:Room):
 		var target_mu:MU = Level.map.get_mu_at(current_pos + direction_vec)
 		#adjacent room exists
 		if target_mu != null:
+			#adjacent room is destination
 			if target_mu.parent_room == destination:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				return
-			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms
+			#adjacent room was just visited
+			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms TODO: add >1 memory
 				continue #reroll
-			##TODO barriers if lower step index here AND when creating new room from here (TODO: register step indexes) ##note: ascending order, objective will never have lower step index
-			#TODO: create gate when first creating new room and when entering an existing room (this resets the first condition) (only create when first entering new room) (only if current and origin have diff step index)
-			#elif different_steps && !create_gate:
-			if !on_existing_path && (origin.step_index > target_mu.parent_room.step_index):
-				var connection_gate:LockedDoor = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
-				connect_adjacent_rooms(current_room, target_mu.parent_room)
+			elif current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR: #avoid overwriting doors, prevents softlocks TODO: try other mu instead of rerolling
+				continue
+			#adjacent room is existing of different step index
+			elif !on_existing_path && (origin.step_index != target_mu.parent_room.step_index):
+				var connection_gate:LockedDoor
+				if is_progress:
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+				else:
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
+				connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate)
+				previous_room = current_room
+				current_room = target_mu.parent_room
+				on_existing_path = true
+			#adjacent room is existing, destination room should not be reached from said existing room
+			elif !on_existing_path && (origin.step_index != destination.step_index):
+				var connection_gate:LockedDoor 
+				if is_progress:
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+				else:
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
+				connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate)
 				previous_room = current_room
 				current_room = target_mu.parent_room
 				on_existing_path = true
@@ -862,7 +869,10 @@ func connect_rooms(origin:Room, destination:Room):
 			#create gate to connect if necessary
 			var connection_gate:LockedDoor = null
 			if on_existing_path:
-				connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+				if is_progress:
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+				else:
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
 				on_existing_path = false
 			connect_adjacent_rooms(current_room, new_room, connection_gate)
 			previous_room = current_room
@@ -1052,7 +1062,7 @@ func expand_points(points:Array, center:Vector2, min_distance:float, expansion_f
 					second_point.update_position(second_point.pos + current_to_second * (min_distance - distance + 0.1)) #DO NOT REMOVE THE 0.1
 					clear = false
 
-func connect_points(points:Array): #BUG: sometimes isolated segments are formed
+func connect_points(points:Array):
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		compute_point_relations(points, i)
@@ -1113,21 +1123,21 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 		if suitable:
 			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting maybe
 
-func join_stragglers(points:Array): #TODO: remove. deprecated for clean_islands
-	for current_point:Point in points:
-		if len(current_point.relations) == 0:
-			print('straggling point: ', points.find(current_point))
-			var min_dist:float = INF
-			var closest_point_index:int
-			for i:int in range(len(points)):
-				var second_point:Point = points[i]
-				if current_point == second_point: continue
-				var distance_sq:float = current_point.global_position.distance_squared_to(second_point.global_position)
-				if distance_sq < min_dist:
-					min_dist = distance_sq
-					closest_point_index = i
-			current_point.relations.push_back(points[closest_point_index])
-			points[closest_point_index].relations.push_back(current_point)
+#func join_stragglers(points:Array): #TODO: remove. deprecated for clean_islands
+	#for current_point:Point in points:
+		#if len(current_point.relations) == 0:
+			#print('straggling point: ', points.find(current_point))
+			#var min_dist:float = INF
+			#var closest_point_index:int
+			#for i:int in range(len(points)):
+				#var second_point:Point = points[i]
+				#if current_point == second_point: continue
+				#var distance_sq:float = current_point.global_position.distance_squared_to(second_point.global_position)
+				#if distance_sq < min_dist:
+					#min_dist = distance_sq
+					#closest_point_index = i
+			#current_point.relations.push_back(points[closest_point_index])
+			#points[closest_point_index].relations.push_back(current_point)
 
 func clean_islands(points:Array):
 	var remaining_points:Array = points.duplicate() #Array[Points]

@@ -5,6 +5,7 @@ const CONNECTION_POINT = preload("res://scene/points/connection_point.tscn")
 
 var area_relations:Array[ConnectionPoint]
 var area_relation_is_progress : Array[bool] #if not, it's backtracking route
+var area_relation_is_mapped : Array[bool]
 
 static func createNew(pos:Vector2, generic_identity:Point = null) -> ConnectionPoint:
 	var newPoint = CONNECTION_POINT.instantiate()

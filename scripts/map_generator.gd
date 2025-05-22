@@ -628,19 +628,27 @@ func extrude_reward_room(room:Room): #TODO: cases where there are no available r
 	var random_index:int = Utils.rng.randi_range(0, len(available_positions) - 1)
 	var selected_position:Vector2i = available_positions[random_index]
 	var selected_direction:Utils.direction = position_directions[random_index]
+	var new_reward_room:Room
+	#place boss in existing room if one can't be created
+	if len(available_positions)==0:
+		new_reward_room = room
+		get_free_MU(room).add_reward(current_reward)
+		Level.keyset_rooms.push_back(room)
 	#create new room
-	var gate:LockedDoor 
-	if current_reward is MainUpgrade:
-		gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, selected_direction)
 	else:
-		gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
-	var new_reward_room:Room = Room.createNew(selected_position, room.area_index, room.step_index)
-	new_reward_room.step_index = room.step_index+1
-	new_reward_room.createRoomMUs()
-	Level.keyset_rooms.push_back(new_reward_room)
-	connect_adjacent_rooms(room, new_reward_room, gate)
-	#set reward in new room
-	new_reward_room.room_MUs[0].add_reward(current_reward)
+		new_reward_room = Room.createNew(selected_position, room.area_index, room.step_index)
+		new_reward_room.step_index = room.step_index+1
+		new_reward_room.createRoomMUs()
+		Level.keyset_rooms.push_back(new_reward_room)
+		#connect
+		var gate:LockedDoor 
+		if current_reward is MainUpgrade:
+			gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, selected_direction)
+		else:
+			gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
+		connect_adjacent_rooms(room, new_reward_room, gate)
+		#set reward in new room
+		get_free_MU(new_reward_room).add_reward(current_reward)
 	#set original room as boss room
 	room.is_trap = true
 	var mu:MU = get_free_MU(room)
@@ -782,7 +790,7 @@ func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 					adjacent_connected_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 					adjacent_connected_mu.border_data[neg_direction] = connection_gate
 
-func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): #TODO fix crash
+func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): 
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
 	var r1_candidates:Array[Vector2i]
 	var x_candidates:Array #either x or y is always length 1 (different for each call)
@@ -853,7 +861,6 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 	
 	var on_existing_path:bool = false
 	
-	#var destination_previous_step_keyset:Array[Reward] = Level.route_steps[destination.step_index - 1].keyset
 	var higher_step_previous_keyset:Array[Reward] = Level.route_steps[max(origin.step_index, destination.step_index) - 1].keyset
 	
 	if origin.step_index != destination.step_index:
@@ -871,7 +878,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 		if count == 1000:
 			print('LIMIT REACHED')
 			return
-		#TODO: check if there is no vailable path, in that case reuse existing gate
+		#TODO 1: check if there is no vailable path, in that case reuse existing gate
 		
 		#weighted random walk: decide direction
 		if !skip_direction_computation:
@@ -892,7 +899,6 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 		if target_mu != null:
 			#must force gate but would overwrite existing one, reroll
 			if force_first_gate && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR:
-				print('rerolled')
 				continue
 			#adjacent room is destination
 			if target_mu.parent_room == destination:

@@ -6,8 +6,9 @@ static var map: Map
 
 #The complete list of rooms
 static var rooms: Array[Room]
-#initial room #TODO:just make it first in rooms array
 static var initial_room:Room
+static var keyset_rooms:Array[Room]
+static var trap_rooms:Array[Room]
 
 #map size
 static var map_size_x:int

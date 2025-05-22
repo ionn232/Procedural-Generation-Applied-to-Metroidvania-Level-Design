@@ -106,13 +106,13 @@ static func opposite_direction(dir:direction) -> direction:
 	return direction.UP
 
 static func is_pos_inside_map(pos:Vector2i) -> bool:
-	if (pos.x > Level.map_size_x/2):
+	if (pos.x > Level.map_size_x/2.0 - 1):
 		return false
-	elif (pos.y >= Level.map_size_y/2):
+	elif (pos.y > Level.map_size_y/2.0 - 1):
 		return false
-	elif (pos.x < -Level.map_size_x/2):
+	elif (pos.x < -Level.map_size_x/2.0):
 		return false
-	elif (pos.y < -Level.map_size_y/2):
+	elif (pos.y < -Level.map_size_y/2.0):
 		return false
 	return true
 	

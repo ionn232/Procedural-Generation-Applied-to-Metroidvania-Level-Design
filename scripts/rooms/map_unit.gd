@@ -15,9 +15,9 @@ var is_spawn:bool = false
 var is_save:bool = false
 var is_fast_travel:bool = false
 var is_shop:bool = false
+var is_minor_boss:bool = false
+var is_major_boss:bool = false
 
-static var DEBUG_count1 = 0
-static var DEBUG_count2 = 0
 
 static func createNew() -> MU:
 	var new_map_unit = MU.new()

@@ -24,7 +24,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	#Utils.rng.seed = hash("1")
+	Utils.rng.seed = hash("3")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -515,16 +515,20 @@ func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions, current_point):
 				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
 				room_position = Utils.world_pos_to_room(current_point.global_position)
-			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, current_point.associated_step.index , room_dimensions, current_point) #TODO round?
+			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, current_point.associated_step.index , room_dimensions, current_point)
 			new_room.createRoomMUs()
 			current_point.associated_room = new_room
 			var random_room_mu:MU = get_random_MU(new_room)
 			
 			match(current_point):
-				_ when current_point is MainUpgradePoint || current_point is SideUpgradePoint:
+				_ when current_point is MainUpgradePoint:
 					random_room_mu.add_reward(current_point.key_value)
+					Level.trap_rooms.push_back(new_room) #trap rooms because keyset points are later extruded
 				_ when current_point is KeyItemUnitPoint:
 					random_room_mu.add_reward(current_point.key_unit_value)
+					Level.trap_rooms.push_back(new_room) #trap rooms because keyset points are later extruded
+				_ when current_point is SideUpgradePoint:
+					random_room_mu.add_reward(current_point.key_value)
 				_ when current_point is SpawnPoint:
 					random_room_mu.is_spawn = true
 				_ when current_point is FastTravelPoint:
@@ -575,7 +579,6 @@ func step_17(): ##Map out connections
 			var area_step_points:Array = current_area.subpoints.filter(func(val:Point): return val.associated_step == current_step )
 			for current_point:Point in area_step_points:
 				var current_point_room:Room = current_point.associated_room
-				#if current_point is FastTravelPoint: return
 				#gate adjacent rooms to avoid sequence breaking
 				gate_adjacent_rooms(current_point_room, current_step)
 				#intra-area connections
@@ -596,10 +599,66 @@ func step_17(): ##Map out connections
 							current_point.area_relation_is_mapped[k] = true
 							area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
 
-func step_18(): ##Map out inter-area connections
-	for current_area:AreaPoint in Level.area_points:
-		var connectors:Array = current_area.subpoints.filter(func(val:Point): return val is ConnectionPoint)
-		#for current_connector:ConnectionPoint in connectors:
+func step_18(): #Extrude keyset points 
+	for current_room:Room in Level.trap_rooms:
+		extrude_reward_room(current_room)
+
+func extrude_reward_room(room:Room): #TODO: cases where there are no available rooms
+	var adjacent_MU:MU
+	var adjacent_pos:Vector2i
+	var available_positions : Array[Vector2i]
+	var position_directions:Array[Utils.direction]
+	var current_reward:Reward
+	#get extruded room candidates
+	for room_mu:MU in room.room_MUs: #TODO optimization iterate just border mus not all
+		#check adjacent positions for each MU
+		if len(room_mu.rewards) > 0:
+			current_reward = room_mu.rewards[0]
+			room_mu.rewards.erase(current_reward)
+		for direction:Utils.direction in range(4):
+			adjacent_pos = room_mu.grid_pos + Utils.direction_to_vec2i(direction)
+			if !Utils.is_pos_inside_map(adjacent_pos):
+				continue
+			adjacent_MU = Level.map.get_mu_at(adjacent_pos)
+			if adjacent_MU == null:
+				available_positions.push_back(adjacent_pos)
+				position_directions.push_back(direction)
+	#select room amongst candidates
+	if !current_reward: print('ERROR: no reward selected!')
+	var random_index:int = Utils.rng.randi_range(0, len(available_positions) - 1)
+	var selected_position:Vector2i = available_positions[random_index]
+	var selected_direction:Utils.direction = position_directions[random_index]
+	#create new room
+	var gate:LockedDoor 
+	if current_reward is MainUpgrade:
+		gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, selected_direction)
+	else:
+		gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
+	var new_reward_room:Room = Room.createNew(selected_position, room.area_index, room.step_index)
+	new_reward_room.step_index = room.step_index+1
+	new_reward_room.createRoomMUs()
+	Level.keyset_rooms.push_back(new_reward_room)
+	connect_adjacent_rooms(room, new_reward_room, gate)
+	#set reward in new room
+	new_reward_room.room_MUs[0].add_reward(current_reward)
+	#set original room as boss room
+	room.is_trap = true
+	var mu:MU = get_free_MU(room)
+	var is_major_boss:bool
+	if current_reward is MainUpgrade:
+		is_major_boss = true
+	elif current_reward is KeyItemUnit:
+		is_major_boss = false
+	else:
+		print('ERROR: invalid reward')
+	mu.is_major_boss = is_major_boss
+	mu.is_minor_boss = !is_major_boss
+	
+	#make upgrade room exit route and loop back to fast-travel area
+	if current_reward is MainUpgrade:
+		var area:AreaPoint = Level.area_points[room.area_index]
+		var warp_room:FastTravelPoint = area.subpoints.filter(func(val:Point): return val is FastTravelPoint)[0]
+		connect_rooms(new_reward_room, warp_room.associated_room, true, true, true)
 
 func set_protected_points(area:AreaPoint): #protect smallest series of points that connects area connectors with progression
 	#get origin and destination
@@ -783,38 +842,58 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): #TODO fix
 	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 	r2_mu.border_data[neg_direction] = connection_gate
 
-func connect_rooms(origin:Room, destination:Room, is_progress:bool = true):
+func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_reuse_gates:bool = false, force_first_gate:bool = false):
 	var current_room:Room = origin
 	var previous_room:Room = null
 	var current_MU:MU
 	var direction:Utils.direction
 	var current_pos:Vector2i
 	var direction_vec:Vector2i
+	var next_mu_pos:Vector2i
 	
 	var on_existing_path:bool = false
-	var destination_previous_step_keyset:Array[Reward] = Level.route_steps[destination.step_index - 1].keyset
-	if origin.step_index < destination.step_index:
+	
+	#var destination_previous_step_keyset:Array[Reward] = Level.route_steps[destination.step_index - 1].keyset
+	var higher_step_previous_keyset:Array[Reward] = Level.route_steps[max(origin.step_index, destination.step_index) - 1].keyset
+	
+	if origin.step_index != destination.step_index:
 		on_existing_path = true
+	
 	
 	#step 0, get non-randomized direction
 	direction_vec = Utils.absolute_direction(origin.grid_pos, destination.grid_pos) #BUG
 	direction = Utils.vec2i_to_direction(direction_vec)
 	var count:int = 0
+	var skip_direction_computation:bool = true
 	while true:
 		#debug instructions
 		count +=1
 		if count == 1000:
 			print('LIMIT REACHED')
 			return
+		#TODO: check if there is no vailable path, in that case reuse existing gate
+		
 		#weighted random walk: decide direction
-		if count > 1:
+		if !skip_direction_computation:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
 			direction_vec = Utils.direction_to_vec2i(direction)
+		skip_direction_computation = false
 		current_MU = current_room.get_mu_towards(direction)
 		current_pos = current_MU.grid_pos
-		var target_mu:MU = Level.map.get_mu_at(current_pos + direction_vec)
+		#force next direction if trying to move out of bounds
+		next_mu_pos = current_pos + direction_vec
+		if next_mu_pos.x > Level.map_size_x/2 - 1 || next_mu_pos.x < -Level.map_size_x/2 || next_mu_pos.y > Level.map_size_y/2 - 1 || next_mu_pos.y < -Level.map_size_y/2: 
+			direction = (direction+1)%4
+			direction_vec = Utils.direction_to_vec2i(direction)
+			skip_direction_computation = true
+			continue
+		var target_mu:MU = Level.map.get_mu_at(next_mu_pos)
 		#adjacent room exists
 		if target_mu != null:
+			#must force gate but would overwrite existing one, reroll
+			if force_first_gate && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR:
+				print('rerolled')
+				continue
 			#adjacent room is destination
 			if target_mu.parent_room == destination:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
@@ -822,35 +901,45 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true):
 			#adjacent room was just visited
 			elif target_mu.parent_room == previous_room: #avoids creating superfluous rooms TODO: add >1 memory
 				continue #reroll
-			elif current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR: #avoid overwriting doors, prevents softlocks TODO: try other mu instead of rerolling
+			#avoid overwriting doors unless specified, prevents softlocks TODO: try other mu instead of rerolling
+			elif !can_reuse_gates && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR:
 				continue
+			#reuse gate if allowed and applicable
+			elif can_reuse_gates && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR && current_MU.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY:
+					previous_room = current_room
+					current_room = target_mu.parent_room
+					on_existing_path = true
 			#adjacent room is existing of different step index
-			elif !on_existing_path && (origin.step_index != target_mu.parent_room.step_index):
+			elif (!on_existing_path || force_first_gate) && (origin.step_index != target_mu.parent_room.step_index):
 				var connection_gate:LockedDoor
 				if is_progress:
-					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				else:
-					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
+					connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
 				connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate)
 				previous_room = current_room
 				current_room = target_mu.parent_room
 				on_existing_path = true
+				force_first_gate = false
 			#adjacent room is existing, destination room should not be reached from said existing room
-			elif !on_existing_path && (origin.step_index != destination.step_index):
+			elif (!on_existing_path || force_first_gate) && (origin.step_index != destination.step_index):
 				var connection_gate:LockedDoor 
 				if is_progress:
-					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				else:
-					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
+					connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
 				connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate)
 				previous_room = current_room
 				current_room = target_mu.parent_room
 				on_existing_path = true
+				force_first_gate = false
+			#adjacent room is existing
 			else:
 				connect_adjacent_rooms(current_room, target_mu.parent_room)
 				previous_room = current_room
 				current_room = target_mu.parent_room
-		#create room in chosen direction
+				on_existing_path = true
+		#create new room
 		else:
 			var room_position:Vector2i 
 			var room_dimensions:Vector2i 
@@ -864,16 +953,17 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true):
 					room_position = current_pos + direction_vec * room_dimensions
 				else:
 					room_position = current_pos + direction_vec
-			var new_room:Room = Room.createNew(room_position, origin.area_index, origin.associated_point.associated_step.index, room_dimensions) 
+			var new_room:Room = Room.createNew(room_position, origin.area_index, origin.step_index, room_dimensions) 
 			new_room.createRoomMUs()
 			#create gate to connect if necessary
 			var connection_gate:LockedDoor = null
-			if on_existing_path:
+			if (on_existing_path || force_first_gate):
 				if is_progress:
-					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, destination_previous_step_keyset)
+					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				else:
-					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
+					connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
 				on_existing_path = false
+				force_first_gate = false
 			connect_adjacent_rooms(current_room, new_room, connection_gate)
 			previous_room = current_room
 			current_room = new_room
@@ -1007,8 +1097,8 @@ func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false):
 		points[i] = current_point
 
 func ensure_min_dist_around(center_point:Point, points:Array, min_distance:float):
-	var map_boundary_x:float = map_size_x*16/2.0
-	var map_boundary_y:float = map_size_y*16/2.0
+	var map_boundary_x:float = map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_y:float = map_size_y*16/2.0 - 4.0
 	for second_point:Point in points:
 		if center_point == second_point: continue
 		var distance:float = center_point.global_position.distance_to(second_point.global_position)

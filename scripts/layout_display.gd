@@ -3,11 +3,11 @@ extends Node2D
 
 @onready var ui: CanvasLayer = $"../UI"
 
-#@onready var tilemap_layout: TileMapLayer = $RoomLayout
-@onready var tilemap_content: TileMapLayer = $RoomContent
 
+@onready var tilemap_content: TileMapLayer = $RoomContent
+@onready var tilemap_bg: TileMapLayer = $Background
 @onready var room_layout_container: Node2D = $RoomLayoutContainer
-#@onready var room_content_container: Node2D = $RoomContentContainer
+
 
 var layout_tilemaps:Array[TileMapLayer]
 #var content_tilemaps:Array[TileMapLayer]
@@ -15,14 +15,25 @@ var layout_tilemaps:Array[TileMapLayer]
 #const ROOM_CONTENT = preload("res://scene/tilemaplayers/room_content.tscn")
 const ROOM_LAYOUT = preload("res://scene/tilemaplayers/room_layout.tscn")
 
+const wall_up_atlas := Vector2i(1,0)
+const wall_down_atlas := Vector2i(1,2)
+const wall_left_atlas := Vector2i(0,1)
+const wall_right_atlas := Vector2i(2,1)
+
+const wall_up_slim_atlas := Vector2i(8,0)
+const wall_down_slim_atlas := Vector2i(8,2)
+const wall_left_slim_atlas := Vector2i(7,1)
+const wall_right_slim_atlas := Vector2i(9,1)
+
 
 const empty_atlas := Vector2i(4, 2)
+const trap_atlas := Vector2i(4,3)
 const full_atlas := Vector2i(5,4)
 const start_atlas := Vector2i(3, 4)
-const gate_atlas := Vector2i(1,4)
-const gate_key_atlas := Vector2i(2,4)
-const wall_X_atlas := Vector2i(0,1)
-const wall_Y_atlas := Vector2i(1,0)
+const gate_x_atlas := Vector2i(1,4)
+const gate_y_atlas := Vector2i(2,4)
+const gate_x_key_atlas := Vector2i(3,4)
+const gate_y_key_atlas := Vector2i(4,4)
 const room_inside_atlas := Vector2i(3,2)
 const gate_up_atlas := Vector2i(5,0)
 const gate_down_atlas := Vector2i(5,2)
@@ -34,7 +45,9 @@ const gate_key_left_atlas := Vector2i(6,3)
 const gate_key_right_atlas := Vector2i(6,1)
 
 const bg_atlas := Vector2i(3, 0)
-const challenge_room_atlas := Vector2i(0,0)
+const trap_bg_atlas := Vector2i(3,1)
+const major_boss_atlas := Vector2i(0,0)
+const minor_boss_atlas := Vector2i(3, 2)
 const save_point_atlas := Vector2i(1,0)
 const spawn_point_atlas := Vector2i(2,0)
 const main_upgrade_atlas := Vector2i(0,1)
@@ -64,7 +77,6 @@ func _ready() -> void:
 		layout_tilemaps[i+1] = new_tilemap_layout
 		room_layout_container.add_child(new_tilemap_layout, true)
 
-
 func clear_tilemaps():
 	tilemap_content.clear()
 	for i:int in range(Level.num_areas + 1):
@@ -88,16 +100,13 @@ func dim_area_nodes():
 	for area:AreaPoint in Level.area_points:
 		area.set_point_color(Utils.area_colors[area.area_index] * Color(1,1,1, 0.4))
 
-func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modulate colors. COLOR BY AREAS OR BY STEPS || RENDER BY STEPS (input index)
-	var map_grid = Level.map.MUs
+func draw_rooms(): #TODO: RENDER BY STEPS (input index)
 	var rooms = Level.rooms
 	for room:Room in rooms:
 		var limits:Array[Vector2i] = get_room_limits(room)
+		draw_room_bg(room, room.is_trap)
+		#draw layout
 		layout_tilemaps[room.area_index+1].set_cells_terrain_connect(limits, 0, 0)
-		trace_positions(limits)
-		fill_room_spots(room)
-		
-		#TODO: room type, is trap modulate
 		for mu:MU in room.room_MUs:
 			var current_tilemap_layout_pos:Vector2i = mu.grid_pos*2
 			#mu type
@@ -110,6 +119,10 @@ func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modu
 					tilemap_content.set_cell(mu.grid_pos, 0, warp_spot_atlas)
 				_ when mu.is_shop: 
 					tilemap_content.set_cell(mu.grid_pos, 0, shop_atlas)
+				_ when mu.is_minor_boss: 
+					tilemap_content.set_cell(mu.grid_pos, 0, minor_boss_atlas)
+				_ when mu.is_major_boss: 
+					tilemap_content.set_cell(mu.grid_pos, 0, major_boss_atlas)
 			
 			#mu content
 			if len(mu.rewards) == 1:
@@ -135,11 +148,25 @@ func draw_rooms(): #TODO: multiple tilemaplayers for layouts and content to modu
 						Utils.border_type.LOCKED_DOOR:
 							var has_key:bool = len(mu.border_data[direction].keyset) >= 1
 							if mu.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY:
-								layout_tilemaps[room.area_index+1].set_cell(border_pos, 0, gate_atlas if !has_key else gate_key_atlas)
+								var selected_atlas:Vector2i = (gate_y_atlas if !has_key else gate_y_key_atlas) if direction > 1 else (gate_x_atlas if !has_key else gate_x_key_atlas)
+								layout_tilemaps[room.area_index+1].set_cell(border_pos, 0, selected_atlas)
 							else:
-								layout_tilemaps[room.area_index+1].set_cell(border_pos, 0, get_direction_oneway_atlas(direction, has_key))
-						Utils.border_type.WALL:
-							layout_tilemaps[room.area_index+1].set_cell(border_pos, 0, wall_Y_atlas if direction == Utils.direction.UP || direction == Utils.direction.DOWN else wall_X_atlas)
+								layout_tilemaps[room.area_index+1].set_cell(border_pos, 0, get_direction_oneway_atlas(mu.border_data[direction].direction, has_key))
+						#Utils.border_type.WALL:
+							#layout_tilemaps[room.area_index+1].set_cell(border_pos, 0, direction_to_wall_atlas(direction))
+
+func direction_to_wall_atlas(direction:Utils.direction) -> Vector2i:
+	match direction:
+		Utils.direction.UP:
+			return wall_up_atlas
+		Utils.direction.DOWN:
+			return wall_down_atlas
+		Utils.direction.LEFT:
+			return wall_left_atlas
+		Utils.direction.RIGHT:
+			return wall_right_atlas
+	print('direction to wall error!"!!')
+	return empty_atlas
 
 func get_adjacent_cells(pos:Vector2i) -> Array[Vector2i]:
 	var cells:Array[Vector2i] = []
@@ -167,17 +194,79 @@ func get_room_limits(room:Room) -> Array[Vector2i]:
 		cells[4 * room.room_size.x + 2 + room.room_size.y*2 + j] = starting_tilemap_layout_pos + Vector2i(2*room.room_size.x, j+1)
 	return cells
 
+func get_room_non_connection_cells(room:Room) -> Array[Vector2i]:
+	var cells:Array[Vector2i] = []
+	cells.resize(4*room.room_size.x + 4*room.room_size.y + 2)
+	var starting_tilemap_layout_pos = room.grid_pos*2 - Vector2i(1,1)
+	for i in range(room.room_size.x * 2 + 1):
+		if i%2==1:continue
+		cells[i] = starting_tilemap_layout_pos + Vector2i(i, 0)
+		cells[room.room_size.x*2 + 1 + i] = starting_tilemap_layout_pos + Vector2i(i, 2*room.room_size.y)
+	for j in range(room.room_size.y * 2):
+		if j%2==0:continue
+		cells[4 * room.room_size.x + 2 + j] = starting_tilemap_layout_pos + Vector2i(0, j+1)
+		cells[4 * room.room_size.x + 2 + room.room_size.y*2 + j] = starting_tilemap_layout_pos + Vector2i(2*room.room_size.x, j+1)
+	return cells
 
-func trace_positions(positions:Array[Vector2i]):
+func get_room_corners(room:Room) -> Array[Vector2i]:
+	var corners:Array[Vector2i]
+	corners.resize(4)
+	corners[0] = room.grid_pos * 2 - Vector2i(1,1)
+	corners[1] = room.grid_pos * 2 + room.room_size * 2 - Vector2i(1, 1)
+	corners[2] = room.grid_pos * 2 + room.room_size * Vector2i(1,0) * 2 - Vector2i(1, 1)
+	corners[3] = room.grid_pos * 2 + room.room_size * Vector2i(0,1) * 2 - Vector2i(1, 1)
+	return corners
+
+func draw_room_limits(room:Room, corners:Array[Vector2i]):
+	var upper_left:Vector2i = corners[0]
+	var lower_right:Vector2i = corners[1]
+	#var room_limits:Array[Vector2i] = []
+	for i:int in range(2):
+		for x:int in range(upper_left.x+1, lower_right.x):
+			var current_pos:Vector2i = Vector2i(x, upper_left.y if i==0 else lower_right.y)
+			layout_tilemaps[room.area_index+1].set_cell(current_pos, 0, wall_up_atlas if i==0 else wall_down_atlas)
+	for i:int in range(2, 4):
+		for y:int in range(upper_left.y+1, lower_right.y):
+			var current_pos:Vector2i = Vector2i(upper_left.x if i==2 else lower_right.x, y)
+			layout_tilemaps[room.area_index+1].set_cell(current_pos, 0, wall_left_atlas if i==2 else wall_right_atlas)
+
+func get_slim_in_limits(room:Room, corners:Array[Vector2i]) -> Array[Vector2i]:
+	var upper_left:Vector2i = corners[0]
+	var lower_right:Vector2i = corners[1]
+	var slim_cells:Array[Vector2i]
+	for i:int in range(2):
+		for x:int in range(upper_left.x+1, lower_right.x):
+			var current_pos:Vector2i = Vector2i(x, upper_left.y if i==0 else lower_right.y)
+			#not an existing border
+			if layout_tilemaps[room.area_index+1].get_cell_source_id(current_pos + Utils.direction_to_vec2i(i)) == -1:
+				slim_cells.push_back(current_pos)
+	for i:int in range(2, 4):
+		for y:int in range(upper_left.y+1, lower_right.y):
+			var current_pos:Vector2i = Vector2i(upper_left.x if i==2 else lower_right.x, y)
+			#not an existing border
+			if layout_tilemaps[room.area_index+1].get_cell_source_id(current_pos + Utils.direction_to_vec2i(i)) == -1: 
+				slim_cells.push_back(current_pos)
+	return slim_cells
+
+func not_valid_or_wall(area_index:int, current_pos:Vector2i) -> bool:
+	return !(layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == Vector2i(-1, -1) || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_down_atlas || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_up_atlas || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_left_atlas || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_right_atlas)
+
+func trace_positions(positions:Array[Vector2i], is_trap_room:bool):
 	for cell:Vector2i in positions:
-		layout_tilemaps[0].set_cell(cell, 0, empty_atlas)
+		if layout_tilemaps[0].get_cell_source_id(cell) == -1 || !is_trap_room:
+			layout_tilemaps[0].set_cell(cell, 0, empty_atlas if !is_trap_room else trap_atlas)
 
-func fill_room_spots(room:Room):
+func fill_room_spots(room:Room, is_trap_room:bool):
 	var starting_tilemap_layout_pos = room.grid_pos*2
 	for i in range(room.room_size.x*2 - 1):
 		for j in range(room.room_size.y*2 - 1):
 			var current_tilemap_layout_pos = starting_tilemap_layout_pos + Vector2i(i, 0) + Vector2i(0, j)
-			layout_tilemaps[room.area_index+1].set_cell(current_tilemap_layout_pos, 0, empty_atlas)
+			if layout_tilemaps[0].get_cell_source_id(current_tilemap_layout_pos) == -1 || is_trap_room:
+				layout_tilemaps[0].set_cell(current_tilemap_layout_pos, 0, empty_atlas if !is_trap_room else trap_atlas)
+
+func draw_room_bg(room:Room, is_trap_room:bool):
+	for mu:MU in room.room_MUs:
+		tilemap_bg.set_cell(mu.grid_pos, 0, bg_atlas if !is_trap_room else trap_bg_atlas)
 
 func get_direction_oneway_atlas(direction:Utils.direction, has_key:bool = false):
 	match direction:
@@ -189,3 +278,10 @@ func get_direction_oneway_atlas(direction:Utils.direction, has_key:bool = false)
 			return gate_left_atlas if !has_key else gate_key_left_atlas
 		Utils.direction.RIGHT:
 			return gate_right_atlas if !has_key else gate_key_right_atlas
+
+func array_exclusive_right_join(left:Array[Vector2i], right:Array[Vector2i]) -> Array[Vector2i]:
+	var result:Array[Vector2i]
+	for elem:Vector2i in left:
+		if !right.has(elem):
+			result.push_back(elem)
+	return result

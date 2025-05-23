@@ -940,7 +940,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 			elif (origin.step_index < target_mu.parent_room.step_index):
 				continue
 			#adjacent room is existing of lower step index
-			elif (!on_existing_path || force_first_gate) && (origin.step_index < target_mu.parent_room.step_index):
+			elif (!on_existing_path || force_first_gate) && (origin.step_index > target_mu.parent_room.step_index):
 				var connection_gate:LockedDoor
 				if is_progress:
 					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)

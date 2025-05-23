@@ -11,7 +11,7 @@ func _process(delta: float) -> void:
 	#input detection
 	var mouse_room_coords:Vector2i = layout_display.tilemap_content.local_to_map(get_local_mouse_position() + Vector2(4, 4))
 	if (Input.is_action_pressed("Click")):
-		if(Level.map.get_mu_at(mouse_room_coords) != null):
+		if Utils.is_pos_inside_map(mouse_room_coords) && (Level.map.get_mu_at(mouse_room_coords) != null):
 			selected_room_pos = mouse_room_coords
 		else:
 			selected_room_pos = null

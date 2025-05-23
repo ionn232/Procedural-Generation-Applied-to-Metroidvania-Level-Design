@@ -48,7 +48,7 @@ const area_colors : Array[Color] = [
 	Color.LIGHT_PINK,
 	Color.AQUA,
 	Color.MAGENTA,
-	Color.LIME,
+	Color.BEIGE,
 	Color.SKY_BLUE,
 	Color.MAROON,
 	Color.NAVY_BLUE,

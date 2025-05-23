@@ -24,7 +24,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("3")
+	#Utils.rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -590,15 +590,16 @@ func step_17(): ##Map out connections
 							connect_rooms(current_point.associated_room, relation_room)
 							current_point.relation_is_mapped[k] = true
 							relation.relation_is_mapped[relation.relations.find(current_point)] = true
-				#inter-area connections, no step restrictions
+				#inter-area connections, only those of current step or lower
 				if current_point is ConnectionPoint:
 					for k:int in range(len(current_point.area_relations)):
 						var area_relation:Point = current_point.area_relations[k]
-						var relation_room:Room = area_relation.associated_room
-						if !current_point.area_relation_is_mapped[k]:
-							connect_rooms(current_point.associated_room, relation_room, current_point.area_relation_is_progress[k])
-							current_point.area_relation_is_mapped[k] = true
-							area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
+						if area_relation.associated_step.index <= current_point.associated_step.index:
+							var relation_room:Room = area_relation.associated_room
+							if !current_point.area_relation_is_mapped[k]:
+								connect_rooms(current_point.associated_room, relation_room, current_point.area_relation_is_progress[k])
+								current_point.area_relation_is_mapped[k] = true
+								area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
 
 func step_18(): ##Extrude keyset points 
 	#ascending order to avoid timeouts
@@ -701,7 +702,6 @@ func extrude_reward_room(room:Room): #TODO: cases where there are no available r
 	if current_reward is MainUpgrade:
 		var area:AreaPoint = Level.area_points[room.area_index]
 		var warp_room:FastTravelPoint = area.subpoints.filter(func(val:Point): return val is FastTravelPoint)[0]
-		print('CONNECTING ROOMS: ', current_room.grid_pos, ' -> ', warp_room.associated_room.grid_pos, ' WITH ORIGIN STEP ', current_room.step_index)
 		connect_rooms(current_room, warp_room.associated_room, true, true, true)
 
 func set_protected_points(area:AreaPoint): #protect smallest series of points that connects area connectors with progression
@@ -902,19 +902,22 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 	var on_existing_path:bool = false
 	if origin.step_index != destination.step_index:
 		on_existing_path = true
+	
+
+	
 	#step 0, get non-randomized direction
 	direction_vec = Utils.absolute_direction(origin.grid_pos, destination.grid_pos) #BUG
 	direction = Utils.vec2i_to_direction(direction_vec)
 	var count:int = 0
 	var skip_direction_computation:bool = true
 	while true:
+		if origin.grid_pos == Vector2i(9, -9) && destination.grid_pos == Vector2i(14, 2) && current_pos == Vector2i(13, 3):
+			print(current_pos, ' // ', direction_vec)
 		#debug instructions
 		count +=1
 		if count == 1000:
-			print('LIMIT REACHED FROM ', origin.grid_pos, ' TO ', destination.grid_pos)
+			print('LIMIT REACHED FROM ', origin.grid_pos, ' TO ', destination.grid_pos, ' IN ROOM ', current_room.grid_pos)
 			return
-		#if origin.grid_pos == Vector2i(27, 44):
-			#print(current_pos)
 		#weighted random walk: decide direction
 		if !skip_direction_computation:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
@@ -1016,7 +1019,7 @@ func _can_proceed_normally(room:Room, room_memory:Array[Room]) -> bool:
 	var adjacent_mu:MU
 	for room_mu:MU in room.room_MUs:
 		for direction:Utils.direction in range(4):
-			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR:
+			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || Utils.border_type.SAME_ROOM:
 				continue
 			adjacent_mu = Level.map.get_mu_at(room_mu.grid_pos + Utils.direction_to_vec2i(direction))
 			if adjacent_mu == null: 

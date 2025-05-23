@@ -42,6 +42,7 @@ const STEP_DESCRIPTIONS = [
 	'Place rooms for all points',
 	'Prepare hub zone',
 	'Map intra-area connections',
+	'Set save points',
 	'Extrude keyset points, create boss rooms and create looping paths',
 	'',
 	'',

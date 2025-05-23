@@ -631,7 +631,6 @@ func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) 
 		#dead end
 		return null
 
-
 func step_19(): ##Extrude keyset points 
 	#ascending order to avoid timeouts
 	var test1 = Level.trap_rooms

@@ -523,10 +523,10 @@ func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 			match(current_point):
 				_ when current_point is MainUpgradePoint:
 					random_room_mu.add_reward(current_point.key_value)
-					Level.trap_rooms.push_back(new_room) #trap rooms because keyset points are later extruded
+					Level.keyset_rooms.push_back(new_room)
 				_ when current_point is KeyItemUnitPoint:
 					random_room_mu.add_reward(current_point.key_unit_value)
-					Level.trap_rooms.push_back(new_room) #trap rooms because keyset points are later extruded
+					Level.keyset_rooms.push_back(new_room)
 				_ when current_point is SideUpgradePoint:
 					random_room_mu.add_reward(current_point.key_value)
 				_ when current_point is SpawnPoint:
@@ -601,72 +601,93 @@ func step_17(): ##Map out connections
 							area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
 
 func step_18(): ##Extrude keyset points 
-	for current_room:Room in Level.trap_rooms:
-		extrude_reward_room(current_room)
+	#ascending order to avoid timeouts
+	var test1 = Level.trap_rooms
+	var test2 = Level.keyset_rooms
+	for step:RouteStep in Level.route_steps:
+		for current_room:Room in Level.keyset_rooms:
+			if current_room.step_index == step.index && !(current_room.is_trap):
+				extrude_reward_room(current_room)
 
 func extrude_reward_room(room:Room): #TODO: cases where there are no available rooms
+	var number_of_extrusions:int = Utils.rng.randi_range(1,4)
 	var adjacent_MU:MU
 	var adjacent_pos:Vector2i
+	var current_room:Room = room
+	var prev_extruded_room:Room
 	#for room extrusion
-	var available_positions : Array[Vector2i]
+	var available_positions:Array[Vector2i]
 	var position_directions:Array[Utils.direction]
 	#if room cant be extruded
 	var previous_rooms:Array[Room]
 	var previous_room_directions:Array[Utils.direction]
 	var current_reward:Reward
-	#get extruded room candidates
-	for room_mu:MU in room.room_MUs: #TODO optimization iterate just border mus not all
-		#check adjacent positions for each MU
-		if len(room_mu.rewards) > 0:
-			current_reward = room_mu.rewards[0]
-			room_mu.rewards.erase(current_reward)
-		for direction:Utils.direction in range(4):
-			adjacent_pos = room_mu.grid_pos + Utils.direction_to_vec2i(direction)
-			if !Utils.is_pos_inside_map(adjacent_pos):
-				continue
-			adjacent_MU = Level.map.get_mu_at(adjacent_pos)
-			if adjacent_MU == null:
-				available_positions.push_back(adjacent_pos)
-				position_directions.push_back(direction)
-			elif (adjacent_MU.parent_room.step_index <= room.step_index) && room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR:
-				previous_rooms.push_back(adjacent_MU.parent_room)
-				previous_room_directions.push_back(direction)
-	var new_reward_room:Room
-	if !current_reward: print('ERROR: no reward selected!')
-	#place boss in existing room if one can't be created, make existing entrance one-directional
-	if len(available_positions)==0:
-		new_reward_room = room
-		get_free_MU(room).add_reward(current_reward)
-		Level.keyset_rooms.push_back(room)
-		room.step_index = room.step_index + 1
-		if current_reward is MainUpgrade:
-			for i:int in range(len(previous_rooms)):
-				var gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(previous_room_directions[i]))
-				connect_adjacent_rooms(room, previous_rooms[i], gate)
-	else:
-		#select room amongst candidates
-		var random_index:int = Utils.rng.randi_range(0, len(available_positions) - 1)
-		var selected_position:Vector2i = available_positions[random_index]
-		var selected_direction:Utils.direction = position_directions[random_index]
-		#create new room
-		new_reward_room = Room.createNew(selected_position, room.area_index, room.step_index)
-		new_reward_room.step_index = room.step_index+1
-		new_reward_room.createRoomMUs()
-		Level.keyset_rooms.push_back(new_reward_room)
-		#connect
-		var gate:LockedDoor 
-		if current_reward is MainUpgrade:
-			gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, selected_direction)
+	for i:int in range(number_of_extrusions):
+		previous_rooms.clear()
+		previous_room_directions.clear()
+		available_positions.clear()
+		position_directions.clear()
+		#get extruded room candidates
+		for room_mu:MU in current_room.room_MUs: #TODO optimization iterate just border MUs not all
+			#check adjacent positions for each MU
+			if len(room_mu.rewards) > 0:
+				current_reward = room_mu.rewards[0]
+				room_mu.rewards.erase(current_reward)
+			for direction:Utils.direction in range(4):
+				adjacent_pos = room_mu.grid_pos + Utils.direction_to_vec2i(direction)
+				if !Utils.is_pos_inside_map(adjacent_pos):
+					continue
+				adjacent_MU = Level.map.get_mu_at(adjacent_pos)
+				if adjacent_MU == null:
+					available_positions.push_back(adjacent_pos)
+					position_directions.push_back(direction)
+				elif (adjacent_MU.parent_room.step_index <= room.step_index) && room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR:
+					previous_rooms.push_back(adjacent_MU.parent_room)
+					previous_room_directions.push_back(direction)
+		if !current_reward: print('ERROR: no reward selected!')
+		#place boss in existing room if one can't be created, make existing entrance one-directional
+		if len(available_positions)==0:
+			prev_extruded_room = current_room
+			if current_reward is MainUpgrade:
+				for j:int in range(len(previous_rooms)):
+					var gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(previous_room_directions[j]))
+					connect_adjacent_rooms(current_room, previous_rooms[j], gate)
+			#no more extrusions possible
+			break
 		else:
-			gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
-		connect_adjacent_rooms(room, new_reward_room, gate)
-		#set reward in new room
-		get_free_MU(new_reward_room).add_reward(current_reward)
-	#set original room as boss room
-	room.is_trap = true
+			#select room amongst candidates
+			var random_index:int = Utils.rng.randi_range(0, len(available_positions) - 1)
+			var selected_position:Vector2i = available_positions[random_index]
+			var selected_direction:Utils.direction = position_directions[random_index]
+			var direction_vec = Utils.direction_to_vec2i(selected_direction)
+			var room_dimensions:Vector2i = Vector2i(1,1) if i == number_of_extrusions - 1 else Vector2i(Utils.rng.randi_range(1, 2),Utils.rng.randi_range(1, 2)) 
+			var position_aux:Vector2i = selected_position
+			#create new room
+			while !Room.canCreate(position_aux, room_dimensions):
+				room_dimensions = Vector2i(Utils.rng.randi_range(1, 2), Utils.rng.randi_range(1, 2))
+				if direction_vec.x < 0 || direction_vec.y < 0:
+					position_aux = selected_position - (room_dimensions - Vector2i(1, 1))
+				else:
+					position_aux = selected_position
+			prev_extruded_room = current_room
+			current_room = Room.createNew(position_aux, room.area_index, room.step_index, room_dimensions)
+			current_room.createRoomMUs()
+			#connect
+			var gate:LockedDoor 
+			if current_reward is MainUpgrade && i == number_of_extrusions-1:
+				gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.ONE_WAY, selected_direction)
+			else:
+				gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
+			connect_adjacent_rooms(prev_extruded_room, current_room, gate)
+	#set previous room as boss room
+	current_room.step_index = room.step_index+1
+	prev_extruded_room.is_trap = true
+	#set reward in new room
+	get_free_MU(current_room).add_reward(current_reward)
+	#set boss category
 	var mu:MU 
-	if room.room_size.x > 1 || room.room_size.y > 1: mu = get_free_MU(room)
-	else: mu = room.room_MUs[0]
+	if prev_extruded_room.room_size.x > 1 || prev_extruded_room.room_size.y > 1: mu = get_free_MU(prev_extruded_room)
+	else: mu = prev_extruded_room.room_MUs[0]
 	var is_major_boss:bool
 	if current_reward is MainUpgrade:
 		is_major_boss = true
@@ -676,12 +697,12 @@ func extrude_reward_room(room:Room): #TODO: cases where there are no available r
 		print('ERROR: invalid reward')
 	mu.is_major_boss = is_major_boss
 	mu.is_minor_boss = !is_major_boss
-	
 	#make upgrade room exit route and loop back to fast-travel area
 	if current_reward is MainUpgrade:
 		var area:AreaPoint = Level.area_points[room.area_index]
 		var warp_room:FastTravelPoint = area.subpoints.filter(func(val:Point): return val is FastTravelPoint)[0]
-		connect_rooms(new_reward_room, warp_room.associated_room, true, true, true)
+		print('CONNECTING ROOMS: ', current_room.grid_pos, ' -> ', warp_room.associated_room.grid_pos, ' WITH ORIGIN STEP ', current_room.step_index)
+		connect_rooms(current_room, warp_room.associated_room, true, true, true)
 
 func set_protected_points(area:AreaPoint): #protect smallest series of points that connects area connectors with progression
 	#get origin and destination
@@ -892,8 +913,8 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 		if count == 1000:
 			print('LIMIT REACHED FROM ', origin.grid_pos, ' TO ', destination.grid_pos)
 			return
-		#TODO 1: check if there is no vailable path, in that case reuse existing gate
-		
+		#if origin.grid_pos == Vector2i(27, 44):
+			#print(current_pos)
 		#weighted random walk: decide direction
 		if !skip_direction_computation:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
@@ -917,21 +938,21 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 			#adjacent room is destination
 			elif target_mu.parent_room == destination:
 				var gate:LockedDoor = null
-				#gate entrance to new room or previous room if that would overwrite
+				#gate entrance to new room
 				if (origin.step_index != destination.step_index) && (current_MU.borders[direction] != Utils.border_type.LOCKED_DOOR || current_MU.border_data[direction].keyset == higher_step_previous_keyset):
 					gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				connect_adjacent_rooms(current_room, target_mu.parent_room, gate)
 				return
 			#adjacent room in memory, reroll
 			elif target_mu.parent_room in room_history: #avoids creating superfluous rooms
-				reuse_one_gate = !_can_proceed_normally(current_room, room_history)
+				reuse_one_gate = !_can_proceed_normally(current_room, room_history) #reuse gate if no available paths left
 				continue
-			#adjacent room connection exists, avoid overwriting unless specified TODO: try other mu instead of rerolling
+			#adjacent room connection exists, avoid overwriting TODO: try other mu instead of rerolling
 			elif !(can_reuse_gates || reuse_one_gate) && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR:
-				reuse_one_gate = !_can_proceed_normally(current_room, room_history)
+				reuse_one_gate = !_can_proceed_normally(current_room, room_history) #reuse gate if no available paths left
 				continue
-			#reuse gate if allowed and applicable #TODO no keys
-			elif (can_reuse_gates || reuse_one_gate) && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR && current_MU.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY:
+			#reuse gate if allowed and applicable
+			elif (can_reuse_gates || reuse_one_gate) && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR && current_MU.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY && len(current_MU.border_data[direction].keyset) == 0:
 				_room_connection_memory(room_history, current_room)
 				current_room = target_mu.parent_room
 				on_existing_path = true
@@ -951,25 +972,12 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				current_room = target_mu.parent_room
 				on_existing_path = true
 				force_first_gate = false
-			#adjacent room is existing, destination room should not be reached from said existing room
-			#elif (!on_existing_path || force_first_gate) && (origin.step_index != destination.step_index):
-				#var connection_gate:LockedDoor 
-				#if is_progress:
-					#connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
-				#else:
-					#connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
-				#connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate)
-				#_room_connection_memory(room_history, current_room)
-				#current_room = target_mu.parent_room
-				#on_existing_path = true
-				#force_first_gate = false
 			#adjacent room is existing, same index
 			else:
 				var gate:LockedDoor = null
 				if force_first_gate:
 					LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 					force_first_gate = false
-					print('test')
 				connect_adjacent_rooms(current_room, target_mu.parent_room, gate)
 				_room_connection_memory(room_history, current_room)
 				current_room = target_mu.parent_room
@@ -999,7 +1007,6 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				on_existing_path = false
 				force_first_gate = false
 			connect_adjacent_rooms(current_room, new_room, connection_gate)
-			#previous_room = current_room
 			_room_connection_memory(room_history, current_room)
 			current_room = new_room
 			current_pos = current_room.grid_pos #room position used only for direction computation

@@ -6,6 +6,7 @@ var state : Utils.gate_state = Utils.gate_state.NON_TRAVERSABLE
 var final_state : Utils.gate_state = Utils.gate_state.TRAVERSABLE
 var directionality : Utils.gate_directionality = Utils.gate_directionality.TWO_WAY
 var direction = null #ONLY USED FOR ONE-WAYS, type:Utils.direction
+var is_protected:bool = false #avoid overwriting to conserve paths when connecting rooms
 
 # Always two positions.
 # [0]: player obtains associated key, [1]: player crosses it for the first time

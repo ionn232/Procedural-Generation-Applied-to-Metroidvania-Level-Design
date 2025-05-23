@@ -24,7 +24,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	#Utils.rng.seed = hash("1")
+	Utils.rng.seed = hash("2")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -108,6 +108,8 @@ func _stage_handler():
 			step_17()
 		18:
 			step_18()
+		19:
+			step_19()
 	redraw_all()
 
 
@@ -580,7 +582,7 @@ func step_17(): ##Map out connections
 			for current_point:Point in area_step_points:
 				var current_point_room:Room = current_point.associated_room
 				#gate adjacent rooms to avoid sequence breaking
-				gate_adjacent_rooms(current_point_room, current_step)
+				gate_adjacent_rooms(current_point_room)
 				#intra-area connections, only to those of current or lower steps for better map results
 				for k:int in range(len(current_point.relations)):
 					var relation:Point = current_point.relations[k]
@@ -601,7 +603,36 @@ func step_17(): ##Map out connections
 								current_point.area_relation_is_mapped[k] = true
 								area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
 
-func step_18(): ##Extrude keyset points 
+func step_18(): ##Add save points
+	var save_distance:int
+	var save_room:Room
+	for starting_room:Room in Level.keyset_rooms:
+		save_distance = Utils.rng.randi_range(1, 5)
+		save_room = dfs_get_room_at_dist(starting_room, save_distance)
+		get_random_MU(save_room).is_save = true
+
+func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) -> Room:
+	seen_rooms.push_back(room)
+	var next_room:Room
+	#base case
+	if distance == 0:
+		return room
+	#recursive case
+	else:
+		var min_index = INF
+		for mu:MU in room.room_MUs:
+			for direction:Utils.direction in range(4):
+				if mu.borders[direction] == Utils.border_type.LOCKED_DOOR:
+					next_room = Level.map.get_mu_at(mu.grid_pos + Utils.direction_to_vec2i(direction)).parent_room
+					if seen_rooms.has(next_room): continue
+					elif next_room.step_index > room.step_index: continue
+					next_room = dfs_get_room_at_dist(next_room, distance-1, seen_rooms)
+					if next_room != null: return next_room
+		#dead end
+		return null
+
+
+func step_19(): ##Extrude keyset points 
 	#ascending order to avoid timeouts
 	var test1 = Level.trap_rooms
 	var test2 = Level.keyset_rooms
@@ -806,7 +837,7 @@ func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int:
 		if dead_end: return 9999 #note: int(INF) cast results in negative number, fucks up calculation, return this instead
 		else: return min_index
 
-func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
+func gate_adjacent_rooms(origin:Room):
 	var route_step_index:int = origin.step_index
 	var debug = Level.rooms
 	if route_step_index == 0: return #first connections, no previous keys, no gates necessary
@@ -818,6 +849,7 @@ func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 			if border == Utils.border_type.LOCKED_DOOR:
 				var direction_vec:Vector2i = Utils.direction_to_vec2i(direction)
 				var adjacent_connected_mu:MU = Level.map.get_mu_at(current_mu.grid_pos + direction_vec)
+				if current_mu.border_data[direction].is_protected: continue #do not overwrite protected gaets
 				if adjacent_connected_mu.parent_room.step_index != origin.step_index:
 					var connection_gate:LockedDoor = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, previous_step_keyset)
 					current_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
@@ -826,7 +858,7 @@ func gate_adjacent_rooms(origin:Room, current_step:RouteStep):
 					adjacent_connected_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 					adjacent_connected_mu.border_data[neg_direction] = connection_gate
 
-func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null): 
+func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_gate:bool=false): 
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
 	var r1_candidates:Array[Vector2i]
 	var x_candidates:Array #either x or y is always length 1 (different for each call)
@@ -839,6 +871,7 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null):
 		connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
 	else:
 		connection_gate = gate
+	connection_gate.is_protected = protect_gate
 	#compute candidate MUs in r1 adjacent to r2
 	if r1_to_r2.x < 0:
 		overlap = r2.grid_pos.x + r2.room_size.x - r1.grid_pos.x
@@ -900,10 +933,6 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 	var higher_step_previous_keyset:Array[Reward] = Level.route_steps[new_room_step_index - 1].keyset
 	var reuse_one_gate:bool = false
 	var on_existing_path:bool = false
-	if origin.step_index != destination.step_index:
-		on_existing_path = true
-	
-
 	
 	#step 0, get non-randomized direction
 	direction_vec = Utils.absolute_direction(origin.grid_pos, destination.grid_pos) #BUG
@@ -911,8 +940,6 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 	var count:int = 0
 	var skip_direction_computation:bool = true
 	while true:
-		if origin.grid_pos == Vector2i(9, -9) && destination.grid_pos == Vector2i(14, 2) && current_pos == Vector2i(13, 3):
-			print(current_pos, ' // ', direction_vec)
 		#debug instructions
 		count +=1
 		if count == 1000:
@@ -933,6 +960,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 			skip_direction_computation = true
 			continue
 		var target_mu:MU = Level.map.get_mu_at(next_mu_pos)
+		if count==0 && origin.step_index != destination.step_index: on_existing_path = (true if target_mu == null else false)
 		#adjacent room exists
 		if target_mu != null:
 			#must force gate but would overwrite existing one, reroll
@@ -960,9 +988,12 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				current_room = target_mu.parent_room
 				on_existing_path = true
 				reuse_one_gate = false
-			#adjacent room is existing of higher step index, avoid connecting (reroll)
+			#adjacent room is existing of higher step index, gate existing connections before entering
 			elif (origin.step_index < target_mu.parent_room.step_index):
-				continue
+				gate_adjacent_rooms(target_mu.parent_room)
+				connect_adjacent_rooms(current_room, target_mu.parent_room, null, true) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
+				_room_connection_memory(room_history, current_room)
+				current_room = target_mu.parent_room
 			#adjacent room is existing of lower step index
 			elif (!on_existing_path || force_first_gate) && (origin.step_index > target_mu.parent_room.step_index):
 				var connection_gate:LockedDoor
@@ -1282,21 +1313,6 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 		if suitable:
 			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting maybe
 
-#func join_stragglers(points:Array): #TODO: remove. deprecated for clean_islands
-	#for current_point:Point in points:
-		#if len(current_point.relations) == 0:
-			#print('straggling point: ', points.find(current_point))
-			#var min_dist:float = INF
-			#var closest_point_index:int
-			#for i:int in range(len(points)):
-				#var second_point:Point = points[i]
-				#if current_point == second_point: continue
-				#var distance_sq:float = current_point.global_position.distance_squared_to(second_point.global_position)
-				#if distance_sq < min_dist:
-					#min_dist = distance_sq
-					#closest_point_index = i
-			#current_point.relations.push_back(points[closest_point_index])
-			#points[closest_point_index].relations.push_back(current_point)
 
 func clean_islands(points:Array):
 	var remaining_points:Array = points.duplicate() #Array[Points]

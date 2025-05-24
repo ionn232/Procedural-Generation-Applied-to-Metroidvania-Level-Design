@@ -14,13 +14,8 @@ static func import_reward_pool():
 			var item = key_items[i - num_main_upgrades]
 			keyset[i] = key_items[i - num_main_upgrades]
 
-static func _make_key_item(name: String, desc: String, unit_names: Array[String]) -> KeyItem:
-	var units:Array[KeyItemUnit] = []
-	for unit_name in unit_names:
-		units.append(KeyItemUnit.createNew(unit_name, 'part of ' + name))
-	var item = KeyItem.createNew(name, desc)
-	item.assign_units(units)
-	return item
+
+static var keyset:Array = [] #type: Array[MainUpgrade || KeyItem]
 
 static var main_upgrades:Array = [
 	MainUpgrade.createNew('double jump', 'allows user to jump a second time before touching the ground'),
@@ -62,7 +57,14 @@ static var key_items:Array = [
 	_make_key_item('wind charm', 'a charm blessed by wind spirits', [
 		'feather token', 'air essence', 'whistle core', 'tassel']),
 ]
-
+static func _make_key_item(name: String, desc: String, unit_names: Array[String]) -> KeyItem:
+	var units:Array[KeyItemUnit] = []
+	for unit_name in unit_names:
+		units.append(KeyItemUnit.createNew(unit_name, 'part of ' + name))
+	var item = KeyItem.createNew(name, desc)
+	item.assign_units(units)
+	return item
+	
 static var side_upgrades:Array[SideUpgrade] = [
 	SideUpgrade.createNew('Fire projectile', 'Shoots a blazing fireball'),
 	SideUpgrade.createNew('Ice projectile', 'Shoots freezing ice pellets'),
@@ -74,6 +76,162 @@ static var side_upgrades:Array[SideUpgrade] = [
 	SideUpgrade.createNew('Radar', 'Reacts to nearby treasure'),
 	SideUpgrade.createNew('Return', 'Return to the previous save point at no additional cost'),
 ]
-static var keyset:Array = [] #type: Array[MainUpgrade || KeyItem]
-static var equipment:Array = []
-static var collectibles:Array = []
+
+static var equipment:Array[Equipment] = [
+	Equipment.createNew('Equipment1', 'A piece of equipment'),
+	Equipment.createNew('Equipment2', 'A piece of equipment'),
+	Equipment.createNew('Equipment3', 'A piece of equipment'),
+	Equipment.createNew('Equipment4', 'A piece of equipment'),
+	Equipment.createNew('Equipment5', 'A piece of equipment'),
+	Equipment.createNew('Equipment6', 'A piece of equipment'),
+	Equipment.createNew('Equipment7', 'A piece of equipment'),
+	Equipment.createNew('Equipment8', 'A piece of equipment'),
+	Equipment.createNew('Equipment9', 'A piece of equipment'),
+	Equipment.createNew('Equipment10', 'A piece of equipment'),
+	Equipment.createNew('Equipment11', 'A piece of equipment'),
+	Equipment.createNew('Equipment12', 'A piece of equipment'),
+	Equipment.createNew('Equipment13', 'A piece of equipment'),
+	Equipment.createNew('Equipment14', 'A piece of equipment'),
+	Equipment.createNew('Equipment15', 'A piece of equipment'),
+	Equipment.createNew('Equipment16', 'A piece of equipment'),
+	Equipment.createNew('Equipment17', 'A piece of equipment'),
+	Equipment.createNew('Equipment18', 'A piece of equipment'),
+	Equipment.createNew('Equipment19', 'A piece of equipment'),
+	Equipment.createNew('Equipment20', 'A piece of equipment'),
+	Equipment.createNew('Equipment21', 'A piece of equipment'),
+	Equipment.createNew('Equipment22', 'A piece of equipment'),
+	Equipment.createNew('Equipment23', 'A piece of equipment'),
+	Equipment.createNew('Equipment24', 'A piece of equipment'),
+	Equipment.createNew('Equipment25', 'A piece of equipment'),
+	Equipment.createNew('Equipment26', 'A piece of equipment'),
+	Equipment.createNew('Equipment27', 'A piece of equipment'),
+	Equipment.createNew('Equipment28', 'A piece of equipment'),
+	Equipment.createNew('Equipment29', 'A piece of equipment'),
+	Equipment.createNew('Equipment30', 'A piece of equipment'),
+	Equipment.createNew('Equipment31', 'A piece of equipment'),
+	Equipment.createNew('Equipment32', 'A piece of equipment'),
+	Equipment.createNew('Equipment33', 'A piece of equipment'),
+	Equipment.createNew('Equipment34', 'A piece of equipment'),
+	Equipment.createNew('Equipment35', 'A piece of equipment'),
+	Equipment.createNew('Equipment36', 'A piece of equipment'),
+	Equipment.createNew('Equipment37', 'A piece of equipment'),
+	Equipment.createNew('Equipment38', 'A piece of equipment'),
+	Equipment.createNew('Equipment39', 'A piece of equipment'),
+	Equipment.createNew('Equipment40', 'A piece of equipment'),
+	Equipment.createNew('Equipment41', 'A piece of equipment'),
+	Equipment.createNew('Equipment42', 'A piece of equipment'),
+	Equipment.createNew('Equipment43', 'A piece of equipment'),
+	Equipment.createNew('Equipment44', 'A piece of equipment'),
+	Equipment.createNew('Equipment45', 'A piece of equipment'),
+	Equipment.createNew('Equipment46', 'A piece of equipment'),
+	Equipment.createNew('Equipment47', 'A piece of equipment'),
+	Equipment.createNew('Equipment48', 'A piece of equipment'),
+	Equipment.createNew('Equipment49', 'A piece of equipment'),
+	Equipment.createNew('Equipment50', 'A piece of equipment'),
+]
+
+static var collectibles:Array[Collectible] = [
+	Collectible.createNew('Collectible1', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible2', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible3', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible4', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible5', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible6', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible7', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible8', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible9', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible10', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible11', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible12', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible13', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible14', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible15', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible16', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible17', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible18', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible19', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible20', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible21', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible22', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible23', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible24', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible25', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible26', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible27', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible28', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible29', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible30', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible31', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible32', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible33', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible34', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible35', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible36', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible37', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible38', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible39', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible40', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible41', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible42', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible43', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible44', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible45', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible46', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible47', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible48', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible49', 'A shiny stone, must have some use'),
+	Collectible.createNew('Collectible50', 'A shiny stone, must have some use'),
+]
+
+static var stat_upgrades:Array[StatUpgrade] = [
+	StatUpgrade.createNew('HP upgrade 1', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 2', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 3', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 4', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 5', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 6', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 7', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 8', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 9', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 10', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 11', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 12', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 13', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 14', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 15', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 16', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 17', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 18', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 19', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 20', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 21', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 22', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 23', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 24', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 25', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 26', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 27', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 28', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 29', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 30', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 31', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 32', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 33', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 34', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 35', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 36', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 37', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 38', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 39', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 40', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 41', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 42', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 43', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 44', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 45', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 46', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 47', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 48', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 49', 'Increses health points'),
+	StatUpgrade.createNew('HP upgrade 50', 'Increses health points'),
+]

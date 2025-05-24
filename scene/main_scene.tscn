@@ -16,6 +16,9 @@ map_size_y = 100
 number_route_steps = 25
 number_of_areas = 25
 number_side_upgrades = 4
+number_equipment_items = 50
+number_collectibles = 50
+number_stat_upgrades = 50
 area_size_multiplier = 3.0
 
 [node name="LayoutDisplay" parent="." instance=ExtResource("2_qa15b")]

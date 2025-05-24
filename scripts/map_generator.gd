@@ -9,7 +9,10 @@ extends Node2D
 @export_range (1,25) var number_route_steps:int
 @export_range (1,25) var number_of_areas:int
 @export_range (0, 9) var number_side_upgrades:int
-@export_range (0.1,3.0) var area_size_multiplier:float
+@export_range (0, 50) var number_equipment_items:int
+@export_range (0, 50) var number_collectibles:int
+@export_range (0, 50) var number_stat_upgrades:int
+@export_range (0.1,5.0) var area_size_multiplier:float
 
 
 #area size DIAMETER
@@ -44,29 +47,64 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	#load reward pool
 	RewardPool.import_reward_pool()
 	#distribute rewards amongst route steps #TODO: make a separate step
-	#TODO: stat upgrades, equipment and collectibles
 	var route_steps:Array[RouteStep]
 	route_steps.resize(number_route_steps)
 	var keyset_indexes:Array = range(len(RewardPool.keyset))
 	var side_indexes:Array = range(len(RewardPool.side_upgrades))
+	var RS_item_weight:float
 	var side_upgrades_left:int = number_side_upgrades
+	var equipment_items_left:int = number_equipment_items
+	var collectibles_left:int = number_collectibles
+	var stat_upgrades_left:int = number_stat_upgrades
+	var roll:float
 	for i:int in range(number_route_steps):
 		route_steps[i] = RouteStep.createNew(i)
 		#assign RS main key
 		var indexes_random_index:int = Utils.rng.randi_range(0, len(keyset_indexes)-1)
 		route_steps[i].add_key(RewardPool.keyset[keyset_indexes.pop_at(indexes_random_index)])
 		#assign side upgrades
-		var RS_side_weight:float = side_upgrades_left / float(number_route_steps - i)
-		while RS_side_weight > 1.0: #TODO: reuse procedure in step 8 to a separate function
+		RS_item_weight = side_upgrades_left / float(number_route_steps - i)
+		while RS_item_weight > 1.0:
 			indexes_random_index = Utils.rng.randi_range(0, len(side_indexes)-1)
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
 			side_upgrades_left -= 1
-			RS_side_weight -= 1.0
-		var roll = Utils.rng.randf()
-		if roll < RS_side_weight:
+			RS_item_weight -= 1.0
+		roll = Utils.rng.randf()
+		if roll < RS_item_weight:
 			indexes_random_index = Utils.rng.randi_range(0, side_upgrades_left - 1)
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
 			side_upgrades_left -= 1
+		#assign equipment
+		RS_item_weight = equipment_items_left / float(number_route_steps - i)
+		while RS_item_weight > 1.0:
+			route_steps[i].add_reward(RewardPool.equipment[number_equipment_items - equipment_items_left])
+			equipment_items_left -= 1
+			RS_item_weight -= 1.0
+		roll = Utils.rng.randf()
+		if roll < RS_item_weight:
+			route_steps[i].add_reward(RewardPool.equipment[number_equipment_items - equipment_items_left])
+			equipment_items_left -= 1
+		#assign collectibles
+		RS_item_weight = collectibles_left / float(number_route_steps - i)
+		while RS_item_weight > 1.0:
+			route_steps[i].add_reward(RewardPool.collectibles[number_collectibles - collectibles_left])
+			collectibles_left -= 1
+			RS_item_weight -= 1.0
+		roll = Utils.rng.randf()
+		if roll < RS_item_weight:
+			route_steps[i].add_reward(RewardPool.collectibles[number_collectibles - collectibles_left])
+			collectibles_left -= 1
+		#assign stat upgrades
+		RS_item_weight = stat_upgrades_left / float(number_route_steps - i)
+		while RS_item_weight > 1.0:
+			route_steps[i].add_reward(RewardPool.stat_upgrades[number_stat_upgrades - stat_upgrades_left])
+			stat_upgrades_left -= 1
+			RS_item_weight -= 1.0
+		roll = Utils.rng.randf()
+		if roll < RS_item_weight:
+			route_steps[i].add_reward(RewardPool.stat_upgrades[number_stat_upgrades - stat_upgrades_left])
+			stat_upgrades_left -= 1
+	#store info
 	Level.route_steps = route_steps
 
 
@@ -110,6 +148,8 @@ func _stage_handler():
 			step_18()
 		19:
 			step_19()
+		20:
+			step_20()
 	redraw_all()
 
 
@@ -611,6 +651,18 @@ func step_18(): ##Add save points
 		save_room = dfs_get_room_at_dist(starting_room, save_distance)
 		get_random_MU(save_room).is_save = true
 
+func step_19(): ##Extrude keyset points 
+	#ascending order to avoid timeouts
+	var test1 = Level.trap_rooms
+	var test2 = Level.keyset_rooms
+	for step:RouteStep in Level.route_steps:
+		for current_room:Room in Level.keyset_rooms:
+			if current_room.step_index == step.index && !(current_room.is_trap):
+				extrude_reward_room(current_room)
+
+func step_20(): ##Distribute minor rewards
+	pass
+
 func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) -> Room:
 	seen_rooms.push_back(room)
 	var next_room:Room
@@ -630,15 +682,6 @@ func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) 
 					if next_room != null: return next_room
 		#dead end
 		return null
-
-func step_19(): ##Extrude keyset points 
-	#ascending order to avoid timeouts
-	var test1 = Level.trap_rooms
-	var test2 = Level.keyset_rooms
-	for step:RouteStep in Level.route_steps:
-		for current_room:Room in Level.keyset_rooms:
-			if current_room.step_index == step.index && !(current_room.is_trap):
-				extrude_reward_room(current_room)
 
 func extrude_reward_room(room:Room): #TODO: cases where there are no available rooms
 	var number_of_extrusions:int = Utils.rng.randi_range(1,4)

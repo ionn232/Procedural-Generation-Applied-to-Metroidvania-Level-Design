@@ -20,6 +20,10 @@ func get_side_upgrades() -> Array: #return type: Array[SideUpgrade]
 func get_minor_rewards() -> Array: #return type: Array[Equipment || StatUpgrade || Collectible]
 	return reward_pool.filter(func(val): return !(val is SideUpgrade))
 
+func get_previous_step_rooms() -> Array[Room]:
+	var previous_step_rooms = Level.rooms.filter(func(val:Room): return val.step_index < self.index)
+	return previous_step_rooms
+
 func add_key(new_key:Reward):
 	keyset.push_back(new_key)
 	new_key.route_step = self

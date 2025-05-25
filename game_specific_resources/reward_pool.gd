@@ -81,16 +81,16 @@ static var equipment:Array[Equipment]
 static func make_equipment(number_items:int):
 	equipment.resize(number_items)
 	for i:int in range(number_items):
-		equipment[i] = Equipment.createNew('Equipment'+str(i), 'A piece of equipment')
+		equipment[i] = Equipment.createNew('Equipment '+str(i), 'A piece of equipment')
 
 static var collectibles:Array[Collectible]
 static func make_collectibles(number_items:int):
 	collectibles.resize(number_items)
 	for i:int in range(number_items):
-		collectibles[i] = Collectible.createNew('Collectible'+str(i), 'A shiny stone, must have some use')
+		collectibles[i] = Collectible.createNew('Collectible '+str(i), 'A shiny stone, must have some use')
 
 static var stat_upgrades:Array[StatUpgrade]
 static func make_stat_ups(number_items:int):
 	stat_upgrades.resize(number_items)
 	for i:int in range(number_items):
-		stat_upgrades[i] = StatUpgrade.createNew('HP upgrade 1', 'Increses health points')
+		stat_upgrades[i] = StatUpgrade.createNew('HP upgrade '+str(i), 'Increses health points')

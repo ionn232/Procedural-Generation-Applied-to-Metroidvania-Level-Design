@@ -81,6 +81,21 @@ func get_mu_towards(direction:Utils.direction) -> MU:
 	print('invalid direction given!!')
 	return null
 
+func get_adjacent_free_MU_pos(): #return type: Vector2i || null
+	var adjacent_mu:MU
+	var adjacent_mu_pos:Vector2i
+	for room_mu:MU in self.room_MUs:
+		for direction:Utils.direction in range(4):
+			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || room_mu.borders[direction] == Utils.border_type.SAME_ROOM:
+				continue
+			adjacent_mu_pos = room_mu.grid_pos + Utils.direction_to_vec2i(direction)
+			if !Utils.is_pos_inside_map(adjacent_mu_pos): 
+				continue
+			adjacent_mu = Level.map.get_mu_at(adjacent_mu_pos)
+			if adjacent_mu == null: 
+				return adjacent_mu_pos
+	return null
+
 func get_random_viable_reward_MU() -> MU:
 	if !minor_rewards_viable: return null
 	var selected_mu:MU = null

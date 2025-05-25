@@ -27,7 +27,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("2")
+	Utils.rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -679,21 +679,26 @@ func step_20(): ##Distribute minor rewards
 	
 	var current_reward:Reward
 	var step_minor_rewards:Array
-	var num_backtarcking_rewards:int
+	var num_backtracking_rewards:int
 	var num_exploration_rewards:int
 	var selected_room:Room
 	var potential_room
 	var selected_mu:MU
 	var existing_room_reward_count:int
 	var random_index:int
+	var new_room_mu_pos #Type: Vector2i || null
+	var new_room:Room
+	var new_room_gate:LockedDoor
 	for step:RouteStep in Level.route_steps:
 		step_minor_rewards = step.get_minor_rewards()
-		num_backtarcking_rewards = len(step_minor_rewards) * reward_backtracking_factor
-		num_exploration_rewards = len(step_minor_rewards) - num_backtarcking_rewards
-		#exploration rewards
+		#partition exploration and backtracking rewards unless initial step
+		num_backtracking_rewards = len(step_minor_rewards) * reward_backtracking_factor if step.index > 0 else 0
+		num_exploration_rewards = len(step_minor_rewards) - num_backtracking_rewards
+		#distribute exploration rewards
 		for i:int in range(num_exploration_rewards):
 			existing_room_reward_count = -1
 			selected_room = null
+			selected_mu = null
 			current_reward = step_minor_rewards[i]
 			while selected_room == null:
 				existing_room_reward_count += 1
@@ -713,7 +718,26 @@ func step_20(): ##Distribute minor rewards
 				#initialize array if it's a new tier
 				Level.minor_reward_room_counts[step.index].push_back([])
 			Level.minor_reward_room_counts[step.index][existing_room_reward_count+1].push_back(selected_room)
-		#do backtracking rewards
+		#distribute backtracking rewards
+		for i:int in range(num_backtracking_rewards):
+			current_reward = step_minor_rewards[num_exploration_rewards+i]
+			new_room = null
+			new_room_gate = null
+			selected_room = null
+			selected_mu = null
+			new_room_mu_pos = null
+			potential_room = step.get_previous_step_rooms() #TODO: edge case no room can be extruded (extremely unlikely)
+			#select room to extrude
+			while new_room_mu_pos == null:
+				selected_room = potential_room[Utils.rng.randi_range(0, len(potential_room)-1)]
+				new_room_mu_pos = selected_room.get_adjacent_free_MU_pos()
+			#create and connect new room with previous step key
+			new_room = Room.createNew(new_room_mu_pos, selected_room.area_index, step.index, Vector2i(1,1))
+			new_room.createRoomMUs()
+			new_room_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, Level.route_steps[step.index-1].keyset)
+			connect_adjacent_rooms(selected_room, new_room, new_room_gate)
+			selected_mu = Level.map.get_mu_at(new_room_mu_pos)
+			selected_mu.add_reward(current_reward)
 
 func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) -> Room:
 	seen_rooms.push_back(room)
@@ -1181,7 +1205,7 @@ func _can_proceed_normally(room:Room, room_memory:Array[Room]) -> bool:
 	var adjacent_mu:MU
 	for room_mu:MU in room.room_MUs:
 		for direction:Utils.direction in range(4):
-			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || Utils.border_type.SAME_ROOM:
+			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || Utils.border_type.SAME_ROOM: #TODO arreglar esto sin crashes: room_mu.borders[direction] == 
 				continue
 			adjacent_mu = Level.map.get_mu_at(room_mu.grid_pos + Utils.direction_to_vec2i(direction))
 			if adjacent_mu == null: 

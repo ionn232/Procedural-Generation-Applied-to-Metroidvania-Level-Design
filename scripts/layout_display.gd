@@ -133,7 +133,15 @@ func draw_rooms(): #TODO: RENDER BY STEPS (input index)
 						tilemap_content.set_cell(mu.grid_pos, 0, key_item_unit_atlas)
 					_ when mu.rewards[0] is SideUpgrade:
 						tilemap_content.set_cell(mu.grid_pos, 0, side_upgrade_atlas)
+					_ when mu.rewards[0] is Equipment:
+						tilemap_content.set_cell(mu.grid_pos, 0, equipment_atlas)
+					_ when mu.rewards[0] is Collectible:
+						tilemap_content.set_cell(mu.grid_pos, 0, collectible_atlas)
+					_ when mu.rewards[0] is StatUpgrade:
+						tilemap_content.set_cell(mu.grid_pos, 0, stat_upgrade_atlas)
 					#TODO stat upgrades, equipment, collectibles
+			elif len(mu.rewards) > 1:
+				tilemap_content.set_cell(mu.grid_pos, 0, multiple_items_atlas)
 			
 			#room borders
 			for direction:Utils.direction in range(4):

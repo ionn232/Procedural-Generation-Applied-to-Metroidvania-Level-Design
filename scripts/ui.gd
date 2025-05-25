@@ -44,7 +44,7 @@ const STEP_DESCRIPTIONS = [
 	'Map intra-area connections',
 	'Set save points',
 	'Extrude keyset points, create boss rooms and create looping paths',
-	'',
+	'Distribute minor rewards',
 	'',
 	'',
 	'',

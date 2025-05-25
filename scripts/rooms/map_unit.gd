@@ -18,6 +18,9 @@ var is_shop:bool = false
 var is_minor_boss:bool = false
 var is_major_boss:bool = false
 
+var minor_reward_score:int = -1
+#-1||0 -> not viable
+#1 -> viable
 
 static func createNew() -> MU:
 	var new_map_unit = MU.new()

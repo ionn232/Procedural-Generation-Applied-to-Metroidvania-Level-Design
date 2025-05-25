@@ -3,8 +3,8 @@ extends Resource
 
 var index:int
 var areas:Array[AreaPoint]
-var keyset:Array[Reward] #Array[MainUpgrade || KeyItem] #TODO: this being an array makes no sense with the current implementation, always has one member
-var reward_pool:Array[Reward] #Array[SideUpgrade || Equipment || Collectible || StatUpgrade]
+var keyset:Array[Reward] #Array[MainUpgrade || KeyItem] #note: always one member in current implementation
+var reward_pool:Array[Reward] #Array[SideUpgrade || Equipment || Collectible || StatUpgrade] #TODO: separate side upgrades and minor rewards for efficiency
 
 static func createNew(new_index:int = -1,new_areas:Array[AreaPoint] = [], new_keyset:Array[Reward] = [], new_RP:Array[Reward] = []) -> RouteStep:
 	var new_RS:RouteStep = RouteStep.new()
@@ -17,6 +17,8 @@ static func createNew(new_index:int = -1,new_areas:Array[AreaPoint] = [], new_ke
 func get_side_upgrades() -> Array: #return type: Array[SideUpgrade]
 	return reward_pool.filter(func(val): return val is SideUpgrade)
 
+func get_minor_rewards() -> Array: #return type: Array[Equipment || StatUpgrade || Collectible]
+	return reward_pool.filter(func(val): return !(val is SideUpgrade))
 
 func add_key(new_key:Reward):
 	keyset.push_back(new_key)

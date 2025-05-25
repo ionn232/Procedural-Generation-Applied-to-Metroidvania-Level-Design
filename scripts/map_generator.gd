@@ -9,11 +9,11 @@ extends Node2D
 @export_range (1,25) var number_route_steps:int
 @export_range (1,25) var number_of_areas:int
 @export_range (0, 9) var number_side_upgrades:int
-@export_range (0, 50) var number_equipment_items:int
-@export_range (0, 50) var number_collectibles:int
-@export_range (0, 50) var number_stat_upgrades:int
+@export_range (0, 200) var number_equipment_items:int
+@export_range (0, 200) var number_collectibles:int
+@export_range (0, 200) var number_stat_upgrades:int
 @export_range (0.1,5.0) var area_size_multiplier:float
-
+@export_range (0.0, 1.0) var reward_backtracking_factor:float
 
 #area size DIAMETER
 var area_size:float
@@ -44,8 +44,12 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	Level.num_areas = number_of_areas
 	Level.num_route_steps = number_route_steps
 	
+	
 	#load reward pool
 	RewardPool.import_reward_pool()
+	RewardPool.make_equipment(number_equipment_items)
+	RewardPool.make_collectibles(number_collectibles)
+	RewardPool.make_stat_ups(number_stat_upgrades)
 	#distribute rewards amongst route steps #TODO: make a separate step
 	var route_steps:Array[RouteStep]
 	route_steps.resize(number_route_steps)
@@ -109,6 +113,7 @@ func _ready() -> void: ##level, map initializations // rng seeding
 
 
 func _stage_handler():
+	var time_start = Time.get_unix_time_from_system()
 	match(Utils.generator_stage):
 		1:
 			step_1()
@@ -150,6 +155,7 @@ func _stage_handler():
 			step_19()
 		20:
 			step_20()
+	print('time for step ', str(Utils.generator_stage), ': ', float(Time.get_unix_time_from_system() - time_start))
 	redraw_all()
 
 
@@ -661,7 +667,53 @@ func step_19(): ##Extrude keyset points
 				extrude_reward_room(current_room)
 
 func step_20(): ##Distribute minor rewards
-	pass
+	#initialize necessary data structure
+	Level.minor_reward_room_counts.resize(number_route_steps)
+	for step_i:int in number_route_steps:
+		Level.minor_reward_room_counts[step_i].push_back([])
+	for room:Room in Level.rooms:
+		#add room to pool of possible reward containers
+		if room.minor_rewards_viable:
+			#initialize array if necessary
+			Level.minor_reward_room_counts[min(room.step_index, number_route_steps-1)][0].push_back(room)
+	
+	var current_reward:Reward
+	var step_minor_rewards:Array
+	var num_backtarcking_rewards:int
+	var num_exploration_rewards:int
+	var selected_room:Room
+	var potential_room
+	var selected_mu:MU
+	var existing_room_reward_count:int
+	var random_index:int
+	for step:RouteStep in Level.route_steps:
+		step_minor_rewards = step.get_minor_rewards()
+		num_backtarcking_rewards = len(step_minor_rewards) * reward_backtracking_factor
+		num_exploration_rewards = len(step_minor_rewards) - num_backtarcking_rewards
+		#exploration rewards
+		for i:int in range(num_exploration_rewards):
+			existing_room_reward_count = -1
+			selected_room = null
+			current_reward = step_minor_rewards[i]
+			while selected_room == null:
+				existing_room_reward_count += 1
+				potential_room = Level.minor_reward_room_counts[step.index][existing_room_reward_count]
+				#single room left
+				if potential_room is Room:
+					selected_room = potential_room
+				#select random available room
+				elif len(potential_room) > 0:
+					random_index = Utils.rng.randf_range(0, len(potential_room)-1)
+					potential_room = potential_room.pop_at(random_index)
+					selected_room = potential_room
+			selected_mu = selected_room.get_random_viable_reward_MU()
+			selected_mu.add_reward(current_reward)
+			#register new room existing reward count
+			if len(Level.minor_reward_room_counts[step.index]) <= existing_room_reward_count+1:
+				#initialize array if it's a new tier
+				Level.minor_reward_room_counts[step.index].push_back([])
+			Level.minor_reward_room_counts[step.index][existing_room_reward_count+1].push_back(selected_room)
+		#do backtracking rewards
 
 func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) -> Room:
 	seen_rooms.push_back(room)
@@ -881,7 +933,6 @@ func min_neighbor_step_index(point:Point, seen_points:Array[Point] = []) -> int:
 
 func gate_adjacent_rooms(origin:Room):
 	var route_step_index:int = origin.step_index
-	var debug = Level.rooms
 	if route_step_index == 0: return #first connections, no previous keys, no gates necessary
 	var previous_step_keyset:Array[Reward] = Level.route_steps[route_step_index-1].keyset
 	
@@ -900,7 +951,7 @@ func gate_adjacent_rooms(origin:Room):
 					adjacent_connected_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 					adjacent_connected_mu.border_data[neg_direction] = connection_gate
 
-func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_gate:bool=false): 
+func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_gate:bool=false, r1_start:MU =null): 
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
 	var r1_candidates:Array[Vector2i]
 	var x_candidates:Array #either x or y is always length 1 (different for each call)
@@ -960,12 +1011,17 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_ga
 	var neg_direction:Utils.direction = Utils.opposite_direction(direction)
 	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 	r2_mu.border_data[neg_direction] = connection_gate
+	#use initial and final room to set point weights
+	if r1_start != null && !r1.is_trap: _set_room_minor_reward_weights(r1, r1_start, r1_mu)
+	#return start point for use in next computations if necessary
+	return r2_mu
 
 const ROOM_MEMORY:int = 3
 func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_reuse_gates:bool = false, force_first_gate:bool = false):
 	var current_room:Room = origin
 	var room_history:Array[Room] = []
 	room_history.resize(ROOM_MEMORY)
+	var room_entry_MU:MU
 	var current_MU:MU
 	var direction:Utils.direction
 	var current_pos:Vector2i
@@ -982,11 +1038,11 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 	var count:int = 0
 	var skip_direction_computation:bool = true
 	while true:
-		#debug instructions
 		count +=1
 		if count == 1000:
 			print('LIMIT REACHED FROM ', origin.grid_pos, ' TO ', destination.grid_pos, ' IN ROOM ', current_room.grid_pos)
 			return
+		
 		#weighted random walk: decide direction
 		if !skip_direction_computation:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
@@ -1014,7 +1070,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				#gate entrance to new room
 				if (origin.step_index != destination.step_index) && (current_MU.borders[direction] != Utils.border_type.LOCKED_DOOR || current_MU.border_data[direction].keyset == higher_step_previous_keyset):
 					gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
-				connect_adjacent_rooms(current_room, target_mu.parent_room, gate)
+				connect_adjacent_rooms(current_room, target_mu.parent_room, gate, false, room_entry_MU)
 				return
 			#adjacent room in memory, reroll
 			elif target_mu.parent_room in room_history: #avoids creating superfluous rooms
@@ -1027,13 +1083,15 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 			#reuse gate if allowed and applicable
 			elif (can_reuse_gates || reuse_one_gate) && current_MU.borders[direction] == Utils.border_type.LOCKED_DOOR && current_MU.border_data[direction].directionality == Utils.gate_directionality.TWO_WAY && len(current_MU.border_data[direction].keyset) == 0:
 				_room_connection_memory(room_history, current_room)
+				#_set_room_minor_reward_weights(current_room, room_entry_MU, current_MU)
 				current_room = target_mu.parent_room
+				room_entry_MU = target_mu
 				on_existing_path = true
 				reuse_one_gate = false
 			#adjacent room is existing of higher step index, gate existing connections before entering
 			elif (origin.step_index < target_mu.parent_room.step_index):
 				gate_adjacent_rooms(target_mu.parent_room)
-				connect_adjacent_rooms(current_room, target_mu.parent_room, null, true) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
+				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, null, true, room_entry_MU) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
 				_room_connection_memory(room_history, current_room)
 				current_room = target_mu.parent_room
 			#adjacent room is existing of lower step index
@@ -1043,8 +1101,9 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				else:
 					connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
-				connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate)
+				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate, false, room_entry_MU)
 				_room_connection_memory(room_history, current_room)
+				#_set_room_minor_reward_weights(current_room, room_entry_MU, current_MU)
 				current_room = target_mu.parent_room
 				on_existing_path = true
 				force_first_gate = false
@@ -1054,7 +1113,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				if force_first_gate:
 					LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 					force_first_gate = false
-				connect_adjacent_rooms(current_room, target_mu.parent_room, gate)
+				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, gate, false, room_entry_MU)
 				_room_connection_memory(room_history, current_room)
 				current_room = target_mu.parent_room
 		#create new room
@@ -1082,10 +1141,40 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 					connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, Utils.opposite_direction(direction))
 				on_existing_path = false
 				force_first_gate = false
-			connect_adjacent_rooms(current_room, new_room, connection_gate)
+			room_entry_MU = connect_adjacent_rooms(current_room, new_room, connection_gate, false, room_entry_MU)
 			_room_connection_memory(room_history, current_room)
 			current_room = new_room
 			current_pos = current_room.grid_pos #room position used only for direction computation
+
+func _set_room_minor_reward_weights(room:Room, path_start:MU, path_end:MU):
+	var current_difference:Vector2i = (path_end.grid_pos - path_start.grid_pos)
+	var current_mu:MU = path_start
+	#assign neutral score on path from start to end
+	path_start.minor_reward_score = 0
+	path_end.minor_reward_score = 0
+	var roll:float = Utils.rng.randf()
+	var direction_vec:Vector2i
+	while current_mu != path_end:
+		current_mu.minor_reward_score = 0
+		#roll axis
+		if current_difference.x != 0 && current_difference.y != 0:
+			#advance X
+			if roll >= 0.5:
+				direction_vec = Vector2i(sign(current_difference.x), 0)
+			#advance Y
+			else:
+				direction_vec = Vector2i(0, sign(current_difference.y))
+		#singe valid axis 
+		else:
+			direction_vec = Vector2i(sign(current_difference.x), sign(current_difference.y))
+		current_mu = Level.map.get_mu_at(current_mu.grid_pos + direction_vec)
+		current_difference -= direction_vec
+	#assign valid score to all remaining MUs in room
+	room.minor_rewards_viable = false
+	for mu:MU in room.room_MUs:
+		if mu.minor_reward_score == 0: continue #initialized previously, dont overwrite
+		room.minor_rewards_viable = true
+		mu.minor_reward_score = 1
 
 func _can_proceed_normally(room:Room, room_memory:Array[Room]) -> bool:
 	var can_continue:bool = false
@@ -1354,7 +1443,6 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 					angle_candidates[j] = angles[j]
 		if suitable:
 			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting maybe
-
 
 func clean_islands(points:Array):
 	var remaining_points:Array = points.duplicate() #Array[Points]

@@ -14,8 +14,10 @@ var room_size:Vector2i
 #MUs comprising the room
 var room_MUs : Array[MU] = []
 
-#room types
+#room type
 var is_trap:bool = false
+
+var minor_rewards_viable:bool = false
 
 static func createNew(pos:Vector2i, area_i:int, step_i:int, size:Vector2i = Vector2i(1,1), point:Point = null) -> Room:
 	var newRoom = Room.new()
@@ -78,7 +80,14 @@ func get_mu_towards(direction:Utils.direction) -> MU:
 			return Level.map.get_mu_at(grid_pos + Vector2i(room_size.x-1, Utils.rng.randi_range(0, room_size.y-1)))
 	print('invalid direction given!!')
 	return null
-	
+
+func get_random_viable_reward_MU() -> MU:
+	if !minor_rewards_viable: return null
+	var selected_mu:MU = null
+	while selected_mu == null:
+		selected_mu = room_MUs[Utils.rng.randi_range(0, len(room_MUs)-1)]
+		if selected_mu.minor_reward_score != 1: selected_mu = null
+	return selected_mu
 
 func define_pos(pos:Vector2i):
 	grid_pos = pos

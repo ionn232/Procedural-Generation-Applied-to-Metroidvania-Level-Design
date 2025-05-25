@@ -81,7 +81,6 @@ func clear_tilemaps():
 	tilemap_content.clear()
 	for i:int in range(Level.num_areas + 1):
 		layout_tilemaps[i].clear()
-		#content_tilemaps[i].clear()
 
 func _stage_handler():
 	clear_tilemaps()
@@ -127,6 +126,8 @@ func draw_rooms(): #TODO: RENDER BY STEPS (input index)
 			#mu content
 			if len(mu.rewards) == 1:
 				match mu.rewards[0]:
+					_ when mu.is_major_boss || mu.is_minor_boss:
+						tilemap_content.set_cell(mu.grid_pos, 0, multiple_items_atlas)
 					_ when mu.rewards[0] is MainUpgrade:
 						tilemap_content.set_cell(mu.grid_pos, 0, main_upgrade_atlas)
 					_ when mu.rewards[0] is KeyItemUnit:
@@ -139,7 +140,6 @@ func draw_rooms(): #TODO: RENDER BY STEPS (input index)
 						tilemap_content.set_cell(mu.grid_pos, 0, collectible_atlas)
 					_ when mu.rewards[0] is StatUpgrade:
 						tilemap_content.set_cell(mu.grid_pos, 0, stat_upgrade_atlas)
-					#TODO stat upgrades, equipment, collectibles
 			elif len(mu.rewards) > 1:
 				tilemap_content.set_cell(mu.grid_pos, 0, multiple_items_atlas)
 			

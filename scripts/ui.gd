@@ -45,7 +45,7 @@ const STEP_DESCRIPTIONS = [
 	'Set save points',
 	'Extrude keyset points, create boss rooms and create looping paths',
 	'Distribute minor rewards',
-	'',
+	'Recalculate room areas',
 	'',
 	'',
 	'',

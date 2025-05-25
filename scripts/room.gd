@@ -30,7 +30,10 @@ static func createNew(pos:Vector2i, area_i:int, step_i:int, size:Vector2i = Vect
 	if (point != null):
 		newRoom.associated_point = point
 	
+	newRoom.createRoomMUs()
 	Level.rooms.push_back(newRoom)
+	
+	#newRoom.mimic_adjacent_rooms_area()
 	return newRoom
 
 static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1), origin_point:Point = null) -> bool:
@@ -109,3 +112,32 @@ func define_pos(pos:Vector2i):
 
 func add_MU(newMU:MU, index:int = 0):
 	room_MUs[index] = newMU
+
+func mimic_adjacent_rooms_area():
+	var seen_rooms:Array[Room]
+	var target_mu:MU
+	var target_room:Room
+	var initial_area_index:int = self.area_index
+	var area_counts:Dictionary = {}
+	area_counts[self.area_index] = 0
+	#get adjacent rooms
+	for current_mu:MU in self.room_MUs:
+		for direction:Utils.direction in range(4):
+			if current_mu.borders[direction] == Utils.border_type.SAME_ROOM: continue
+			target_mu = Level.map.get_mu_at(current_mu.grid_pos + Utils.direction_to_vec2i(direction))
+			if target_mu != null:
+				target_room = target_mu.parent_room
+				if seen_rooms.has(target_room): continue
+				seen_rooms.push_back(target_room)
+				if !area_counts.has(target_room.area_index):
+					area_counts[target_room.area_index] = 1
+				else:
+					area_counts[target_room.area_index] += 1
+	#reassign area if more adjacent rooms of other area exist
+	for adjacent_area_index:int in area_counts.keys():
+		if adjacent_area_index == self.area_index: continue
+		if area_counts[adjacent_area_index] > area_counts[self.area_index]:
+			self.area_index = adjacent_area_index
+			#reassign seen rooms if they are the previous area index as results can change
+			for prev_area_adjacent_room:Room in seen_rooms.filter(func(val:Room): return val.area_index == initial_area_index):
+				prev_area_adjacent_room.mimic_adjacent_rooms_area()

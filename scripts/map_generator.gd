@@ -993,6 +993,30 @@ func gate_adjacent_rooms(origin:Room):
 					adjacent_connected_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 					adjacent_connected_mu.border_data[neg_direction] = connection_gate
 
+func connect_adjacent_mus(r1_mu:MU, r2_mu:MU, gate:LockedDoor = null, protect_gate:bool=false, r1_start:MU = null):
+	var r1_to_r2:Vector2i = r2_mu.grid_pos - r1_mu.grid_pos
+	var connection_gate:LockedDoor
+	#create default gate if not given
+	if gate == null:
+		connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY)
+	else:
+		connection_gate = gate
+	connection_gate.is_protected = protect_gate
+	if r1_mu.parent_room == r2_mu.parent_room:
+		print('ERROR: call to connect_adjacent_mus of same room ', r1_mu.grid_pos)
+	#connect rooms by selected MUs
+	var direction = Utils.vec2i_to_direction(r1_to_r2)
+	r1_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
+	r1_mu.border_data[direction] = connection_gate
+	var neg_direction:Utils.direction = Utils.opposite_direction(direction)
+	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
+	r2_mu.border_data[neg_direction] = connection_gate
+	#use initial and final room to set point weights
+	if r1_start != null && !r1_start.parent_room.is_trap: _set_room_minor_reward_weights(r1_start.parent_room, r1_start, r1_mu)
+	#return start point for use in next computations if necessary
+	return r2_mu
+
+
 func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_gate:bool=false, r1_start:MU =null): 
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
 	var r1_candidates:Array[Vector2i]
@@ -1043,16 +1067,11 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_ga
 			r1_candidates[index] = Vector2i(x_candidate, y_candidate)
 			index += 1
 	#roll MU and get r2 correspondant
-	#var valid_selection:bool = false
 	var r1_mu:MU
 	var r2_mu:MU
-	#while !valid_selection:
 	var rand_index:int = Utils.rng.randf_range(0, len(r1_candidates)-1)
 	r1_mu = Level.map.get_mu_at(r1.grid_pos + r1_candidates[rand_index])
 	r2_mu = Level.map.get_mu_at(r1_mu.grid_pos + direction_vec)
-	if r1_mu.borders[Utils.vec2i_to_direction(direction_vec)] != Utils.border_type.WALL:
-		print('overwritten at pos: ', r1_mu.grid_pos, ' -> ', r2_mu.grid_pos)
-			#valid_selection = true
 	#connect rooms by selected MUs
 	var direction = Utils.vec2i_to_direction(direction_vec)
 	r1_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
@@ -1121,7 +1140,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 					gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				elif !is_progress && (origin.step_index != destination.step_index) && (current_MU.borders[direction] != Utils.border_type.LOCKED_DOOR || current_MU.border_data[direction].keyset == higher_step_previous_keyset):
 					gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, direction if origin.step_index > destination.step_index else Utils.opposite_direction(direction))
-				connect_adjacent_rooms(current_room, target_mu.parent_room, gate, false, room_entry_MU)
+				connect_adjacent_mus(current_MU, target_mu, gate, false, room_entry_MU)
 				return
 			#adjacent room in memory, reroll
 			elif target_mu.parent_room in room_history: #avoids creating superfluous rooms
@@ -1142,7 +1161,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 			#adjacent room is existing of higher step index, gate existing connections before entering (avoids point rooms)
 			elif (origin.step_index < target_mu.parent_room.step_index) && target_mu.parent_room.associated_point == null:
 				gate_adjacent_rooms(target_mu.parent_room)
-				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, null, true, room_entry_MU) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
+				room_entry_MU = connect_adjacent_mus(current_MU, target_mu, null, true, room_entry_MU) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
 				_room_connection_memory(room_history, current_room)
 				current_room = target_mu.parent_room
 			#adjacent room is existing of lower step index
@@ -1152,7 +1171,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 					connection_gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 				else:
 					connection_gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, direction if origin.step_index > destination.step_index else Utils.opposite_direction(direction))
-				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, connection_gate, false, room_entry_MU)
+				room_entry_MU = connect_adjacent_mus(current_MU, target_mu, connection_gate, false, room_entry_MU)
 				_room_connection_memory(room_history, current_room)
 				#_set_room_minor_reward_weights(current_room, room_entry_MU, current_MU)
 				current_room = target_mu.parent_room
@@ -1164,7 +1183,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				if force_first_gate:
 					LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
 					force_first_gate = false
-				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, gate, false, room_entry_MU)
+				room_entry_MU = connect_adjacent_mus(current_MU, target_mu, gate, false, room_entry_MU)
 				_room_connection_memory(room_history, current_room)
 				current_room = target_mu.parent_room
 		#create new room

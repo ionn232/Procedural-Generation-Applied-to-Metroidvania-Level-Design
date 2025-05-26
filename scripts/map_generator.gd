@@ -27,7 +27,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("1")
+	Utils.rng.seed = hash("2")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -1300,9 +1300,9 @@ func compute_direction_weighs(position:Vector2i, objective:Vector2i) -> Array[fl
 func get_random_MU(room:Room) -> MU: #TODO: move this to Room class, move Utils.rng to Utils
 	return room.room_MUs[Utils.rng.randi_range(0, len(room.room_MUs)-1)]
 
-func get_free_MU(room:Room) -> MU: #TODO make random
+func get_free_MU(room:Room) -> MU: #Excludes save points! (avoid crashes) #TODO make random
 	for room_mu:MU in room.room_MUs:
-		if len(room_mu.rewards) == 0 && !room_mu.is_fast_travel && !room_mu.is_save && !room_mu.is_shop && !room_mu.is_spawn:
+		if len(room_mu.rewards) == 0 && !room_mu.is_fast_travel && !room_mu.is_shop && !room_mu.is_spawn:
 			return room_mu
 	return null
 

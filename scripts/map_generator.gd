@@ -1448,7 +1448,7 @@ func expand_points(points:Array, center:Vector2, min_distance:Vector2, expansion
 				#move points in conflict to current
 				if abs(distance.x) < min_distance.x && abs(distance.y) < min_distance.y:
 					var mult_factors:Vector2 = Vector2( (min_distance.x / abs(distance.x)) , min_distance.y / abs(distance.y)) 
-					second_point.update_position(current_point.pos + (distance) * Vector2(mult_factors[mult_factors.min_axis_index()], mult_factors[mult_factors.min_axis_index()])) #DO NOT REMOVE THE 0.1
+					second_point.update_position(current_point.pos + (distance + 0.1 * Vector2(sign(distance.x), sign(distance.y))) * Vector2(mult_factors[mult_factors.min_axis_index()], mult_factors[mult_factors.min_axis_index()])) #DO NOT REMOVE THE 0.1
 					clear = false
 
 func connect_points(points:Array):

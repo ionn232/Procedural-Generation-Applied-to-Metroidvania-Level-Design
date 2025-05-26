@@ -27,7 +27,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	#Utils.rng.seed = hash("1")
+	Utils.rng.seed = hash("2")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -50,9 +50,18 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	RewardPool.make_equipment(number_equipment_items)
 	RewardPool.make_collectibles(number_collectibles)
 	RewardPool.make_stat_ups(number_stat_upgrades)
-	#distribute rewards amongst route steps #TODO: make a separate step
+	#initialize route step array
 	var route_steps:Array[RouteStep]
 	route_steps.resize(number_route_steps)
+	for i:int in range(number_route_steps):
+		route_steps[i] = RouteStep.createNew(i)
+	#store info
+	Level.route_steps = route_steps
+	
+	distribute_step_rewards()
+
+func distribute_step_rewards():
+	var route_steps:Array[RouteStep] = Level.route_steps
 	var keyset_indexes:Array = range(len(RewardPool.keyset))
 	var side_indexes:Array = range(len(RewardPool.side_upgrades))
 	var RS_item_weight:float
@@ -62,7 +71,6 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	var stat_upgrades_left:int = number_stat_upgrades
 	var roll:float
 	for i:int in range(number_route_steps):
-		route_steps[i] = RouteStep.createNew(i)
 		#assign RS main key
 		var indexes_random_index:int = Utils.rng.randi_range(0, len(keyset_indexes)-1)
 		route_steps[i].add_key(RewardPool.keyset[keyset_indexes.pop_at(indexes_random_index)])
@@ -108,9 +116,6 @@ func _ready() -> void: ##level, map initializations // rng seeding
 		if roll < RS_item_weight:
 			route_steps[i].add_reward(RewardPool.stat_upgrades[number_stat_upgrades - stat_upgrades_left])
 			stat_upgrades_left -= 1
-	#store info
-	Level.route_steps = route_steps
-
 
 func _stage_handler():
 	var time_start = Time.get_unix_time_from_system()
@@ -689,6 +694,7 @@ func step_20(): ##Distribute minor rewards
 	var new_room_mu_pos #Type: Vector2i || null
 	var new_room:Room
 	var new_room_gate:LockedDoor
+	var no_rooms_available:bool = false
 	for step:RouteStep in Level.route_steps:
 		step_minor_rewards = step.get_minor_rewards()
 		#partition exploration and backtracking rewards unless initial step
@@ -699,9 +705,16 @@ func step_20(): ##Distribute minor rewards
 			existing_room_reward_count = -1
 			selected_room = null
 			selected_mu = null
+			no_rooms_available = false
 			current_reward = step_minor_rewards[i]
 			while selected_room == null:
 				existing_room_reward_count += 1
+				#force backtracking instead of exploration if no rooms available or stacking too many rewards together
+				if (existing_room_reward_count >= len(Level.minor_reward_room_counts[step.index]) || existing_room_reward_count >= 3) && step.index > 0:
+					num_backtracking_rewards += (num_exploration_rewards - i)
+					num_exploration_rewards = i
+					no_rooms_available = true
+					break
 				potential_room = Level.minor_reward_room_counts[step.index][existing_room_reward_count]
 				#single room left
 				if potential_room is Room:
@@ -711,6 +724,7 @@ func step_20(): ##Distribute minor rewards
 					random_index = Utils.rng.randf_range(0, len(potential_room)-1)
 					potential_room = potential_room.pop_at(random_index)
 					selected_room = potential_room
+			if no_rooms_available: break
 			selected_mu = selected_room.get_random_viable_reward_MU()
 			selected_mu.add_reward(current_reward)
 			#register new room existing reward count

@@ -6,6 +6,10 @@ var areas:Array[AreaPoint]
 var keyset:Array[Reward] #Array[MainUpgrade || KeyItem] #note: always one member in current implementation
 var reward_pool:Array[Reward] #Array[SideUpgrade || Equipment || Collectible || StatUpgrade] #TODO: separate side upgrades and minor rewards for efficiency
 
+var has_new_area:bool = false
+var num_exploration_rewards:int = 0
+var num_backtracking_rewards:int = 0
+
 static func createNew(new_index:int = -1,new_areas:Array[AreaPoint] = [], new_keyset:Array[Reward] = [], new_RP:Array[Reward] = []) -> RouteStep:
 	var new_RS:RouteStep = RouteStep.new()
 	new_RS.index = new_index

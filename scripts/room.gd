@@ -136,8 +136,9 @@ func mimic_adjacent_rooms_area():
 	#reassign area if more adjacent rooms of other area exist
 	for adjacent_area_index:int in area_counts.keys():
 		if adjacent_area_index == self.area_index: continue
-		if area_counts[adjacent_area_index] > area_counts[self.area_index]:
+		if area_counts[adjacent_area_index] > area_counts[self.area_index] || area_counts[adjacent_area_index] > 2:
 			self.area_index = adjacent_area_index
 			#reassign seen rooms if they are the previous area index as results can change
 			for prev_area_adjacent_room:Room in seen_rooms.filter(func(val:Room): return val.area_index == initial_area_index):
 				prev_area_adjacent_room.mimic_adjacent_rooms_area()
+			return

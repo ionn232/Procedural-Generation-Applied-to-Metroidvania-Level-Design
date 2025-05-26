@@ -126,6 +126,7 @@ func mimic_adjacent_rooms_area():
 			if current_mu.borders[direction] == Utils.border_type.SAME_ROOM: continue
 			target_mu = Level.map.get_mu_at(current_mu.grid_pos + Utils.direction_to_vec2i(direction))
 			if target_mu != null:
+				if !Utils.is_pos_inside_map(target_mu.grid_pos): continue
 				target_room = target_mu.parent_room
 				if seen_rooms.has(target_room): continue
 				seen_rooms.push_back(target_room)

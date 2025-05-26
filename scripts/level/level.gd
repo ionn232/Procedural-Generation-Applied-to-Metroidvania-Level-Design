@@ -13,10 +13,11 @@ static var trap_rooms:Array[Room]
 #for each step i, for each number of minor rewards j, stores a room that is part of step i and currently has j minor rewards
 static var minor_reward_room_counts:Array[Array]  #type: Array[Array[Array[Room]]]
 
-
 #map size
 static var map_size_x:int
 static var map_size_y:int
+
+static var area_size_multiplier:float
 
 #area points
 static var num_areas:int

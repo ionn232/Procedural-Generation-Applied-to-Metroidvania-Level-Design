@@ -176,19 +176,6 @@ func direction_to_wall_atlas(direction:Utils.direction) -> Vector2i:
 	print('direction to wall error!"!!')
 	return empty_atlas
 
-func get_adjacent_cells(pos:Vector2i) -> Array[Vector2i]:
-	var cells:Array[Vector2i] = []
-	cells.resize(8)
-	cells[0] = pos + Vector2i(1,0)
-	cells[1] = pos + Vector2i(-1,0)
-	cells[2] = pos + Vector2i(1,1)
-	cells[3] = pos + Vector2i(-1,1)
-	cells[4] = pos + Vector2i(-1,-1)
-	cells[5] = pos + Vector2i(1,-1)
-	cells[6] = pos + Vector2i(0,-1)
-	cells[7] = pos + Vector2i(0,1)
-	return cells
-
 #gets room delineation cells in tilemap_layout
 func get_room_limits(room:Room) -> Array[Vector2i]:
 	var cells:Array[Vector2i] = []
@@ -201,76 +188,6 @@ func get_room_limits(room:Room) -> Array[Vector2i]:
 		cells[4 * room.room_size.x + 2 + j] = starting_tilemap_layout_pos + Vector2i(0, j+1)
 		cells[4 * room.room_size.x + 2 + room.room_size.y*2 + j] = starting_tilemap_layout_pos + Vector2i(2*room.room_size.x, j+1)
 	return cells
-
-func get_room_non_connection_cells(room:Room) -> Array[Vector2i]:
-	var cells:Array[Vector2i] = []
-	cells.resize(4*room.room_size.x + 4*room.room_size.y + 2)
-	var starting_tilemap_layout_pos = room.grid_pos*2 - Vector2i(1,1)
-	for i in range(room.room_size.x * 2 + 1):
-		if i%2==1:continue
-		cells[i] = starting_tilemap_layout_pos + Vector2i(i, 0)
-		cells[room.room_size.x*2 + 1 + i] = starting_tilemap_layout_pos + Vector2i(i, 2*room.room_size.y)
-	for j in range(room.room_size.y * 2):
-		if j%2==0:continue
-		cells[4 * room.room_size.x + 2 + j] = starting_tilemap_layout_pos + Vector2i(0, j+1)
-		cells[4 * room.room_size.x + 2 + room.room_size.y*2 + j] = starting_tilemap_layout_pos + Vector2i(2*room.room_size.x, j+1)
-	return cells
-
-func get_room_corners(room:Room) -> Array[Vector2i]:
-	var corners:Array[Vector2i]
-	corners.resize(4)
-	corners[0] = room.grid_pos * 2 - Vector2i(1,1)
-	corners[1] = room.grid_pos * 2 + room.room_size * 2 - Vector2i(1, 1)
-	corners[2] = room.grid_pos * 2 + room.room_size * Vector2i(1,0) * 2 - Vector2i(1, 1)
-	corners[3] = room.grid_pos * 2 + room.room_size * Vector2i(0,1) * 2 - Vector2i(1, 1)
-	return corners
-
-func draw_room_limits(room:Room, corners:Array[Vector2i]):
-	var upper_left:Vector2i = corners[0]
-	var lower_right:Vector2i = corners[1]
-	#var room_limits:Array[Vector2i] = []
-	for i:int in range(2):
-		for x:int in range(upper_left.x+1, lower_right.x):
-			var current_pos:Vector2i = Vector2i(x, upper_left.y if i==0 else lower_right.y)
-			layout_tilemaps[room.area_index+1].set_cell(current_pos, 0, wall_up_atlas if i==0 else wall_down_atlas)
-	for i:int in range(2, 4):
-		for y:int in range(upper_left.y+1, lower_right.y):
-			var current_pos:Vector2i = Vector2i(upper_left.x if i==2 else lower_right.x, y)
-			layout_tilemaps[room.area_index+1].set_cell(current_pos, 0, wall_left_atlas if i==2 else wall_right_atlas)
-
-func get_slim_in_limits(room:Room, corners:Array[Vector2i]) -> Array[Vector2i]:
-	var upper_left:Vector2i = corners[0]
-	var lower_right:Vector2i = corners[1]
-	var slim_cells:Array[Vector2i]
-	for i:int in range(2):
-		for x:int in range(upper_left.x+1, lower_right.x):
-			var current_pos:Vector2i = Vector2i(x, upper_left.y if i==0 else lower_right.y)
-			#not an existing border
-			if layout_tilemaps[room.area_index+1].get_cell_source_id(current_pos + Utils.direction_to_vec2i(i)) == -1:
-				slim_cells.push_back(current_pos)
-	for i:int in range(2, 4):
-		for y:int in range(upper_left.y+1, lower_right.y):
-			var current_pos:Vector2i = Vector2i(upper_left.x if i==2 else lower_right.x, y)
-			#not an existing border
-			if layout_tilemaps[room.area_index+1].get_cell_source_id(current_pos + Utils.direction_to_vec2i(i)) == -1: 
-				slim_cells.push_back(current_pos)
-	return slim_cells
-
-func not_valid_or_wall(area_index:int, current_pos:Vector2i) -> bool:
-	return !(layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == Vector2i(-1, -1) || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_down_atlas || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_up_atlas || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_left_atlas || layout_tilemaps[area_index+1].get_cell_atlas_coords(current_pos) == wall_right_atlas)
-
-func trace_positions(positions:Array[Vector2i], is_trap_room:bool):
-	for cell:Vector2i in positions:
-		if layout_tilemaps[0].get_cell_source_id(cell) == -1 || !is_trap_room:
-			layout_tilemaps[0].set_cell(cell, 0, empty_atlas if !is_trap_room else trap_atlas)
-
-func fill_room_spots(room:Room, is_trap_room:bool):
-	var starting_tilemap_layout_pos = room.grid_pos*2
-	for i in range(room.room_size.x*2 - 1):
-		for j in range(room.room_size.y*2 - 1):
-			var current_tilemap_layout_pos = starting_tilemap_layout_pos + Vector2i(i, 0) + Vector2i(0, j)
-			if layout_tilemaps[0].get_cell_source_id(current_tilemap_layout_pos) == -1 || is_trap_room:
-				layout_tilemaps[0].set_cell(current_tilemap_layout_pos, 0, empty_atlas if !is_trap_room else trap_atlas)
 
 func draw_room_bg(room:Room, is_trap_room:bool):
 	for mu:MU in room.room_MUs:
@@ -286,10 +203,3 @@ func get_direction_oneway_atlas(direction:Utils.direction, has_key:bool = false)
 			return gate_left_atlas if !has_key else gate_key_left_atlas
 		Utils.direction.RIGHT:
 			return gate_right_atlas if !has_key else gate_key_right_atlas
-
-func array_exclusive_right_join(left:Array[Vector2i], right:Array[Vector2i]) -> Array[Vector2i]:
-	var result:Array[Vector2i]
-	for elem:Vector2i in left:
-		if !right.has(elem):
-			result.push_back(elem)
-	return result

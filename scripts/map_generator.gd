@@ -19,7 +19,7 @@ extends Node2D
 var area_size:float
 var area_size_rooms:int
 var area_size_xy:Vector2
-#TODO: track intra_area_size globally somehow, keep
+var area_size_rooms_xy:Vector2i
 
 const ROOM_SIZE:float = 16.0
 const MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
@@ -27,20 +27,21 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("2")
+	Utils.rng.seed = hash("1")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
+	Level.area_size_multiplier = area_size_multiplier
 	var main_map:Map = Map.new()
 	main_map.initialize_map()
 	Level.map = main_map
 	
-	#TODO tweak and separate x, y
 	#area size (DIAMETER)
 	area_size = ((map_size_x+map_size_y)*16/2.0)*area_size_multiplier/float(number_of_areas) #arbitrarily decided
 	var w_h_ratio:float = map_size_x/float(map_size_y)
-	area_size_xy = Vector2(map_size_x * w_h_ratio, map_size_y / w_h_ratio)
+	area_size_xy = Vector2(map_size_x*16*area_size_multiplier/float(number_of_areas), map_size_y*16*area_size_multiplier/float(number_of_areas))
 	area_size_rooms = ceil(area_size / 16.0)
+	area_size_rooms_xy = ceil(area_size_xy / 16.0)
 	Level.num_areas = number_of_areas
 	Level.num_route_steps = number_route_steps
 	
@@ -180,7 +181,7 @@ func step_2(): ##expand points from centroid and ensure minimum distance
 	centroid.x /= len(Level.area_points)
 	centroid.y /= len(Level.area_points)
 	#expand areas from centroid
-	expand_points(Level.area_points, centroid, area_size, ROOM_SIZE)
+	expand_points(Level.area_points, centroid, area_size_xy, ROOM_SIZE)
 
 func step_3(): ##establish initial area
 	var rand_index :int = Utils.rng.randi_range(0, number_of_areas - 1)
@@ -304,7 +305,7 @@ func step_8(): ##randomly place around areas a point for each relation, one for 
 		var current_area:AreaPoint = Level.area_points[i]
 		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 0 else 1))
 		#spawn points
-		spawn_points(current_area.subpoints, Vector2(area_size_rooms, area_size_rooms))
+		spawn_points(current_area.subpoints, Vector2(area_size_rooms_xy.x, area_size_rooms_xy.y))
 		current_area.add_subarea_nodes()
 
 func step_9(): ##randomly place around areas a point for each main upgrade, key item unit and side upgrades.
@@ -313,7 +314,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 		if current_step.keyset[0] is MainUpgrade:
 			var main_upgrade:MainUpgrade = current_step.keyset[0]
 			var chosen_area:AreaPoint = current_step.areas[Utils.rng.randi_range(0, len(current_step.areas) - 1)]
-			var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), Utils.rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
+			var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms_xy.x/2.0,area_size_rooms_xy.x/2.0), Utils.rng.randf_range(-area_size_rooms_xy.y/2.0, area_size_rooms_xy.y/2.0))
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.reward_pool.push_back(main_upgrade)
 			chosen_area.subpoints.push_back(new_point)
@@ -322,7 +323,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 			var key_item:KeyItem = current_step.keyset[0]
 			for KIU:KeyItemUnit in key_item.kius:
 				var chosen_area:AreaPoint = current_step.areas[Utils.rng.randi_range(0, len(current_step.areas) - 1)]
-				var random_pos = Vector2(Utils.rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), Utils.rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
+				var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms_xy.x/2.0,area_size_rooms_xy.x/2.0), Utils.rng.randf_range(-area_size_rooms_xy.y/2.0, area_size_rooms_xy.y/2.0))
 				var new_point = Point.createNew(random_pos)
 				chosen_area.reward_pool.push_back(KIU)
 				chosen_area.subpoints.push_back(new_point)
@@ -330,18 +331,18 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 		var rs_side_upgrades:Array[Reward] = current_step.get_side_upgrades()
 		for side_upgrade:SideUpgrade in rs_side_upgrades:
 			var chosen_area:AreaPoint = current_step.areas[Utils.rng.randi_range(0, len(current_step.areas) - 1)]
-			var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms/2.0,area_size_rooms/2.0), Utils.rng.randf_range(-area_size_rooms/2.0, area_size_rooms/2.0))
+			var random_pos:Vector2 = Vector2(Utils.rng.randf_range(-area_size_rooms_xy.x/2.0,area_size_rooms_xy.x/2.0), Utils.rng.randf_range(-area_size_rooms_xy.y/2.0, area_size_rooms_xy.y/2.0))
 			var new_point:Point = Point.createNew(random_pos)
 			chosen_area.reward_pool.push_back(side_upgrade)
 			chosen_area.subpoints.push_back(new_point)
 	#add new nodes
 	for area:AreaPoint in Level.area_points:
 		area.add_subarea_nodes()
+		area.calculate_intra_area_distance()
 
 func step_10(): ##expand intra-area points
 	for current_area:AreaPoint in Level.area_points:
-		var intra_area_distance = area_size / float(len(current_area.subpoints))
-		expand_points(current_area.subpoints, current_area.pos, intra_area_distance, ROOM_SIZE)
+		expand_points(current_area.subpoints, current_area.pos, current_area.intra_area_distance, ROOM_SIZE)
 
 func step_11(): ##assign points as area connectors and establish relation
 	for i:int in range(len(Level.area_points)):
@@ -455,9 +456,8 @@ func step_13(): ##assign points as fast-travel rooms
 			current_area.add_subarea_nodes()
 			# prepare for hub zone if applicable
 			if current_area.has_hub:
-				var intra_area_distance = area_size / float(len(current_area.subpoints))
 				#TODO 1: flat, not scaling. Behaves weird for large areas.
-				ensure_min_dist_around(fast_travel_point, current_area.subpoints, intra_area_distance*1.5)
+				ensure_min_dist_around(fast_travel_point, current_area.subpoints, current_area.intra_area_distance*1.5)
 
 func step_14(): ##assign points as spawn point, side upgrades, main upgrades and key item units
 	#identify protected points for each area beyond initial
@@ -658,7 +658,7 @@ func step_18(): ##Add save points
 	var save_distance:int
 	var save_room:Room
 	for starting_room:Room in Level.keyset_rooms:
-		save_distance = Utils.rng.randi_range(1, 5)
+		save_distance = Utils.rng.randi_range(1, 3)
 		save_room = dfs_get_room_at_dist(starting_room, save_distance)
 		get_random_MU(save_room).is_save = true
 
@@ -940,8 +940,8 @@ func check_protect_point(original:Point, new_point:Point, area:AreaPoint, area_s
 			original.associated_step = Level.route_steps[original_required_step_index]
 			area_step_points.erase(original)
 			#move new point in a random direction so it doesen't overlap with original
-			var intra_area_distance = area_size / float(len(area.subpoints))
-			new_point.update_position(new_point.pos + Vector2(Utils.rng.randf_range(-1, 1), Utils.rng.randf_range(-1, 1)).normalized() * intra_area_distance)
+			new_point.update_position(new_point.pos + Vector2(Utils.rng.randf_range(-1, 1), Utils.rng.randf_range(-1, 1)).normalized() * area.intra_area_distance*2)
+			ensure_min_dist_around(new_point, area.subpoints, area.intra_area_distance)
 			return
 	#replace original point for new point
 	new_point.absorb_relations(original)
@@ -1043,9 +1043,16 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_ga
 			r1_candidates[index] = Vector2i(x_candidate, y_candidate)
 			index += 1
 	#roll MU and get r2 correspondant
+	#var valid_selection:bool = false
+	var r1_mu:MU
+	var r2_mu:MU
+	#while !valid_selection:
 	var rand_index:int = Utils.rng.randf_range(0, len(r1_candidates)-1)
-	var r1_mu:MU = Level.map.get_mu_at(r1.grid_pos + r1_candidates[rand_index])
-	var r2_mu:MU = Level.map.get_mu_at(r1_mu.grid_pos + direction_vec)
+	r1_mu = Level.map.get_mu_at(r1.grid_pos + r1_candidates[rand_index])
+	r2_mu = Level.map.get_mu_at(r1_mu.grid_pos + direction_vec)
+	if r1_mu.borders[Utils.vec2i_to_direction(direction_vec)] != Utils.border_type.WALL:
+		print('overwritten at pos: ', r1_mu.grid_pos, ' -> ', r2_mu.grid_pos)
+			#valid_selection = true
 	#connect rooms by selected MUs
 	var direction = Utils.vec2i_to_direction(direction_vec)
 	r1_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
@@ -1132,8 +1139,8 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				room_entry_MU = target_mu
 				on_existing_path = true
 				reuse_one_gate = false
-			#adjacent room is existing of higher step index, gate existing connections before entering
-			elif (origin.step_index < target_mu.parent_room.step_index):
+			#adjacent room is existing of higher step index, gate existing connections before entering (avoids point rooms)
+			elif (origin.step_index < target_mu.parent_room.step_index) && target_mu.parent_room.associated_point == null:
 				gate_adjacent_rooms(target_mu.parent_room)
 				room_entry_MU = connect_adjacent_rooms(current_room, target_mu.parent_room, null, true, room_entry_MU) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
 				_room_connection_memory(room_history, current_room)
@@ -1152,7 +1159,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				on_existing_path = true
 				force_first_gate = false
 			#adjacent room is existing, same index
-			else:
+			elif origin.step_index == target_mu.parent_room.step_index:
 				var gate:LockedDoor = null
 				if force_first_gate:
 					LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
@@ -1365,21 +1372,20 @@ func steps_to_crossroads(point:Point, seen_points:Array[Point] = []) -> int:
 
 func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
 	for i in range(len(points)):
-		#TODO better random procedure
 		var random_pos = Vector2(Utils.rng.randf_range(-pixel_dimensions.x/2.0,pixel_dimensions.x/2.0), Utils.rng.randf_range(-pixel_dimensions.y/2.0, pixel_dimensions.y/2.0))
 		var current_point = AreaPoint.createNew(random_pos) if is_area else Point.createNew(random_pos)
 		points[i] = current_point
 
-func ensure_min_dist_around(center_point:Point, points:Array, min_distance:float):
+func ensure_min_dist_around(center_point:Point, points:Array, min_distance:Vector2):
 	var map_boundary_x:float = map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
 	var map_boundary_y:float = map_size_y*16/2.0 - 4.0
 	for second_point:Point in points:
 		if center_point == second_point: continue
-		var distance:float = center_point.global_position.distance_to(second_point.global_position)
+		var distance:Vector2 = second_point.global_position - center_point.global_position
 		#move points in conflict to current
-		if (distance <= min_distance):
-			var current_to_second:Vector2 = center_point.global_position.direction_to(second_point.global_position)
-			second_point.update_position(second_point.pos + current_to_second * (min_distance - distance + 0.1))
+		if abs(distance.x) < min_distance.x && abs(distance.y) < min_distance.y:
+			var mult_factors:Vector2 = Vector2( (min_distance.x / abs(distance.x)) , min_distance.y / abs(distance.y)) 
+			second_point.update_position(center_point.pos + (distance) * Vector2(mult_factors[mult_factors.min_axis_index()], mult_factors[mult_factors.min_axis_index()])) #DO NOT REMOVE THE 0.1
 			#ensure new position is inside map boundaries
 			if abs(second_point.global_position.x) > map_boundary_x:
 				var point_to_reflection:Vector2 = Vector2(1, 0) * (2 * (sign(second_point.global_position.x) * map_boundary_x - second_point.global_position.x))
@@ -1388,18 +1394,18 @@ func ensure_min_dist_around(center_point:Point, points:Array, min_distance:float
 				var point_to_reflection:Vector2 = Vector2(0, 1) * (2 * (sign(second_point.global_position.y) * map_boundary_y - second_point.global_position.y))
 				second_point.update_position(second_point.pos + point_to_reflection)
 
-func expand_points(points:Array, center:Vector2, min_distance:float, expansion_factor:float = 0):
-	#expand areas from center
+func expand_points(points:Array, center:Vector2, min_distance:Vector2, expansion_factor:float = 0):
+	#expand points from center
 	for current_point:Point in points:
-		var center_to_area:Vector2 = current_point.global_position - center
-		current_point.update_position(current_point.pos + center_to_area * expansion_factor) 
-	#expand areas from each other
+		var center_to_point:Vector2 = current_point.global_position - center
+		current_point.update_position(current_point.pos + center_to_point * expansion_factor) 
+	#expand points from each other
 	#TODO: tweak parameters
 	var map_boundary_x:float = map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
 	var map_boundary_y:float = map_size_y*16/2.0 - 4.0
 	var clear = false
 	var count:int = 0
-	while !clear && min_distance > 0.0:
+	while !clear && min_distance.x > 0.0 && min_distance.y > 0.0:
 		clear = true
 		count += 1
 		if (count == 1000):
@@ -1419,11 +1425,11 @@ func expand_points(points:Array, center:Vector2, min_distance:float, expansion_f
 			#check distance to other points
 			for second_point:Point in points:
 				if current_point == second_point: continue
-				var distance:float = current_point.global_position.distance_to(second_point.global_position)
+				var distance:Vector2 = second_point.global_position - current_point.global_position
 				#move points in conflict to current
-				if (distance <= min_distance):
-					var current_to_second:Vector2 = current_point.global_position.direction_to(second_point.global_position)
-					second_point.update_position(second_point.pos + current_to_second * (min_distance - distance + 0.1)) #DO NOT REMOVE THE 0.1
+				if abs(distance.x) < min_distance.x && abs(distance.y) < min_distance.y:
+					var mult_factors:Vector2 = Vector2( (min_distance.x / abs(distance.x)) , min_distance.y / abs(distance.y)) 
+					second_point.update_position(current_point.pos + (distance) * Vector2(mult_factors[mult_factors.min_axis_index()], mult_factors[mult_factors.min_axis_index()])) #DO NOT REMOVE THE 0.1
 					clear = false
 
 func connect_points(points:Array):
@@ -1584,10 +1590,8 @@ func _process(delta: float) -> void:
 const font = preload("res://data/upheavtt.ttf")
 func _draw():
 	for current_area:AreaPoint in Level.area_points:
-		draw_circle(current_area.pos, area_size*0.5, Color.BLACK, false)
-		var area_rect:Rect2 = Rect2(current_area.position - Vector2(area_size/2.0, area_size/2.0), Vector2(area_size, area_size))
+		var area_rect:Rect2 = Rect2(current_area.position - Vector2(area_size_xy.x/2.0, area_size_xy.y/2.0), Vector2(area_size_xy.x, area_size_xy.y))
 		draw_rect(area_rect, Color.BLACK, false)
-		var intra_area_distance = area_size / float(len(current_area.subpoints))
 		
 		if draw_angles:
 			for related_area:AreaPoint in current_area.relations:
@@ -1599,7 +1603,7 @@ func _draw():
 				draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, false)
 		
 		for subpoint:Point in current_area.subpoints:
-			draw_circle(subpoint.global_position, intra_area_distance*0.5, Color.BLACK, false)
+			draw_rect(Rect2(subpoint.global_position - Vector2(current_area.intra_area_distance.x/2.0, current_area.intra_area_distance.y/2.0), Vector2(current_area.intra_area_distance.x,current_area.intra_area_distance.y)), Color.BLACK, false)
 			
 			var debug_index = current_area.subpoints.find(subpoint)
 			draw_string(font , subpoint.global_position + Vector2(0,20), str(debug_index), 0, -1, 16, Color.BLACK)
@@ -1608,7 +1612,7 @@ func _draw():
 				draw_string(font , subpoint.global_position + Vector2(0,-40), str(subpoint.associated_step.index), 0, -1, 16, Color.DEEP_PINK)
 			
 			if subpoint is FastTravelPoint and current_area.has_hub:
-				draw_circle(subpoint.global_position, intra_area_distance, Color.BLACK, false)
+				draw_rect(Rect2(subpoint.global_position - Vector2(current_area.intra_area_distance.x, current_area.intra_area_distance.y), Vector2(current_area.intra_area_distance.x*2,current_area.intra_area_distance.y*2)), Color.BLACK, false)
 			
 			if draw_angles:
 				for related_point:Point in subpoint.relations:

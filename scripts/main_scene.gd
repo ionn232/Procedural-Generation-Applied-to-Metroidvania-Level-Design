@@ -34,7 +34,7 @@ func _process(delta: float) -> void:
 	else:
 		room_selection.text = str(selected_room_pos)
 		var mu:MU = Level.map.get_mu_at(selected_room_pos)
-		room_selection.text += '\n' + str(mu.minor_reward_score)
+		room_selection.text += '\n' + str(mu.parent_room.step_index)
 		match mu:
 			_ when mu.is_fast_travel:
 				room_selection.text += '\nWarp point'

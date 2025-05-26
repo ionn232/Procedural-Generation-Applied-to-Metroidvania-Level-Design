@@ -9,6 +9,8 @@ const AREA_POINT = preload("res://scene/points/area_point.tscn")
 var area_index : int
 var has_hub : bool = false
 
+var intra_area_distance:Vector2 = Vector2(0,0)
+
 #parity in size to base class 'relations': each 'i' refers to the same area
 var relation_is_progress : Array[bool] #if not, it's backtracking route
 
@@ -22,6 +24,11 @@ static func createNew(pos:Vector2, generic_identity:Point = null) -> AreaPoint:
 	newPoint.relations = []
 	newPoint.is_generic = false
 	return newPoint
+
+func calculate_intra_area_distance():
+	var x_value:float = Level.map_size_x*16*Level.area_size_multiplier / float(Level.num_areas) / float(len(subpoints))
+	var y_value:float = Level.map_size_y*16*Level.area_size_multiplier / float(Level.num_areas) /float(len(subpoints))
+	intra_area_distance = Vector2(max(x_value, 1.0), max(y_value, 1.0))
 
 func add_subarea_nodes():
 	for subpoint:Point in subpoints:

@@ -21,12 +21,10 @@ var area_size_rooms:int
 var area_size_xy:Vector2
 var area_size_rooms_xy:Vector2i
 
-const MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
 var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
-	Utils.rng.seed = hash("2")
 	#initialize map
 	Level.map_size_x = map_size_x
 	Level.map_size_y = map_size_y
@@ -43,6 +41,7 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	area_size_rooms_xy = ceil(area_size_xy / 16.0)
 	Level.num_areas = number_of_areas
 	Level.num_route_steps = number_route_steps
+	Level.area_size_xy = area_size_xy
 	
 	
 	#load reward pool
@@ -163,7 +162,7 @@ func _stage_handler():
 		21:
 			step_21()
 	print('time for step ', str(Utils.generator_stage), ': ', float(Time.get_unix_time_from_system() - time_start))
-	redraw_all()
+	Utils.redraw_all()
 
 
 func step_1(): ##1: place as many points as the number of areas
@@ -846,6 +845,7 @@ func extrude_reward_room(room:Room): #TODO: cases where there are no available r
 			connect_adjacent_rooms(prev_extruded_room, current_room, gate)
 	#set previous room as boss room
 	current_room.step_index = room.step_index+1
+	current_room.is_main_route_location = true
 	prev_extruded_room.is_trap = true
 	#set reward in new room
 	get_free_MU(current_room).add_reward(current_reward)
@@ -1499,7 +1499,7 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 			var existing_relation_angle = angle_candidates[k]
 			if j==k: continue
 			if !existing_relation_angle: continue 
-			if abs(second_point_angle - existing_relation_angle) < MIN_ANGULAR_DISTANCE: 
+			if abs(second_point_angle - existing_relation_angle) < Utils.MIN_ANGULAR_DISTANCE: 
 				suitable = false
 				var distance_existing:float = current_point.pos.distance_squared_to(points[k].global_position)
 				var distance_new:float = current_point.pos.distance_squared_to(points[j].global_position)
@@ -1563,19 +1563,13 @@ func clear_incompatible_relations(point:Point): #iterate over point relations. r
 			var previous_relation = point.relations[j]
 			if previous_relation in relations_to_remove: continue
 			var previous_relation_angle = relation_angles[j]
-			if abs(previous_relation_angle - angle) < MIN_ANGULAR_DISTANCE: 
+			if abs(previous_relation_angle - angle) < Utils.MIN_ANGULAR_DISTANCE: 
 				relations_to_remove.push_back(relation)
 				break
 	for deprecated_relation:Point in relations_to_remove:
 		point.relations.erase(deprecated_relation)
 		deprecated_relation.relations.erase(point)
 
-func redraw_all():
-	queue_redraw()
-	for area:AreaPoint in Level.area_points:
-		area.queue_redraw()
-		for subpoint:Point in area.subpoints:
-			subpoint.queue_redraw()
 
 func DEBUG_check_parity():
 	var parity = true
@@ -1602,39 +1596,3 @@ func DEBUG_check_borders(mu:MU):
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
-
-const font = preload("res://data/upheavtt.ttf")
-func _draw():
-	for current_area:AreaPoint in Level.area_points:
-		var area_rect:Rect2 = Rect2(current_area.position - Vector2(area_size_xy.x/2.0, area_size_xy.y/2.0), Vector2(area_size_xy.x, area_size_xy.y))
-		draw_rect(area_rect, Color.BLACK, false)
-		
-		if draw_angles:
-			for related_area:AreaPoint in current_area.relations:
-				var angle = current_area.global_position.angle_to_point(related_area.global_position)
-				var direction = Vector2(1,0)
-				var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
-				var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-				draw_line(current_area.position, current_area.position + angle_1 * 100, Color(0,0,0,0.3), 2, false)
-				draw_line(current_area.position, current_area.position + angle_2 * 100, Color(0,0,0,0.3), 2, false)
-		
-		for subpoint:Point in current_area.subpoints:
-			draw_rect(Rect2(subpoint.global_position - Vector2(current_area.intra_area_distance.x/2.0, current_area.intra_area_distance.y/2.0), Vector2(current_area.intra_area_distance.x,current_area.intra_area_distance.y)), Color.BLACK, false)
-			
-			var debug_index = current_area.subpoints.find(subpoint)
-			draw_string(font , subpoint.global_position + Vector2(0,20), str(debug_index), 0, -1, 16, Color.BLACK)
-			
-			if subpoint.associated_step != null:
-				draw_string(font , subpoint.global_position + Vector2(0,-40), str(subpoint.associated_step.index), 0, -1, 16, Color.DEEP_PINK)
-			
-			if subpoint is FastTravelPoint and current_area.has_hub:
-				draw_rect(Rect2(subpoint.global_position - Vector2(current_area.intra_area_distance.x, current_area.intra_area_distance.y), Vector2(current_area.intra_area_distance.x*2,current_area.intra_area_distance.y*2)), Color.BLACK, false)
-			
-			if draw_angles:
-				for related_point:Point in subpoint.relations:
-					var angle = subpoint.global_position.angle_to_point(related_point.global_position)
-					var direction = Vector2(1,0)
-					var angle_1 = direction.rotated(angle + MIN_ANGULAR_DISTANCE)
-					var angle_2 = direction.rotated(angle - MIN_ANGULAR_DISTANCE)
-					draw_line(subpoint.global_position, subpoint.global_position + angle_1 * 50, Color(0,0,0,0.8), 1, false)
-					draw_line(subpoint.global_position, subpoint.global_position + angle_2 * 50, Color(0,0,0,0.8), 1, false)

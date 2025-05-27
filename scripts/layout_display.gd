@@ -8,11 +8,10 @@ extends Node2D
 @onready var tilemap_bg: TileMapLayer = $Background
 @onready var room_layout_container: Node2D = $RoomLayoutContainer
 
+var step_display_cap:int = 9999
 
 var layout_tilemaps:Array[TileMapLayer]
-#var content_tilemaps:Array[TileMapLayer]
 
-#const ROOM_CONTENT = preload("res://scene/tilemaplayers/room_content.tscn")
 const ROOM_LAYOUT = preload("res://scene/tilemaplayers/room_layout.tscn")
 
 const wall_up_atlas := Vector2i(1,0)
@@ -24,7 +23,6 @@ const wall_up_slim_atlas := Vector2i(8,0)
 const wall_down_slim_atlas := Vector2i(8,2)
 const wall_left_slim_atlas := Vector2i(7,1)
 const wall_right_slim_atlas := Vector2i(9,1)
-
 
 const empty_atlas := Vector2i(4, 2)
 const trap_atlas := Vector2i(4,3)
@@ -64,6 +62,11 @@ const shop_atlas := Vector2i(2,3)
 const trap_color = Color(1.0, 0.4, 0.4)
 const default_color = Color(1.0 ,1.0 ,1.0)
 
+func change_step_display_limit(new_max_step:int):
+	step_display_cap = new_max_step
+	clear_tilemaps()
+	draw_rooms()
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	ui.stage_changed.connect(_stage_handler.bind())
@@ -79,6 +82,7 @@ func _ready() -> void:
 
 func clear_tilemaps():
 	tilemap_content.clear()
+	tilemap_bg.clear()
 	for i:int in range(Level.num_areas + 1):
 		layout_tilemaps[i].clear()
 
@@ -102,6 +106,8 @@ func dim_area_nodes():
 func draw_rooms(): #TODO: RENDER BY STEPS (input index)
 	var rooms = Level.rooms
 	for room:Room in rooms:
+		#skip steps over current visualized limit
+		if room.step_index > step_display_cap && !(room.is_main_route_location && room.step_index-1 == step_display_cap): continue
 		var limits:Array[Vector2i] = get_room_limits(room)
 		draw_room_bg(room, room.is_trap)
 		#draw layout

@@ -305,13 +305,14 @@ text = "View intra-area size
 [node name="PointIndex" type="CheckBox" parent="UI/UI/DebugPanel/VBoxContainer"]
 layout_mode = 2
 button_pressed = true
-text = "View point indexes
+text = "View area size
 "
 
 [node name="PointStep" type="CheckBox" parent="UI/UI/DebugPanel/VBoxContainer"]
 layout_mode = 2
 button_pressed = true
-text = "View point associated step"
+text = "View area size
+"
 
 [node name="RelationAngles" type="CheckBox" parent="UI/UI/DebugPanel/VBoxContainer"]
 layout_mode = 2
@@ -333,10 +334,3 @@ text = "View points"
 [connection signal="pressed" from="UI/UI/ConfigPanel/Config/Advance/Next" to="UI" method="_on_advance_btn_button_down"]
 [connection signal="toggled" from="UI/UI/ConfigPanel/Config/CheckBox" to="UI" method="set_rng_mode"]
 [connection signal="text_changed" from="UI/UI/ConfigPanel/Config/SeedBox" to="UI" method="rng_seed_changed"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/AreaSize" to="UI" method="set_area_size_visible"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/AreaInnerSize" to="UI" method="set_area_inner_size_visible"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/PointIndex" to="UI" method="set_point_index_visible"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/PointStep" to="UI" method="set_point_step_visible"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/RelationAngles" to="UI" method="set_point_angles_visible"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/Relations" to="UI" method="set_point_relations_visible"]
-[connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/Points" to="UI" method="set_points_visible"]

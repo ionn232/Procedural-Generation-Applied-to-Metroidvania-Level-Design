@@ -17,6 +17,8 @@ static var minor_reward_room_counts:Array[Array]  #type: Array[Array[Array[Room]
 static var map_size_x:int
 static var map_size_y:int
 
+static var area_size_xy:Vector2
+
 static var area_size_multiplier:float
 
 #area points

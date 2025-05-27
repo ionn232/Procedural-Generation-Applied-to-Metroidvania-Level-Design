@@ -16,6 +16,7 @@ var room_MUs : Array[MU] = []
 
 #room type
 var is_trap:bool = false
+var is_main_route_location:bool = false
 
 var minor_rewards_viable:bool = false
 

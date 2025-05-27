@@ -21,3 +21,11 @@ func _process(delta: float) -> void:
 	if (Input.is_action_just_pressed("UIToggle")):
 		ui.visible = !ui.visible
 	
+	if Input.is_action_just_pressed("Reset"):
+		_reset()
+
+func _reset():
+	for child:Node in self.get_children(true):
+		child.queue_free()
+	get_tree().reload_current_scene()
+	

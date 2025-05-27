@@ -2,8 +2,21 @@ class_name Utils
 extends Resource
 
 static var generator_stage : int = 0
+static var fixed_rng:bool = false
 static var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 static var ROOM_SIZE:float = 16.0
+static var MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
+
+#debug visualizers
+static var debug_show_area_size:bool = true
+static var debug_show_intra_area_size:bool = true
+static var debug_show_point_indexes:bool = true
+static var debug_show_point_steps:bool = true
+static var debug_show_point_angles:bool = true
+static var debug_show_relations:bool = true
+static var debug_show_points:bool = true
+
+static var visualized_step_index:int
 
 enum border_type {
 	EMPTY,
@@ -116,7 +129,13 @@ static func is_pos_inside_map(pos:Vector2i) -> bool:
 	elif (pos.y < -Level.map_size_y/2.0):
 		return false
 	return true
-	
+
+static func redraw_all():
+	for area:AreaPoint in Level.area_points:
+		area.queue_redraw()
+		for subpoint:Point in area.subpoints:
+			subpoint.queue_redraw()
+
 static func room_index_to_world(index:int) -> int:
 	return index*16
 static func room_pos_to_world(pos:Vector2i) -> Vector2i:

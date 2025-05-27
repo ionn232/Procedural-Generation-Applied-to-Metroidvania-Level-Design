@@ -5,6 +5,7 @@ const LEFT_DIRECTION_ICON = preload("res://data/images/left_direction_icon.png")
 const RIGHT_DIRECTION_ICON = preload("res://data/images/right_direction_icon.png")
 const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 
+@onready var main_scene: Node2D = $".."
 
 @onready var step_counter: Label = $UI/StepCounter
 @onready var route_steps_keyset: Label = $UI/RouteStepsKeyset
@@ -15,22 +16,36 @@ const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 @onready var room_select_borders: MenuButton = $UI/TopRightElems/RoomSelectionInfo/layout/ColumnContainer/Borders
 @onready var room_select_rewards: MenuButton = $UI/TopRightElems/RoomSelectionInfo/layout/ColumnContainer/Content
 
+#config UI components
+@onready var seed_box: LineEdit = $UI/ConfigPanel/Config/SeedBox
+@onready var step_rooms: MenuButton = $UI/ConfigPanel/Config/StepRooms
 
-@onready var main_scene: Node2D = $".."
 
 
 signal stage_changed()
+signal max_step_selected(step_index:int)
 @onready var advance_btn: Button = $AdvanceBtn
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	load_step_info(0)
-	main_scene.room_selected.connect(display_room_info.bind())
+	set_rng_mode(true)
+	load_step_rooms_menu()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
 
+func load_step_rooms_menu() -> void:
+	var step_rooms_popup:PopupMenu = step_rooms.get_popup()
+	step_rooms_popup.clear(true)
+	step_rooms_popup.id_pressed.connect(step_selected.bind())
+	for step:RouteStep in Level.route_steps:
+		step_rooms_popup.add_item('Step ' + str(step.index))
+	step_rooms_popup.add_item('Complete map')
+
+func step_selected(step_index:int):
+	max_step_selected.emit(step_index)
 
 func display_step_desc(current_stage:int):
 	step_counter.text = STEP_DESCRIPTIONS[current_stage]
@@ -159,12 +174,57 @@ func load_step_info(current_stage:int):
 		#add to parent
 		step_popup.add_submenu_node_item(new_option_popup.title, new_option_popup)
 
+#advance generation procedure
 func _on_advance_btn_button_down() -> void:
 	Utils.generator_stage += 1
 	display_step_desc(Utils.generator_stage)
 	stage_changed.emit()
 	
 	if Utils.generator_stage == 7: load_step_info(7)
+
+
+
+#manipulate rng
+func set_rng_mode(random_seed:bool) -> void:
+	Utils.fixed_rng = !random_seed
+	seed_box.editable = !random_seed
+	if random_seed:
+		seed_box.text = 'RANDOM'
+	else:
+		seed_box.text = ''
+		Utils.rng.seed = hash(seed_box.text)
+
+func rng_seed_changed(new_seed:String):
+	Utils.rng.seed = hash(new_seed)
+
+#debug components
+func set_area_size_visible(is_visible:bool):
+	Utils.debug_show_area_size = is_visible
+	Utils.redraw_all()
+
+func set_area_inner_size_visible(is_visible:bool):
+	Utils.debug_show_intra_area_size = is_visible
+	Utils.redraw_all()
+
+func set_point_index_visible(is_visible:bool):
+	Utils.debug_show_point_indexes = is_visible
+	Utils.redraw_all()
+
+func set_point_step_visible(is_visible:bool):
+	Utils.debug_show_point_steps = is_visible
+	Utils.redraw_all()
+
+func set_point_angles_visible(is_visible:bool):
+	Utils.debug_show_point_angles = is_visible
+	Utils.redraw_all()
+
+func set_point_relations_visible(is_visible:bool):
+	Utils.debug_show_relations = is_visible
+	Utils.redraw_all()
+
+func set_points_visible(is_visible:bool):
+	for area:AreaPoint in Level.area_points:
+		area.visible = is_visible
 
 const STEP_DESCRIPTIONS = [
 	'',

@@ -11,15 +11,15 @@
 script = ExtResource("1_gbq8f")
 
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
-map_size_x = 100
-map_size_y = 80
-number_route_steps = 7
-number_of_areas = 5
-number_side_upgrades = 7
-number_equipment_items = 50
+map_size_x = 80
+map_size_y = 60
+number_route_steps = 10
+number_of_areas = 8
+number_side_upgrades = 9
+number_equipment_items = 30
 number_collectibles = 50
 number_stat_upgrades = 50
-area_size_multiplier = 2.0
+area_size_multiplier = 3.0
 reward_backtracking_factor = 0.1
 
 [node name="LayoutDisplay" parent="." instance=ExtResource("2_qa15b")]
@@ -45,21 +45,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RoomSelection" type="Label" parent="UI/UI"]
-visible = false
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -160.0
-offset_top = -49.0
-grow_horizontal = 0
-grow_vertical = 0
-horizontal_alignment = 2
-metadata/_edit_use_anchors_ = true
-
 [node name="AdvanceBtn" type="Button" parent="UI/UI"]
 layout_mode = 1
 anchors_preset = 7
@@ -78,9 +63,9 @@ flat = true
 
 [node name="StepCounter" type="Label" parent="UI/UI"]
 layout_mode = 1
-offset_left = 6.0
+offset_left = 380.0
 offset_top = 6.0
-offset_right = 333.0
+offset_right = 707.0
 offset_bottom = 99.0
 theme_override_font_sizes/font_size = 32
 text = "Awaiting instructions
@@ -96,6 +81,7 @@ offset_top = 6.0
 offset_right = -6.0
 offset_bottom = 134.0
 grow_horizontal = 0
+mouse_filter = 2
 
 [node name="StepInfo" type="MenuButton" parent="UI/UI/TopRightElems"]
 layout_mode = 2
@@ -108,6 +94,11 @@ layout_mode = 2
 [node name="layout" type="VBoxContainer" parent="UI/UI/TopRightElems/RoomSelectionInfo"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
+
+[node name="Title" type="Label" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
+layout_mode = 2
+text = "Room Selection"
+horizontal_alignment = 1
 
 [node name="Position" type="Label" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
 layout_mode = 2
@@ -129,5 +120,164 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 text = "Borders"
+
+[node name="ConfigPanel" type="PanelContainer" parent="UI/UI"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 364.0
+grow_vertical = 2
+size_flags_vertical = 3
+
+[node name="Config" type="VBoxContainer" parent="UI/UI/ConfigPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Advance" type="HBoxContainer" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Next" type="Button" parent="UI/UI/ConfigPanel/Config/Advance"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Next"
+
+[node name="Result" type="Button" parent="UI/UI/ConfigPanel/Config/Advance"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Result"
+
+[node name="Separator" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="CheckBox" type="CheckBox" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Random seed"
+
+[node name="SeedBox" type="LineEdit" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+placeholder_text = "RNG Seed"
+
+[node name="Separator2" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Map Size (W, H)"
+
+[node name="XYinput" type="HBoxContainer" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="X" type="SpinBox" parent="UI/UI/ConfigPanel/Config/XYinput"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 1.0
+rounded = true
+
+[node name="Y" type="SpinBox" parent="UI/UI/ConfigPanel/Config/XYinput"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 1.0
+rounded = true
+
+[node name="Separator3" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Title2" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Main Route steps"
+
+[node name="RouteSteps" type="SpinBox" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+min_value = 1.0
+max_value = 25.0
+value = 1.0
+
+[node name="Separator4" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Title3" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Areas"
+
+[node name="Areas" type="SpinBox" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+min_value = 1.0
+max_value = 25.0
+value = 1.0
+
+[node name="Separator5" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Title4" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Area size multiplier"
+
+[node name="AreaSizeVal" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "1.0"
+horizontal_alignment = 1
+
+[node name="AreaSizeScroll" type="HScrollBar" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+min_value = 1.0
+max_value = 5.0
+value = 1.0
+
+[node name="Separator6" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Title5" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Upgrades"
+
+[node name="LootTypes" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Side | Equipment | Collectibles | Stat upgrades"
+horizontal_alignment = 1
+
+[node name="LootCounts" type="HBoxContainer" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="SideUps" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 10.0
+
+[node name="Equips" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Collects" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatUps" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Separator7" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+
+[node name="Title6" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "Backtracking Factor"
+
+[node name="BacktrackVal" type="Label" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+text = "1.0"
+horizontal_alignment = 1
+
+[node name="BacktrackBar" type="HScrollBar" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+
+[node name="StepRooms" type="MenuButton" parent="UI/UI/ConfigPanel/Config"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "View Step Rooms"
+flat = false
 
 [connection signal="button_down" from="UI/UI/AdvanceBtn" to="UI" method="_on_advance_btn_button_down"]

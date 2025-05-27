@@ -1156,7 +1156,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 				on_existing_path = true
 				reuse_one_gate = false
 			#adjacent room is existing of higher step index, gate existing connections before entering (avoids point rooms)
-			elif (origin.step_index < target_mu.parent_room.step_index) && target_mu.parent_room.associated_point == null:
+			elif (origin.step_index < target_mu.parent_room.step_index) && (target_mu.parent_room.associated_point == null || target_mu.parent_room.associated_point is ConnectionPoint):
 				gate_adjacent_rooms(target_mu.parent_room)
 				room_entry_MU = connect_adjacent_mus(current_MU, target_mu, null, true, room_entry_MU) #protect gates to maintain routes in case a room is entered to by lower steps in multiple instances (avoid hardlocks)
 				_room_connection_memory(room_history, current_room)

@@ -21,7 +21,6 @@ var area_size_rooms:int
 var area_size_xy:Vector2
 var area_size_rooms_xy:Vector2i
 
-const ROOM_SIZE:float = 16.0
 const MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
 var draw_angles:bool = false
 
@@ -181,7 +180,7 @@ func step_2(): ##expand points from centroid and ensure minimum distance
 	centroid.x /= len(Level.area_points)
 	centroid.y /= len(Level.area_points)
 	#expand areas from centroid
-	expand_points(Level.area_points, centroid, area_size_xy, ROOM_SIZE)
+	expand_points(Level.area_points, centroid, area_size_xy, Utils.ROOM_SIZE)
 
 func step_3(): ##establish initial area
 	var rand_index :int = Utils.rng.randi_range(0, number_of_areas - 1)
@@ -342,7 +341,7 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 
 func step_10(): ##expand intra-area points
 	for current_area:AreaPoint in Level.area_points:
-		expand_points(current_area.subpoints, current_area.pos, current_area.intra_area_distance, ROOM_SIZE)
+		expand_points(current_area.subpoints, current_area.pos, current_area.intra_area_distance, Utils.ROOM_SIZE)
 
 func step_11(): ##assign points as area connectors and establish relation
 	for i:int in range(len(Level.area_points)):

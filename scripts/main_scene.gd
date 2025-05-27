@@ -18,17 +18,6 @@ func _process(delta: float) -> void:
 	if (Input.is_action_just_pressed("UIToggle")):
 		ui.visible = !ui.visible
 	
-	#UI TODO:move to ui script, call on signal new room selected
-	route_steps_keyset.text = ''
-	for route_step:RouteStep in Level.route_steps:
-		route_steps_keyset.text += '\n------------------------------- ' + 'step ' + str(route_step.index)
-		route_steps_keyset.text += '\nkeys: '
-		for key:Reward in route_step.keyset:
-			route_steps_keyset.text += key.name + ', '
-		route_steps_keyset.text += '\nupgrades: '
-		for upgrade:Reward in route_step.reward_pool:
-			route_steps_keyset.text += upgrade.name + ', '
-	
 	if !selected_room_pos:
 		room_selection.text = 'no map unit selected'
 	else:

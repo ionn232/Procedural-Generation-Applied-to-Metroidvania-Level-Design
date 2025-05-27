@@ -3,6 +3,7 @@ extends Resource
 
 static var generator_stage : int = 0
 static var rng : RandomNumberGenerator = RandomNumberGenerator.new()
+static var ROOM_SIZE:float = 16.0
 
 enum border_type {
 	EMPTY,
@@ -54,7 +55,7 @@ const area_colors : Array[Color] = [
 	Color.NAVY_BLUE,
 	Color.FUCHSIA,
 	Color.OLIVE,
-	Color.CYAN,
+	Color.DARK_SLATE_BLUE,
 	Color.BROWN,
 	Color.TEAL,
 	Color.DARK_GREEN,

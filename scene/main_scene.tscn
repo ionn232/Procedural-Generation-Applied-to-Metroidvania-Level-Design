@@ -13,13 +13,13 @@ script = ExtResource("1_gbq8f")
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
 map_size_x = 100
 map_size_y = 80
-number_route_steps = 25
-number_of_areas = 25
-number_side_upgrades = 1
+number_route_steps = 7
+number_of_areas = 5
+number_side_upgrades = 7
 number_equipment_items = 50
 number_collectibles = 50
 number_stat_upgrades = 50
-area_size_multiplier = 3.5
+area_size_multiplier = 2.0
 reward_backtracking_factor = 0.1
 
 [node name="LayoutDisplay" parent="." instance=ExtResource("2_qa15b")]
@@ -75,16 +75,6 @@ grow_vertical = 0
 text = "Next"
 flat = true
 
-[node name="RouteStepInfo" type="Label" parent="UI/UI"]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -23.0
-offset_right = 40.0
-grow_vertical = 0
-text = "Route Step Info"
-
 [node name="StepCounter" type="Label" parent="UI/UI"]
 layout_mode = 1
 anchors_preset = 1
@@ -99,9 +89,13 @@ text = "Awaiting instructions
 0"
 horizontal_alignment = 2
 
-[node name="RouteStepsKeyset" type="Label" parent="UI/UI"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="StepInfo" type="MenuButton" parent="UI/UI"]
+layout_mode = 1
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 132.0
+offset_bottom = 37.0
+text = "Route step info"
+flat = false
 
 [connection signal="button_down" from="UI/UI/AdvanceBtn" to="UI" method="_on_advance_btn_button_down"]

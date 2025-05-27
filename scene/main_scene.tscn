@@ -46,6 +46,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RoomSelection" type="Label" parent="UI/UI"]
+visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -77,25 +78,56 @@ flat = true
 
 [node name="StepCounter" type="Label" parent="UI/UI"]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -32.0
-offset_right = -14.0
-offset_bottom = 45.0
-grow_horizontal = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 333.0
+offset_bottom = 99.0
 theme_override_font_sizes/font_size = 32
 text = "Awaiting instructions
 0"
-horizontal_alignment = 2
 
-[node name="StepInfo" type="MenuButton" parent="UI/UI"]
+[node name="TopRightElems" type="VBoxContainer" parent="UI/UI"]
 layout_mode = 1
-offset_left = 6.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -206.0
 offset_top = 6.0
-offset_right = 132.0
-offset_bottom = 37.0
+offset_right = -6.0
+offset_bottom = 134.0
+grow_horizontal = 0
+
+[node name="StepInfo" type="MenuButton" parent="UI/UI/TopRightElems"]
+layout_mode = 2
 text = "Route step info"
 flat = false
+
+[node name="RoomSelectionInfo" type="PanelContainer" parent="UI/UI/TopRightElems"]
+layout_mode = 2
+
+[node name="layout" type="VBoxContainer" parent="UI/UI/TopRightElems/RoomSelectionInfo"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Position" type="Label" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
+layout_mode = 2
+text = "No room selected"
+horizontal_alignment = 1
+
+[node name="ColumnContainer" type="HBoxContainer" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
+layout_mode = 2
+alignment = 1
+
+[node name="Content" type="MenuButton" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout/ColumnContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Content"
+
+[node name="Borders" type="MenuButton" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout/ColumnContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Borders"
 
 [connection signal="button_down" from="UI/UI/AdvanceBtn" to="UI" method="_on_advance_btn_button_down"]

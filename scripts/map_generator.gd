@@ -296,8 +296,6 @@ func step_7(): ##establish area-rs relations
 				var random_index = available_indexes.pop_at(index_list_random_index)
 				route_steps[i].areas.push_back(Level.area_points[random_index])
 		num_rs_left -= 1
-	#display in UI
-	ui.display_rs_info()
 
 func step_8(): ##randomly place around areas a point for each relation, one for fast-travel room and one extra for spawn room
 	for i:int in len(Level.area_points):

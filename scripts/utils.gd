@@ -129,3 +129,40 @@ static func absolute_direction(pos1:Vector2i, pos2:Vector2i) -> Vector2i:
 	var step2:Vector2i = step1.abs()
 	direction_vec[step2.max_axis_index()] = 1 * sign(step1[step2.max_axis_index()])
 	return direction_vec
+static func border_type_name(border:border_type) -> String:
+	match(border):
+		border_type.EMPTY:
+			return '-'
+		border_type.SAME_ROOM:
+			return '-'
+		border_type.WALL:
+			return 'Wall'
+		border_type.DEATH_ZONE:
+			return 'Death zone'
+		border_type.LOCKED_DOOR:
+			return 'Gate'
+	return 'Invalid type'
+static func direction_to_str(dir:direction) -> String:
+	match(dir):
+		direction.UP:
+			return 'Up'
+		direction.DOWN:
+			return 'Down'
+		direction.LEFT:
+			return 'Left'
+		direction.RIGHT:
+			return 'Right'
+	return 'Invalid direction'
+static func gate_direction_to_str(gate:LockedDoor) -> String:
+	if gate.directionality == gate_directionality.TWO_WAY:
+		return 'Two-way'
+	else:
+		return 'One-way: ' + direction_to_str(gate.direction)
+static func gate_state_to_str(gate:LockedDoor):
+	match(gate.final_state):
+		gate_state.NON_TRAVERSABLE:
+			return 'Non-traversable'
+		gate_state.TRAVERSABLE:
+			return 'Traversable'
+		gate_state.OPEN:
+			return 'Open'

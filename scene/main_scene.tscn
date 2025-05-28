@@ -11,16 +11,6 @@
 script = ExtResource("1_gbq8f")
 
 [node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
-map_size_x = 80
-map_size_y = 60
-number_route_steps = 10
-number_of_areas = 8
-number_side_upgrades = 9
-number_equipment_items = 30
-number_collectibles = 50
-number_stat_upgrades = 50
-area_size_multiplier = 3.0
-reward_backtracking_factor = 0.1
 
 [node name="LayoutDisplay" parent="." instance=ExtResource("2_qa15b")]
 
@@ -155,14 +145,16 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 1.0
-value = 1.0
+max_value = 500.0
+value = 100.0
 rounded = true
 
 [node name="Y" type="SpinBox" parent="UI/UI/ConfigPanel/Config/XYinput"]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 1.0
-value = 1.0
+max_value = 500.0
+value = 80.0
 rounded = true
 
 [node name="Separator3" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
@@ -176,7 +168,7 @@ text = "Main Route steps"
 layout_mode = 2
 min_value = 1.0
 max_value = 25.0
-value = 1.0
+value = 12.0
 
 [node name="Separator4" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -189,7 +181,7 @@ text = "Areas"
 layout_mode = 2
 min_value = 1.0
 max_value = 25.0
-value = 1.0
+value = 10.0
 
 [node name="Separator5" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -207,7 +199,8 @@ horizontal_alignment = 1
 layout_mode = 2
 min_value = 1.0
 max_value = 5.0
-value = 1.0
+step = 0.1
+value = 2.5
 
 [node name="Separator6" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -228,18 +221,22 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 10.0
+value = 5.0
 
 [node name="Equips" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
 layout_mode = 2
 size_flags_horizontal = 3
+value = 20.0
 
 [node name="Collects" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
 layout_mode = 2
 size_flags_horizontal = 3
+value = 20.0
 
 [node name="StatUps" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
 layout_mode = 2
 size_flags_horizontal = 3
+value = 20.0
 
 [node name="Separator7" type="HSeparator" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -250,13 +247,14 @@ text = "Backtracking Factor"
 
 [node name="BacktrackVal" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "1.0"
+text = "0.1"
 horizontal_alignment = 1
 
 [node name="BacktrackBar" type="HScrollBar" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
 max_value = 1.0
 step = 0.05
+value = 0.1
 
 [node name="StepRooms" type="MenuButton" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -333,6 +331,16 @@ text = "View points"
 [connection signal="pressed" from="UI/UI/ConfigPanel/Config/Advance/Next" to="UI" method="_on_advance_btn_button_down"]
 [connection signal="toggled" from="UI/UI/ConfigPanel/Config/CheckBox" to="UI" method="set_rng_mode"]
 [connection signal="text_changed" from="UI/UI/ConfigPanel/Config/SeedBox" to="UI" method="rng_seed_changed"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/XYinput/X" to="UI" method="map_x_changed"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/XYinput/Y" to="UI" method="map_y_changed"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/RouteSteps" to="UI" method="change_num_route_steps"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/Areas" to="UI" method="change_num_areas"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/AreaSizeScroll" to="UI" method="change_area_size_mult"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/LootCounts/SideUps" to="UI" method="change_side_ups_count"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/LootCounts/Equips" to="UI" method="change_equip_count"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/LootCounts/Collects" to="UI" method="change_collectible_count"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/LootCounts/StatUps" to="UI" method="change_stat_ups_count"]
+[connection signal="value_changed" from="UI/UI/ConfigPanel/Config/BacktrackBar" to="UI" method="change_backtracking_factor"]
 [connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/AreaSize" to="UI" method="set_area_size_visible"]
 [connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/AreaInnerSize" to="UI" method="set_area_inner_size_visible"]
 [connection signal="toggled" from="UI/UI/DebugPanel/VBoxContainer/PointIndex" to="UI" method="set_point_index_visible"]

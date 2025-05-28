@@ -80,6 +80,10 @@ func _ready() -> void:
 		layout_tilemaps[i+1] = new_tilemap_layout
 		room_layout_container.add_child(new_tilemap_layout, true)
 
+func reset():
+	clear_tilemaps()
+	
+
 func clear_tilemaps():
 	tilemap_content.clear()
 	tilemap_bg.clear()

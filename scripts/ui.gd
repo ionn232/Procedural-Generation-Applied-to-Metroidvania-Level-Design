@@ -6,6 +6,7 @@ const RIGHT_DIRECTION_ICON = preload("res://data/images/right_direction_icon.png
 const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 
 @onready var main_scene: Node2D = $".."
+@onready var grid: Node2D = $"../Grid"
 
 @onready var step_counter: Label = $UI/StepCounter
 @onready var route_steps_keyset: Label = $UI/RouteStepsKeyset
@@ -19,7 +20,8 @@ const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 #config UI components
 @onready var seed_box: LineEdit = $UI/ConfigPanel/Config/SeedBox
 @onready var step_rooms: MenuButton = $UI/ConfigPanel/Config/StepRooms
-
+@onready var area_size_val: Label = $UI/ConfigPanel/Config/AreaSizeVal
+@onready var backtrack_val: Label = $UI/ConfigPanel/Config/BacktrackVal
 
 
 signal stage_changed()
@@ -182,11 +184,9 @@ func _on_advance_btn_button_down() -> void:
 	
 	if Utils.generator_stage == 7: load_step_info(7)
 
-
-
 #manipulate rng
 func set_rng_mode(random_seed:bool) -> void:
-	Utils.fixed_rng = !random_seed
+	Utils.config_fixed_rng = !random_seed
 	seed_box.editable = !random_seed
 	if random_seed:
 		seed_box.text = 'RANDOM'
@@ -196,6 +196,43 @@ func set_rng_mode(random_seed:bool) -> void:
 
 func rng_seed_changed(new_seed:String):
 	Utils.rng.seed = hash(new_seed)
+
+#map size
+func map_x_changed(width:float):
+	Level.map_size_x = int(width)
+	grid.queue_redraw()
+
+func map_y_changed(height:float):
+	Level.map_size_y = int(height)
+	grid.queue_redraw()
+
+#steps and areas
+func change_num_route_steps(steps:float):
+	Level.num_route_steps = int(steps)
+
+func change_num_areas(areas:float):
+	Level.num_areas = int(areas)
+
+func change_area_size_mult(value:float):
+	Level.area_size_multiplier = value
+	area_size_val.text = str(value)
+
+#equipment
+func change_side_ups_count(val:float):
+	Level.num_side_upgrades = val
+
+func change_equip_count(val:float):
+	Level.num_equipment = val
+
+func change_collectible_count(val:float):
+	Level.num_collectibles = val
+
+func change_stat_ups_count(val:float):
+	Level.num_stat_ups = val
+
+func change_backtracking_factor(val:float):
+	Level.backtracking_factor = val
+	backtrack_val.text = str(val)
 
 #debug components
 func set_area_size_visible(is_visible:bool):

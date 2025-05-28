@@ -3,17 +3,17 @@ extends Node2D
 
 @onready var ui: CanvasLayer = $"../UI"
 
-@export var map_size_x:int
-@export var map_size_y:int
+#@export var map_size_x:int
+#@export var map_size_y:int
 
-@export_range (1,25) var number_route_steps:int
-@export_range (1,25) var number_of_areas:int
-@export_range (0, 9) var number_side_upgrades:int
-@export_range (0, 200) var number_equipment_items:int
-@export_range (0, 200) var number_collectibles:int
-@export_range (0, 200) var number_stat_upgrades:int
-@export_range (0.1,5.0) var area_size_multiplier:float
-@export_range (0.0, 1.0) var reward_backtracking_factor:float
+#@export_range (1,25) var number_route_steps:int
+#@export_range (1,25) var number_of_areas:int
+#@export_range (0, 9) var number_side_upgrades:int
+#@export_range (0, 200) var number_equipment_items:int
+#@export_range (0, 200) var number_collectibles:int
+#@export_range (0, 200) var number_stat_upgrades:int
+#@export_range (0.1,5.0) var area_size_multiplier:float
+#@export_range (0.0, 1.0) var reward_backtracking_factor:float
 
 #area size DIAMETER
 var area_size:float
@@ -26,33 +26,29 @@ var draw_angles:bool = false
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
 	#initialize map
-	Level.map_size_x = map_size_x
-	Level.map_size_y = map_size_y
-	Level.area_size_multiplier = area_size_multiplier
 	var main_map:Map = Map.new()
 	main_map.initialize_map()
+	if Level.map != null: Level.map.free()
 	Level.map = main_map
 	
 	#area size (DIAMETER)
-	area_size = ((map_size_x+map_size_y)*16/2.0)*area_size_multiplier/float(number_of_areas) #arbitrarily decided
-	var w_h_ratio:float = map_size_x/float(map_size_y)
-	area_size_xy = Vector2(map_size_x*16*area_size_multiplier/float(number_of_areas), map_size_y*16*area_size_multiplier/float(number_of_areas))
+	area_size = ((Level.map_size_x+Level.map_size_y)*16/2.0)*Level.area_size_multiplier/float(Level.num_areas) #arbitrarily decided
+	var w_h_ratio:float = Level.map_size_x/float(Level.map_size_y)
+	area_size_xy = Vector2(Level.map_size_x*16*Level.area_size_multiplier/float(Level.num_areas), Level.map_size_y*16*Level.area_size_multiplier/float(Level.num_areas))
 	area_size_rooms = ceil(area_size / 16.0)
 	area_size_rooms_xy = ceil(area_size_xy / 16.0)
-	Level.num_areas = number_of_areas
-	Level.num_route_steps = number_route_steps
 	Level.area_size_xy = area_size_xy
 	
 	
 	#load reward pool
 	RewardPool.import_reward_pool()
-	RewardPool.make_equipment(number_equipment_items)
-	RewardPool.make_collectibles(number_collectibles)
-	RewardPool.make_stat_ups(number_stat_upgrades)
+	RewardPool.make_equipment(Level.num_equipment)
+	RewardPool.make_collectibles(Level.num_collectibles)
+	RewardPool.make_stat_ups(Level.num_stat_ups)
 	#initialize route step array
 	var route_steps:Array[RouteStep]
-	route_steps.resize(number_route_steps)
-	for i:int in range(number_route_steps):
+	route_steps.resize(Level.num_route_steps)
+	for i:int in range(Level.num_route_steps):
 		route_steps[i] = RouteStep.createNew(i)
 	#store info
 	Level.route_steps = route_steps
@@ -64,17 +60,17 @@ func distribute_step_rewards():
 	var keyset_indexes:Array = range(len(RewardPool.keyset))
 	var side_indexes:Array = range(len(RewardPool.side_upgrades))
 	var RS_item_weight:float
-	var side_upgrades_left:int = number_side_upgrades
-	var equipment_items_left:int = number_equipment_items
-	var collectibles_left:int = number_collectibles
-	var stat_upgrades_left:int = number_stat_upgrades
+	var side_upgrades_left:int = Level.num_side_upgrades
+	var equipment_items_left:int = Level.num_equipment
+	var collectibles_left:int = Level.num_collectibles
+	var stat_upgrades_left:int = Level.num_stat_ups
 	var roll:float
-	for i:int in range(number_route_steps):
+	for i:int in range(Level.num_route_steps):
 		#assign RS main key
 		var indexes_random_index:int = Utils.rng.randi_range(0, len(keyset_indexes)-1)
 		route_steps[i].add_key(RewardPool.keyset[keyset_indexes.pop_at(indexes_random_index)])
 		#assign side upgrades
-		RS_item_weight = side_upgrades_left / float(number_route_steps - i)
+		RS_item_weight = side_upgrades_left / float(Level.num_route_steps - i)
 		while RS_item_weight > 1.0:
 			indexes_random_index = Utils.rng.randi_range(0, len(side_indexes)-1)
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
@@ -86,34 +82,34 @@ func distribute_step_rewards():
 			route_steps[i].add_reward(RewardPool.side_upgrades[side_indexes.pop_at(indexes_random_index)])
 			side_upgrades_left -= 1
 		#assign equipment
-		RS_item_weight = equipment_items_left / float(number_route_steps - i)
+		RS_item_weight = equipment_items_left / float(Level.num_route_steps - i)
 		while RS_item_weight > 1.0:
-			route_steps[i].add_reward(RewardPool.equipment[number_equipment_items - equipment_items_left])
+			route_steps[i].add_reward(RewardPool.equipment[Level.num_equipment - equipment_items_left])
 			equipment_items_left -= 1
 			RS_item_weight -= 1.0
 		roll = Utils.rng.randf()
 		if roll < RS_item_weight:
-			route_steps[i].add_reward(RewardPool.equipment[number_equipment_items - equipment_items_left])
+			route_steps[i].add_reward(RewardPool.equipment[Level.num_equipment - equipment_items_left])
 			equipment_items_left -= 1
 		#assign collectibles
-		RS_item_weight = collectibles_left / float(number_route_steps - i)
+		RS_item_weight = collectibles_left / float(Level.num_route_steps - i)
 		while RS_item_weight > 1.0:
-			route_steps[i].add_reward(RewardPool.collectibles[number_collectibles - collectibles_left])
+			route_steps[i].add_reward(RewardPool.collectibles[Level.num_collectibles - collectibles_left])
 			collectibles_left -= 1
 			RS_item_weight -= 1.0
 		roll = Utils.rng.randf()
 		if roll < RS_item_weight:
-			route_steps[i].add_reward(RewardPool.collectibles[number_collectibles - collectibles_left])
+			route_steps[i].add_reward(RewardPool.collectibles[Level.num_collectibles - collectibles_left])
 			collectibles_left -= 1
 		#assign stat upgrades
-		RS_item_weight = stat_upgrades_left / float(number_route_steps - i)
+		RS_item_weight = stat_upgrades_left / float(Level.num_route_steps - i)
 		while RS_item_weight > 1.0:
-			route_steps[i].add_reward(RewardPool.stat_upgrades[number_stat_upgrades - stat_upgrades_left])
+			route_steps[i].add_reward(RewardPool.stat_upgrades[Level.num_stat_ups - stat_upgrades_left])
 			stat_upgrades_left -= 1
 			RS_item_weight -= 1.0
 		roll = Utils.rng.randf()
 		if roll < RS_item_weight:
-			route_steps[i].add_reward(RewardPool.stat_upgrades[number_stat_upgrades - stat_upgrades_left])
+			route_steps[i].add_reward(RewardPool.stat_upgrades[Level.num_stat_ups - stat_upgrades_left])
 			stat_upgrades_left -= 1
 
 func _stage_handler():
@@ -167,8 +163,8 @@ func _stage_handler():
 
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
-	area_points.resize(number_of_areas)
-	spawn_points(area_points, Vector2(map_size_x, map_size_y), true)
+	area_points.resize(Level.num_areas)
+	spawn_points(area_points, Vector2(Level.map_size_x, Level.map_size_y), true)
 	Level.area_points = area_points
 
 func step_2(): ##expand points from centroid and ensure minimum distance
@@ -182,7 +178,7 @@ func step_2(): ##expand points from centroid and ensure minimum distance
 	expand_points(Level.area_points, centroid, area_size_xy, Utils.ROOM_SIZE)
 
 func step_3(): ##establish initial area
-	var rand_index :int = Utils.rng.randi_range(0, number_of_areas - 1)
+	var rand_index :int = Utils.rng.randi_range(0, Level.num_areas - 1)
 	Level.initial_area = Level.area_points[rand_index]
 	Level.initial_area.set_point_color(Utils.area_colors[0])
 
@@ -194,9 +190,9 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 	var ordered_areas:Array[AreaPoint] = []
 	var available_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
 	var progression_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
-	ordered_areas.resize(number_of_areas)
-	available_routes.resize(number_of_areas)
-	progression_routes.resize(number_of_areas)
+	ordered_areas.resize(Level.num_areas)
+	available_routes.resize(Level.num_areas)
+	progression_routes.resize(Level.num_areas)
 	#initial area (alredy known) #TODO:avoid repeating code, add to loop
 	var initial_area:AreaPoint = Level.initial_area
 	ordered_areas[0] = initial_area
@@ -207,7 +203,7 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 	for route_dest:AreaPoint in ordered_areas[0].relations:
 		available_routes[0].push_back(route_dest)
 	#produce ordered areas array and list of backtrack routes
-	for i:int in range(number_of_areas):
+	for i:int in range(Level.num_areas):
 		if i==0: continue
 		var proceed:bool = false
 		var expanding_area_index:int
@@ -260,11 +256,11 @@ func step_6(): ##establish hub-containing area
 	hub_area.has_hub = true
 
 func step_7(): ##establish area-rs relations
-	var num_areas_left:int = number_of_areas
-	var num_rs_left:int = number_route_steps
+	var num_areas_left:int = Level.num_areas
+	var num_rs_left:int = Level.num_route_steps
 	var route_steps:Array[RouteStep] = Level.route_steps
 	var area_index:int = 0
-	for i:int in range(number_route_steps):
+	for i:int in range(Level.num_route_steps):
 		#assign weight. for each whole 1.0 secures an area
 		var RS_weight:float = num_areas_left / float(num_rs_left)
 		var new_areas_this_iteration:int = 0 #used to prevent assigning the same area to a route step twice
@@ -669,14 +665,14 @@ func step_19(): ##Extrude keyset points
 
 func step_20(): ##Distribute minor rewards
 	#initialize necessary data structure
-	Level.minor_reward_room_counts.resize(number_route_steps)
-	for step_i:int in number_route_steps:
+	Level.minor_reward_room_counts.resize(Level.num_route_steps)
+	for step_i:int in Level.num_route_steps:
 		Level.minor_reward_room_counts[step_i].push_back([])
 	for room:Room in Level.rooms:
 		#add room to pool of possible reward containers
 		if room.minor_rewards_viable:
 			#initialize array if necessary
-			Level.minor_reward_room_counts[min(room.step_index, number_route_steps-1)][0].push_back(room)
+			Level.minor_reward_room_counts[min(room.step_index, Level.num_route_steps-1)][0].push_back(room)
 	
 	var current_reward:Reward
 	var step_minor_rewards:Array
@@ -694,7 +690,7 @@ func step_20(): ##Distribute minor rewards
 	for step:RouteStep in Level.route_steps:
 		step_minor_rewards = step.get_minor_rewards()
 		#partition exploration and backtracking rewards unless initial step
-		num_backtracking_rewards = len(step_minor_rewards) * reward_backtracking_factor if step.index > 0 else 0
+		num_backtracking_rewards = len(step_minor_rewards) * Level.backtracking_factor if step.index > 0 else 0
 		num_exploration_rewards = len(step_minor_rewards) - num_backtracking_rewards
 		#distribute exploration rewards
 		for i:int in range(num_exploration_rewards):
@@ -749,7 +745,7 @@ func step_20(): ##Distribute minor rewards
 			selected_mu.add_reward(current_reward)
 
 func step_21(): ##Reassign room areas
-	for i:int in range(number_route_steps):
+	for i:int in range(Level.num_route_steps):
 		for current_room:Room in Level.rooms:
 			if current_room.step_index != i: continue
 			current_room.mimic_adjacent_rooms_area()
@@ -1393,8 +1389,8 @@ func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false):
 		points[i] = current_point
 
 func ensure_min_dist_around(center_point:Point, points:Array, min_distance:Vector2):
-	var map_boundary_x:float = map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
-	var map_boundary_y:float = map_size_y*16/2.0 - 4.0
+	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_y:float = Level.map_size_y*16/2.0 - 4.0
 	for second_point:Point in points:
 		if center_point == second_point: continue
 		var distance:Vector2 = second_point.global_position - center_point.global_position
@@ -1417,8 +1413,8 @@ func expand_points(points:Array, center:Vector2, min_distance:Vector2, expansion
 		current_point.update_position(current_point.pos + center_to_point * expansion_factor) 
 	#expand points from each other
 	#TODO: tweak parameters
-	var map_boundary_x:float = map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
-	var map_boundary_y:float = map_size_y*16/2.0 - 4.0
+	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_y:float = Level.map_size_y*16/2.0 - 4.0
 	var clear = false
 	var count:int = 0
 	while !clear && min_distance.x > 0.0 && min_distance.y > 0.0:
@@ -1485,7 +1481,6 @@ func compute_point_relations(points:Array, index:int):
 		clear_incompatible_relations(points[j])
 
 func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
-	#var max_distance :float = (map_size_x + map_size_y)*16 / float(number_of_areas * 0.1) #TODO: tweak n use this maybe
 	var j:int = -1
 	while j < len(points)-1:
 		j += 1

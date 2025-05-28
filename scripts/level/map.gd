@@ -4,6 +4,7 @@ extends Resource
 var MUs:Array[Array] = []
 
 func initialize_map():
+	MUs.resize(0)
 	MUs.resize(Level.map_size_x)
 	for i in MUs.size():
 		var room_column:Array[MU] = []

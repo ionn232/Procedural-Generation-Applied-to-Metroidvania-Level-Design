@@ -2,10 +2,12 @@ class_name Utils
 extends Resource
 
 static var generator_stage : int = 0
-static var fixed_rng:bool = false
 static var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 static var ROOM_SIZE:float = 16.0
 static var MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
+
+#config parameters
+static var config_fixed_rng:bool = false
 
 #debug visualizers
 static var debug_show_area_size:bool = true

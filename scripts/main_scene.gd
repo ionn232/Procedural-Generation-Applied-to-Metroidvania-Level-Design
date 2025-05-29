@@ -4,6 +4,8 @@ extends Node2D
 @onready var route_steps_keyset: Label = $UI/UI/RouteStepsKeyset
 
 @onready var ui: Control = $UI/UI
+@onready var step_counter: Label = $UI/UI/StepCounter
+
 @onready var map_generator: MapGenerator = $MapGenerator
 @onready var layout_display: LayoutDisplay = $LayoutDisplay
 
@@ -27,11 +29,13 @@ func _process(delta: float) -> void:
 		ui.visible = !ui.visible
 	
 	if Input.is_action_just_pressed("Reset"):
-		_reset()
+		step_counter.text = '\n0'
+		reset()
 
-func _reset():
+func reset():
 	Utils.generator_stage = 0
 	Level.reset()
+	step_counter.text = '\n0'
 	
 	map_generator.queue_free()
 	map_generator = MAP_GENERATOR.instantiate()
@@ -40,6 +44,3 @@ func _reset():
 	layout_display.queue_free()
 	layout_display = LAYOUT_DISPLAY.instantiate()
 	add_child(layout_display, true)
-	
-	
-	

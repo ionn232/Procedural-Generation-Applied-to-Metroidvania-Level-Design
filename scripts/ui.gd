@@ -8,6 +8,7 @@ const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 @onready var main_scene: Node2D = $".."
 @onready var grid: Node2D = $"../Grid"
 
+
 @onready var step_counter: Label = $UI/StepCounter
 @onready var route_steps_keyset: Label = $UI/RouteStepsKeyset
 @onready var step_info_menu: MenuButton = $UI/TopRightElems/StepInfo
@@ -209,9 +210,13 @@ func map_y_changed(height:float):
 #steps and areas
 func change_num_route_steps(steps:float):
 	Level.num_route_steps = int(steps)
+	main_scene.reset()
+	load_step_info(0)
+	load_step_rooms_menu()
 
 func change_num_areas(areas:float):
 	Level.num_areas = int(areas)
+	main_scene.reset()
 
 func change_area_size_mult(value:float):
 	Level.area_size_multiplier = value

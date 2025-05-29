@@ -28,7 +28,6 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	#initialize map
 	var main_map:Map = Map.new()
 	main_map.initialize_map()
-	if Level.map != null: Level.map.free()
 	Level.map = main_map
 	
 	#area size (DIAMETER)

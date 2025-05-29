@@ -42,7 +42,7 @@ offset_top = 6.0
 offset_right = 707.0
 offset_bottom = 99.0
 theme_override_font_sizes/font_size = 32
-text = "Awaiting instructions
+text = "
 0"
 
 [node name="TopRightElems" type="VBoxContainer" parent="UI/UI"]
@@ -192,7 +192,7 @@ text = "Area size multiplier"
 
 [node name="AreaSizeVal" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "1.0"
+text = "2.5"
 horizontal_alignment = 1
 
 [node name="AreaSizeScroll" type="HScrollBar" parent="UI/UI/ConfigPanel/Config"]
@@ -327,7 +327,6 @@ button_pressed = true
 text = "View points"
 
 [connection signal="room_selected" from="." to="UI" method="display_room_info"]
-[connection signal="max_step_selected" from="UI" to="LayoutDisplay" method="change_step_display_limit"]
 [connection signal="pressed" from="UI/UI/ConfigPanel/Config/Advance/Next" to="UI" method="_on_advance_btn_button_down"]
 [connection signal="toggled" from="UI/UI/ConfigPanel/Config/CheckBox" to="UI" method="set_rng_mode"]
 [connection signal="text_changed" from="UI/UI/ConfigPanel/Config/SeedBox" to="UI" method="rng_seed_changed"]

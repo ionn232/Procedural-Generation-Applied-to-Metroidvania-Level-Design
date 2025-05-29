@@ -70,6 +70,7 @@ func change_step_display_limit(new_max_step:int):
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	ui.stage_changed.connect(_stage_handler.bind())
+	ui.max_step_selected.connect(change_step_display_limit.bind())
 	layout_tilemaps.resize(Level.num_areas+1)
 	var new_tilemap_layout = ROOM_LAYOUT.instantiate()
 	layout_tilemaps[0] = new_tilemap_layout

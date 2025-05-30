@@ -327,6 +327,7 @@ button_pressed = true
 text = "View points"
 
 [connection signal="room_selected" from="." to="UI" method="display_room_info"]
+[connection signal="pressed" from="UI/UI/ConfigPanel/Config/Advance/Result" to="UI" method="_on_result_btn_down"]
 [connection signal="pressed" from="UI/UI/ConfigPanel/Config/Advance/Next" to="UI" method="_on_advance_btn_button_down"]
 [connection signal="toggled" from="UI/UI/ConfigPanel/Config/CheckBox" to="UI" method="set_rng_mode"]
 [connection signal="text_changed" from="UI/UI/ConfigPanel/Config/SeedBox" to="UI" method="rng_seed_changed"]

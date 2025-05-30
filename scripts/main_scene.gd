@@ -37,10 +37,10 @@ func reset():
 	Level.reset()
 	step_counter.text = '\n0'
 	
-	map_generator.queue_free()
+	map_generator.free()
 	map_generator = MAP_GENERATOR.instantiate()
 	add_child(map_generator, true)
 	
-	layout_display.queue_free()
+	layout_display.free()
 	layout_display = LAYOUT_DISPLAY.instantiate()
 	add_child(layout_display, true)

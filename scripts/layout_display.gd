@@ -58,7 +58,6 @@ const equipment_atlas := Vector2i(0,3)
 const collectible_atlas := Vector2i(1,3)
 const shop_atlas := Vector2i(2,3)
 
-#TODO: multiples tilemap_layoutlayers para modular diferente
 const trap_color = Color(1.0, 0.4, 0.4)
 const default_color = Color(1.0 ,1.0 ,1.0)
 
@@ -83,7 +82,6 @@ func _ready() -> void:
 
 func reset():
 	clear_tilemaps()
-	
 
 func clear_tilemaps():
 	tilemap_content.clear()
@@ -93,12 +91,7 @@ func clear_tilemaps():
 
 func _stage_handler():
 	clear_tilemaps()
-	draw_rooms() #TODO:only when rooms updated
-	match(Utils.generator_stage):
-		1:
-			add_area_nodes()
-		11:
-			dim_area_nodes()
+	draw_rooms()
 
 func add_area_nodes():
 	for area:AreaPoint in Level.area_points:
@@ -108,7 +101,7 @@ func dim_area_nodes():
 	for area:AreaPoint in Level.area_points:
 		area.set_point_color(Utils.area_colors[area.area_index] * Color(1,1,1, 0.4))
 
-func draw_rooms(): #TODO: RENDER BY STEPS (input index)
+func draw_rooms():
 	var rooms = Level.rooms
 	for room:Room in rooms:
 		#skip steps over current visualized limit

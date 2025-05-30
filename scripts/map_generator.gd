@@ -2,18 +2,7 @@ class_name MapGenerator
 extends Node2D
 
 @onready var ui: CanvasLayer = $"../UI"
-
-#@export var map_size_x:int
-#@export var map_size_y:int
-
-#@export_range (1,25) var number_route_steps:int
-#@export_range (1,25) var number_of_areas:int
-#@export_range (0, 9) var number_side_upgrades:int
-#@export_range (0, 200) var number_equipment_items:int
-#@export_range (0, 200) var number_collectibles:int
-#@export_range (0, 200) var number_stat_upgrades:int
-#@export_range (0.1,5.0) var area_size_multiplier:float
-#@export_range (0.0, 1.0) var reward_backtracking_factor:float
+@onready var main_scene: Node2D = $".."
 
 #area size DIAMETER
 var area_size:float
@@ -25,6 +14,7 @@ var draw_angles:bool = false
 
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
+	ui.result_signal.connect(show_result.bind())
 	#initialize map
 	var main_map:Map = Map.new()
 	main_map.initialize_map()
@@ -112,6 +102,7 @@ func distribute_step_rewards():
 			stat_upgrades_left -= 1
 
 func _stage_handler():
+	print(Utils.rng.seed)
 	var time_start = Time.get_unix_time_from_system()
 	match(Utils.generator_stage):
 		1:
@@ -160,11 +151,38 @@ func _stage_handler():
 	Utils.redraw_all()
 
 
+func show_result():
+	var time_start = Time.get_unix_time_from_system()
+	step_1()
+	step_2()
+	step_3()
+	step_4()
+	step_5()
+	step_6()
+	step_7()
+	step_8()
+	step_9()
+	step_10()
+	step_11()
+	step_12()
+	step_13()
+	step_14()
+	step_15()
+	step_16()
+	step_17()
+	step_18()
+	step_19()
+	step_20()
+	step_21()
+	print('time for complete process: ', float(Time.get_unix_time_from_system() - time_start))
+	Utils.redraw_all()
+
 func step_1(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []
 	area_points.resize(Level.num_areas)
 	spawn_points(area_points, Vector2(Level.map_size_x, Level.map_size_y), true)
 	Level.area_points = area_points
+	main_scene.layout_display.add_area_nodes()
 
 func step_2(): ##expand points from centroid and ensure minimum distance
 	#calculate centroid
@@ -419,6 +437,7 @@ func step_11(): ##assign points as area connectors and establish relation
 					removal_candidate.queue_free()
 					break
 				index += 1
+	main_scene.layout_display.dim_area_nodes()
 
 func step_12(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:

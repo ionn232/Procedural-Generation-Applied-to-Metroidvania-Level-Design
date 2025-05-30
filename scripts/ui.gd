@@ -8,7 +8,6 @@ const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 @onready var main_scene: Node2D = $".."
 @onready var grid: Node2D = $"../Grid"
 
-
 @onready var step_counter: Label = $UI/StepCounter
 @onready var route_steps_keyset: Label = $UI/RouteStepsKeyset
 @onready var step_info_menu: MenuButton = $UI/TopRightElems/StepInfo
@@ -27,17 +26,19 @@ const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 
 signal stage_changed()
 signal max_step_selected(step_index:int)
+signal result_signal()
 @onready var advance_btn: Button = $AdvanceBtn
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	load_step_info(0)
+	load_step_info()
 	set_rng_mode(true)
 	load_step_rooms_menu()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
+
 
 func load_step_rooms_menu() -> void:
 	var step_rooms_popup:PopupMenu = step_rooms.get_popup()
@@ -47,6 +48,7 @@ func load_step_rooms_menu() -> void:
 		step_rooms_popup.add_item('Step ' + str(step.index))
 	step_rooms_popup.add_item('Complete map')
 
+#room info
 func step_selected(step_index:int):
 	max_step_selected.emit(step_index)
 
@@ -126,7 +128,7 @@ func _get_direction_icon(dir:Utils.direction) -> Resource:
 			return RIGHT_DIRECTION_ICON
 	return null
 
-func load_step_info(current_stage:int):
+func load_step_info():
 	var step_popup:PopupMenu = step_info_menu.get_popup()
 	step_popup.clear(true)
 	for step:RouteStep in Level.route_steps:
@@ -179,11 +181,21 @@ func load_step_info(current_stage:int):
 
 #advance generation procedure
 func _on_advance_btn_button_down() -> void:
-	Utils.generator_stage += 1
-	display_step_desc(Utils.generator_stage)
-	stage_changed.emit()
-	
-	if Utils.generator_stage == 7: load_step_info(7)
+	var advance:bool = false
+	if Utils.generator_stage <= 20: advance = true
+	Utils.generator_stage = min(Utils.generator_stage + 1, 21)
+	if advance:
+		display_step_desc(Utils.generator_stage)
+		stage_changed.emit()
+		if Utils.generator_stage == 7: load_step_info()
+
+func _on_result_btn_down() -> void:
+	main_scene.reset()
+	result_signal.emit()
+	Utils.generator_stage = 21
+	main_scene.layout_display._stage_handler()
+	load_step_info()
+	display_step_desc(21)
 
 #manipulate rng
 func set_rng_mode(random_seed:bool) -> void:
@@ -211,7 +223,7 @@ func map_y_changed(height:float):
 func change_num_route_steps(steps:float):
 	Level.num_route_steps = int(steps)
 	main_scene.reset()
-	load_step_info(0)
+	load_step_info()
 	load_step_rooms_menu()
 
 func change_num_areas(areas:float):
@@ -222,7 +234,7 @@ func change_area_size_mult(value:float):
 	Level.area_size_multiplier = value
 	area_size_val.text = str(value)
 
-#equipment
+#loot
 func change_side_ups_count(val:float):
 	Level.num_side_upgrades = val
 

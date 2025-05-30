@@ -208,6 +208,7 @@ func set_rng_mode(random_seed:bool) -> void:
 		Utils.rng.seed = hash(seed_box.text)
 
 func rng_seed_changed(new_seed:String):
+	Utils.rng_seed_unhashed = new_seed
 	Utils.rng.seed = hash(new_seed)
 
 #map size

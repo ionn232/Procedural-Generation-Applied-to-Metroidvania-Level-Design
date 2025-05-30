@@ -15,6 +15,12 @@ var draw_angles:bool = false
 func _ready() -> void: ##level, map initializations // rng seeding
 	ui.stage_changed.connect(_stage_handler.bind())
 	ui.result_signal.connect(show_result.bind())
+	
+	if Utils.config_fixed_rng:
+		Utils.rng.seed = hash(Utils.rng_seed_unhashed)
+	else:
+		Utils.rng.seed = hash(Time.get_unix_time_from_system())
+	
 	#initialize map
 	var main_map:Map = Map.new()
 	main_map.initialize_map()

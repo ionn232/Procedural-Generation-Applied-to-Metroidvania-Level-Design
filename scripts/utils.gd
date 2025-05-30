@@ -3,6 +3,8 @@ extends Resource
 
 static var generator_stage : int = 0
 static var rng : RandomNumberGenerator = RandomNumberGenerator.new()
+static var rng_seed_unhashed:String = ''
+
 static var ROOM_SIZE:float = 16.0
 static var MIN_ANGULAR_DISTANCE:float = PI/3.0 #distance applied to each side, effectively doubled
 

@@ -30,11 +30,12 @@ func _process(delta: float) -> void:
 
 func _draw():
 	#draw point relation lines
-	for i:int in range(len(relations)):
-		var connecting_point:Point = relations[i]
-		draw_line(Vector2(0,0), to_local(connecting_point.global_position), Color.WHITE, 1, true)
-	#draw connection relation lines
-	for i:int in range(len(area_relations)):
-		var connecting_relation_point:ConnectionPoint = area_relations[i]
-		var rel_color:Color = Color.WHITE if area_relation_is_progress[i] else Color.WEB_GRAY
-		draw_line(Vector2(0,0), to_local(connecting_relation_point.global_position), rel_color, 1, true)
+	if Utils.debug_show_relations:
+		for i:int in range(len(relations)):
+			var connecting_point:Point = relations[i]
+			draw_line(Vector2(0,0), to_local(connecting_point.global_position), Color.WHITE, 1, true)
+		#draw connection relation lines
+		for i:int in range(len(area_relations)):
+			var connecting_relation_point:ConnectionPoint = area_relations[i]
+			var rel_color:Color = Color.WHITE if area_relation_is_progress[i] else Color.WEB_GRAY
+			draw_line(Vector2(0,0), to_local(connecting_relation_point.global_position), rel_color, 1, true)

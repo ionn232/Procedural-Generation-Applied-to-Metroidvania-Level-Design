@@ -26,9 +26,3 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
-
-func _draw():
-	#draw point relation lines
-	for i:int in range(len(relations)):
-		var connecting_point:Point = relations[i]
-		draw_line(Vector2(0,0), to_local(connecting_point.global_position), Color.WHITE, 1, true)

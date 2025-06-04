@@ -28,8 +28,8 @@ static func createNew(pos:Vector2, generic_identity:Point = null) -> AreaPoint:
 func calculate_intra_area_distance():
 	var x_value:float = Level.map_size_x*16*Level.area_size_multiplier / float(Level.num_areas) / float(len(subpoints))
 	var y_value:float = Level.map_size_y*16*Level.area_size_multiplier / float(Level.num_areas) /float(len(subpoints))
-	intra_area_distance = Vector2(max(x_value, Utils.ROOM_SIZE), max(y_value, Utils.ROOM_SIZE))
-	if intra_area_distance == Vector2(Utils.ROOM_SIZE, Utils.ROOM_SIZE):
+	intra_area_distance = Vector2(max(x_value, Utils.ROOM_SIZE + 1), max(y_value, Utils.ROOM_SIZE + 1))
+	if intra_area_distance == Vector2(Utils.ROOM_SIZE + 1, Utils.ROOM_SIZE + 1):
 		print('WARNING: area size too low, please adjust multiplier')
 
 func add_subarea_nodes():

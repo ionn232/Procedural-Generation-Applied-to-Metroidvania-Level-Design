@@ -668,10 +668,13 @@ func step_16(): ##Map out connections
 func step_17(): ##Add save points
 	var save_distance:int
 	var save_room:Room
+	var target_mu:MU
 	for starting_room:Room in Level.keyset_rooms:
 		save_distance = Utils.rng.randi_range(1, 3)
-		save_room = dfs_get_room_at_dist(starting_room, save_distance)
-		get_random_MU(save_room).is_save = true
+		save_room = dfs_get_room_at_dist(starting_room, save_distance) #TODO: may return null due to room step index shenanigans, fix room connection procedure
+		if save_room != null: 
+			target_mu = get_random_MU(save_room)
+			target_mu.is_save = true
 
 func step_18(): ##Extrude keyset points 
 	#ascending order to avoid timeouts
@@ -1309,7 +1312,7 @@ func compute_direction_weighs(position:Vector2i, objective:Vector2i) -> Array[fl
 		result[i] = result[i] / sum
 	return result
 
-func get_random_MU(room:Room) -> MU: #TODO: move this to Room class, move Utils.rng to Utils
+func get_random_MU(room:Room) -> MU: #TODO: move this to Room class
 	return room.room_MUs[Utils.rng.randi_range(0, len(room.room_MUs)-1)]
 
 func get_free_MU(room:Room) -> MU: #Excludes save points! (avoid crashes) #TODO make random
@@ -1496,8 +1499,8 @@ func compute_point_relations(points:Array, index:int):
 		if index==j: continue
 		current_point.relations.push_back(points[j])
 		points[j].relations.push_back(current_point)
-		#if j < index: compute_point_relations(points, j)
 		clear_incompatible_relations(points[j])
+
 
 func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
 	var j:int = -1
@@ -1515,8 +1518,8 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 			if !existing_relation_angle: continue 
 			if abs(second_point_angle - existing_relation_angle) < Utils.MIN_ANGULAR_DISTANCE: 
 				suitable = false
-				var distance_existing:float = current_point.pos.distance_squared_to(points[k].global_position)
-				var distance_new:float = current_point.pos.distance_squared_to(points[j].global_position)
+				var distance_existing:float = current_point.global_position.distance_squared_to(points[k].global_position)
+				var distance_new:float = current_point.global_position.distance_squared_to(points[j].global_position)
 				if distance_new < distance_existing:
 					angle_candidates[k] = null
 					angle_candidates[j] = angles[j]
@@ -1578,8 +1581,14 @@ func clear_incompatible_relations(point:Point): #iterate over point relations. r
 			if previous_relation in relations_to_remove: continue
 			var previous_relation_angle = relation_angles[j]
 			if abs(previous_relation_angle - angle) < Utils.MIN_ANGULAR_DISTANCE: 
-				relations_to_remove.push_back(relation)
-				break
+				var distance_previous:float = point.global_position.distance_squared_to(previous_relation.global_position)
+				var distance_current:float = point.global_position.distance_squared_to(relation.global_position)
+				if distance_current > distance_previous || (distance_current == distance_previous && i > j):
+					relations_to_remove.push_back(relation)
+					break
+				else:
+					relations_to_remove.push_back(previous_relation)
+					break
 	for deprecated_relation:Point in relations_to_remove:
 		point.relations.erase(deprecated_relation)
 		deprecated_relation.relations.erase(point)

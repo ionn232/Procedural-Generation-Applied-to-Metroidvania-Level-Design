@@ -73,6 +73,8 @@ func _draw(): #USES LOCAL COORDINATES!
 	if Utils.debug_show_point_indexes:
 		if (Utils.generator_stage >= 4):
 			draw_string(font,Vector2(0,20), str(area_index), 0, -1, 32, Color.BLACK)
+		else:
+			draw_string(font,Vector2(0,20), str(Level.area_points.find(self)), 0, -1, 32, Color.BLACK)
 	
 	#remark hub-containing area
 	if self.has_hub:

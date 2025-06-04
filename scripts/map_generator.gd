@@ -1470,7 +1470,7 @@ func connect_points(points:Array):
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		compute_point_relations(points, i)
-	#clean_islands(points)
+	clean_islands(points) #TODO: currently not doing anything, will be needed for higher values of angular distance
 
 func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null
@@ -1499,7 +1499,10 @@ func compute_point_relations(points:Array, index:int):
 		if index==j: continue
 		current_point.relations.push_back(points[j])
 		points[j].relations.push_back(current_point)
+		if index == 1 || j == 1:
+			var debug
 		clear_incompatible_relations(points[j])
+	clear_incompatible_relations(current_point)
 
 
 func decide_relations(points:Array, current_point:Point, angles:Array, angle_candidates:Array):
@@ -1516,7 +1519,7 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 			var existing_relation_angle = angle_candidates[k]
 			if j==k: continue
 			if !existing_relation_angle: continue 
-			if abs(second_point_angle - existing_relation_angle) < Utils.MIN_ANGULAR_DISTANCE: 
+			if angles_collide(second_point_angle, existing_relation_angle): 
 				suitable = false
 				var distance_existing:float = current_point.global_position.distance_squared_to(points[k].global_position)
 				var distance_new:float = current_point.global_position.distance_squared_to(points[j].global_position)
@@ -1559,7 +1562,7 @@ func clean_islands(points:Array):
 						min_dist = dist_sq
 		best_local_candidate.relations.push_back(best_second_candidate)
 		best_second_candidate.relations.push_back(best_local_candidate)
-		point_islands.pop_front() #TODO better memory management: maybe have another fucking for loop who cares at this point
+		point_islands.pop_front() #TODO better memory management
 
 func get_island(island_points:Array[Point], current_point:Point):
 	if island_points.has(current_point): return
@@ -1568,7 +1571,8 @@ func get_island(island_points:Array[Point], current_point:Point):
 		var relation = current_point.relations[i]
 		get_island(island_points, relation)
 
-func clear_incompatible_relations(point:Point): #iterate over point relations. remove relation if it conflicts with any previous one
+func clear_incompatible_relations(point:Point): #iterate over point relations. resolve relation conflicts
+	#TODO: does not detect in some specific cases. test: '1', 25 areas
 	var relation_angles:Array[float]
 	relation_angles.resize(len(point.relations))
 	var relations_to_remove:Array[Point]
@@ -1580,41 +1584,48 @@ func clear_incompatible_relations(point:Point): #iterate over point relations. r
 			var previous_relation = point.relations[j]
 			if previous_relation in relations_to_remove: continue
 			var previous_relation_angle = relation_angles[j]
-			if abs(previous_relation_angle - angle) < Utils.MIN_ANGULAR_DISTANCE: 
+			if angles_collide(angle, previous_relation_angle): 
 				var distance_previous:float = point.global_position.distance_squared_to(previous_relation.global_position)
 				var distance_current:float = point.global_position.distance_squared_to(relation.global_position)
-				if distance_current > distance_previous || (distance_current == distance_previous && i > j):
+				if distance_current > distance_previous:
 					relations_to_remove.push_back(relation)
-					break
 				else:
 					relations_to_remove.push_back(previous_relation)
-					break
 	for deprecated_relation:Point in relations_to_remove:
 		point.relations.erase(deprecated_relation)
 		deprecated_relation.relations.erase(point)
 
+func angles_collide(angle_1:float, angle_2:float) -> bool:
+	if abs(angle_1 - angle_2) < Utils.MIN_ANGULAR_DISTANCE:
+		return true
+	elif abs(angle_1) > PI/2 && abs(angle_2) > PI/2:
+		var nu_angle_1:float = sign(angle_1) * PI - angle_1
+		var nu_angle_2:float = sign(angle_2) * PI - angle_2
+		if abs(nu_angle_2 - nu_angle_1) < Utils.MIN_ANGULAR_DISTANCE:
+			return true
+	return false
 
-func DEBUG_check_parity():
-	var parity = true
-	for area:AreaPoint in Level.area_points:
-		for relation:AreaPoint in area.relations:
-			if !area in relation.relations:
-				parity = false
-				print('non-compliant: ', Level.area_points.find(area), ' // ' , Level.area_points.find(relation))
-	print('parity holds: ', parity)
-
-func DEBUG_check_RSs():
-	for RS:RouteStep in Level.route_steps:
-		print('---------------------------------------------------------------')
-		print('RS', RS.index, ' with areas: ')
-		for area in RS.areas:
-			print(area.area_index)
-
-func DEBUG_check_borders(mu:MU):
-	print('up: ', mu.borders[Utils.direction.UP])
-	print('down: ', mu.borders[Utils.direction.DOWN])
-	print('left: ', mu.borders[Utils.direction.LEFT])
-	print('right: ', mu.borders[Utils.direction.RIGHT])
+#func DEBUG_check_parity():
+	#var parity = true
+	#for area:AreaPoint in Level.area_points:
+		#for relation:AreaPoint in area.relations:
+			#if !area in relation.relations:
+				#parity = false
+				#print('non-compliant: ', Level.area_points.find(area), ' // ' , Level.area_points.find(relation))
+	#print('parity holds: ', parity)
+#
+#func DEBUG_check_RSs():
+	#for RS:RouteStep in Level.route_steps:
+		#print('---------------------------------------------------------------')
+		#print('RS', RS.index, ' with areas: ')
+		#for area in RS.areas:
+			#print(area.area_index)
+#
+#func DEBUG_check_borders(mu:MU):
+	#print('up: ', mu.borders[Utils.direction.UP])
+	#print('down: ', mu.borders[Utils.direction.DOWN])
+	#print('left: ', mu.borders[Utils.direction.LEFT])
+	#print('right: ', mu.borders[Utils.direction.RIGHT])
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:

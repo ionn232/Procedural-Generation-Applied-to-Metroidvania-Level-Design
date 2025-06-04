@@ -108,7 +108,6 @@ func distribute_step_rewards():
 			stat_upgrades_left -= 1
 
 func _stage_handler():
-	print(Utils.rng.seed)
 	var time_start = Time.get_unix_time_from_system()
 	match(Utils.generator_stage):
 		1:
@@ -151,8 +150,6 @@ func _stage_handler():
 			step_19()
 		20:
 			step_20()
-		21:
-			step_21()
 	print('time for step ', str(Utils.generator_stage), ': ', float(Time.get_unix_time_from_system() - time_start))
 	Utils.redraw_all()
 
@@ -179,7 +176,6 @@ func show_result():
 	step_18()
 	step_19()
 	step_20()
-	step_21()
 	print('time for complete process: ', float(Time.get_unix_time_from_system() - time_start))
 	Utils.redraw_all()
 
@@ -200,15 +196,14 @@ func step_2(): ##expand points from centroid and ensure minimum distance
 	#expand areas from centroid
 	expand_points(Level.area_points, centroid, area_size_xy, Utils.ROOM_SIZE)
 
-func step_3(): ##establish initial area
+func step_3(): ##establish area connections
+	connect_points(Level.area_points)
+
+func step_4(): ##establish initial area and designate area order by expanding from initial area, designate areas as progression or backtracking
 	var rand_index :int = Utils.rng.randi_range(0, Level.num_areas - 1)
 	Level.initial_area = Level.area_points[rand_index]
 	Level.initial_area.set_point_color(Utils.area_colors[0])
-
-func step_4(): ##establish area connections 
-	connect_points(Level.area_points)
-
-func step_5(): ##designate area order by expanding from initial area, designate areas as progression or backtracking
+	
 	#struct inits
 	var ordered_areas:Array[AreaPoint] = []
 	var available_routes:Array[Array] #Array of [origin: AreaPoint, routes: [AreaPoint]]
@@ -222,7 +217,7 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 	initial_area.set_point_color(Utils.area_colors[0])
 	initial_area.area_index = 0
 	initial_area.relation_is_progress.resize(len(initial_area.relations))
-	initial_area.relation_is_progress.fill(false) #ts redundant, it's the default value
+	initial_area.relation_is_progress.fill(false)
 	for route_dest:AreaPoint in ordered_areas[0].relations:
 		available_routes[0].push_back(route_dest)
 	#produce ordered areas array and list of backtrack routes
@@ -243,7 +238,7 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 		new_area.set_point_color(Utils.area_colors[i])
 		new_area.area_index = i
 		new_area.relation_is_progress.resize(len(new_area.relations))
-		new_area.relation_is_progress.fill(false) #ts redundant, it's the default value
+		new_area.relation_is_progress.fill(false)
 		#remove next area from elegibility: store progression and backtracking routes
 		progression_routes[expanding_area_index].push_back(available_routes[expanding_area_index].pop_at(route_index))
 		for current_route_list in available_routes: #TODO: introduce randomness (allow multiple entries to new area) IF YOU DO THIS REWORK CODE FOR get_area_start_points()
@@ -263,7 +258,7 @@ func step_5(): ##designate area order by expanding from initial area, designate 
 			area_1.relation_is_progress[area_1.relations.find(area_2)] = true
 			area_2.relation_is_progress[area_2.relations.find(area_1)] = true
 
-func step_6(): ##establish hub-containing area
+func step_5(): ##establish hub-containing area
 	#get area with most progression relations
 	var hub_area:AreaPoint
 	var max_num_relations:int = -1
@@ -278,7 +273,7 @@ func step_6(): ##establish hub-containing area
 	#apply result
 	hub_area.has_hub = true
 
-func step_7(): ##establish area-rs relations
+func step_6(): ##establish area-rs relations
 	var num_areas_left:int = Level.num_areas
 	var num_rs_left:int = Level.num_route_steps
 	var route_steps:Array[RouteStep] = Level.route_steps
@@ -315,7 +310,7 @@ func step_7(): ##establish area-rs relations
 				route_steps[i].areas.push_back(Level.area_points[random_index])
 		num_rs_left -= 1
 
-func step_8(): ##randomly place around areas a point for each relation, one for fast-travel room and one extra for spawn room
+func step_7(): ##randomly place around areas a point for each relation, one for fast-travel room and one extra for spawn room
 	for i:int in len(Level.area_points):
 		var current_area:AreaPoint = Level.area_points[i]
 		current_area.subpoints.resize(len(current_area.relations) + (2 if i == 0 else 1))
@@ -323,7 +318,7 @@ func step_8(): ##randomly place around areas a point for each relation, one for 
 		spawn_points(current_area.subpoints, Vector2(area_size_rooms_xy.x, area_size_rooms_xy.y))
 		current_area.add_subarea_nodes()
 
-func step_9(): ##randomly place around areas a point for each main upgrade, key item unit and side upgrades.
+func step_8(): ##randomly place around areas a point for each main upgrade, key item unit and side upgrades.
 	for current_step:RouteStep in Level.route_steps:
 		#main upgrades
 		if current_step.keyset[0] is MainUpgrade:
@@ -355,11 +350,11 @@ func step_9(): ##randomly place around areas a point for each main upgrade, key 
 		area.add_subarea_nodes()
 		area.calculate_intra_area_distance()
 
-func step_10(): ##expand intra-area points
+func step_9(): ##expand intra-area points
 	for current_area:AreaPoint in Level.area_points:
 		expand_points(current_area.subpoints, current_area.pos, current_area.intra_area_distance, Utils.ROOM_SIZE)
 
-func step_11(): ##assign points as area connectors and establish relation
+func step_10(): ##assign points as area connectors and establish relation
 	for i:int in range(len(Level.area_points)):
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.relations)):
@@ -445,11 +440,11 @@ func step_11(): ##assign points as area connectors and establish relation
 				index += 1
 	main_scene.layout_display.dim_area_nodes()
 
-func step_12(): ##establish relations between area subpoints
+func step_11(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:
 		connect_points(current_area.subpoints)
 
-func step_13(): ##assign points as fast-travel rooms
+func step_12(): ##assign points as fast-travel rooms
 		for j:int in range(len(Level.area_points)):
 			#identify unassigned subpoint with most relations
 			var current_area:AreaPoint = Level.area_points[j]
@@ -475,7 +470,7 @@ func step_13(): ##assign points as fast-travel rooms
 				#TODO 1: flat, not scaling. Behaves weird for large areas.
 				ensure_min_dist_around(fast_travel_point, current_area.subpoints, current_area.intra_area_distance*1.5)
 
-func step_14(): ##assign points as spawn point, side upgrades, main upgrades and key item units
+func step_13(): ##assign points as spawn point, side upgrades, main upgrades and key item units
 	#identify protected points for each area beyond initial
 	for current_area:AreaPoint in Level.area_points:
 		if current_area.area_index == 0: continue #spawn point placement procedure takes care of the problem
@@ -575,7 +570,7 @@ func step_14(): ##assign points as spawn point, side upgrades, main upgrades and
 						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
 
-func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
+func step_14(): ##Place rooms for main upgrades, keyset units, side upgrades, area connectors and spawn room
 	for i:int in range(len(Level.area_points)):
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.subpoints)):
@@ -604,7 +599,7 @@ func step_15(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 				_ when current_point is FastTravelPoint:
 					random_room_mu.is_fast_travel = true
 
-func step_16(): ##Place hub zone rooms
+func step_15(): ##Place hub zone rooms
 	var hub_area:AreaPoint = Level.area_points.filter(func(val:AreaPoint): return val.has_hub)[0]
 	var hub_position:Vector2 = Utils.world_pos_to_room(hub_area.subpoints.filter(func(val:Point): return val is FastTravelPoint)[0].global_position)
 	var hub_room_1:Room = Level.map.MUs[hub_position.x][hub_position.y].parent_room
@@ -636,7 +631,7 @@ func step_16(): ##Place hub zone rooms
 		save_mu.is_save = true
 		connect_adjacent_rooms(hub_room_1, hub_room_2)
 
-func step_17(): ##Map out connections
+func step_16(): ##Map out connections
 	#get step-area points
 	for i:int in range(len(Level.route_steps)):
 		var current_step:RouteStep
@@ -670,7 +665,7 @@ func step_17(): ##Map out connections
 								current_point.area_relation_is_mapped[k] = true
 								area_relation.area_relation_is_mapped[area_relation.area_relations.find(current_point)] = true
 
-func step_18(): ##Add save points
+func step_17(): ##Add save points
 	var save_distance:int
 	var save_room:Room
 	for starting_room:Room in Level.keyset_rooms:
@@ -678,7 +673,7 @@ func step_18(): ##Add save points
 		save_room = dfs_get_room_at_dist(starting_room, save_distance)
 		get_random_MU(save_room).is_save = true
 
-func step_19(): ##Extrude keyset points 
+func step_18(): ##Extrude keyset points 
 	#ascending order to avoid timeouts
 	var test1 = Level.trap_rooms
 	var test2 = Level.keyset_rooms
@@ -687,7 +682,7 @@ func step_19(): ##Extrude keyset points
 			if current_room.step_index == step.index && !(current_room.is_trap):
 				extrude_reward_room(current_room)
 
-func step_20(): ##Distribute minor rewards
+func step_19(): ##Distribute minor rewards
 	#initialize necessary data structure
 	Level.minor_reward_room_counts.resize(Level.num_route_steps)
 	for step_i:int in Level.num_route_steps:
@@ -768,7 +763,7 @@ func step_20(): ##Distribute minor rewards
 			selected_mu = Level.map.get_mu_at(new_room_mu_pos)
 			selected_mu.add_reward(current_reward)
 
-func step_21(): ##Reassign room areas
+func step_20(): ##Reassign room areas
 	for i:int in range(Level.num_route_steps):
 		for current_room:Room in Level.rooms:
 			if current_room.step_index != i: continue
@@ -1472,7 +1467,7 @@ func connect_points(points:Array):
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		compute_point_relations(points, i)
-	clean_islands(points)
+	#clean_islands(points)
 
 func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null

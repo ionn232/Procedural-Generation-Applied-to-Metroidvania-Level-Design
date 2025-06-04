@@ -182,8 +182,8 @@ func load_step_info():
 #advance generation procedure
 func _on_advance_btn_button_down() -> void:
 	var advance:bool = false
-	if Utils.generator_stage <= 20: advance = true
-	Utils.generator_stage = min(Utils.generator_stage + 1, 21)
+	if Utils.generator_stage <= 19: advance = true
+	Utils.generator_stage = min(Utils.generator_stage + 1, 20)
 	if advance:
 		display_step_desc(Utils.generator_stage)
 		stage_changed.emit()
@@ -192,10 +192,10 @@ func _on_advance_btn_button_down() -> void:
 func _on_result_btn_down() -> void:
 	main_scene.reset()
 	result_signal.emit()
-	Utils.generator_stage = 21
+	Utils.generator_stage = 20
 	main_scene.layout_display._stage_handler()
 	load_step_info()
-	display_step_desc(21)
+	display_step_desc(20)
 
 #manipulate rng
 func set_rng_mode(random_seed:bool) -> void:
@@ -206,19 +206,23 @@ func set_rng_mode(random_seed:bool) -> void:
 	else:
 		seed_box.text = ''
 		Utils.rng.seed = hash(seed_box.text)
+	if Utils.generator_stage > 0: main_scene.reset()
 
 func rng_seed_changed(new_seed:String):
 	Utils.rng_seed_unhashed = new_seed
 	Utils.rng.seed = hash(new_seed)
+	main_scene.reset()
 
 #map size
 func map_x_changed(width:float):
 	Level.map_size_x = int(width)
 	grid.queue_redraw()
+	main_scene.reset()
 
 func map_y_changed(height:float):
 	Level.map_size_y = int(height)
 	grid.queue_redraw()
+	main_scene.reset()
 
 #steps and areas
 func change_num_route_steps(steps:float):
@@ -285,7 +289,6 @@ const STEP_DESCRIPTIONS = [
 	'',
 	'Place area points',
 	'Expand area points',
-	'Establish initial area',
 	'Establish area connections',
 	'Designate area order',
 	'Establish hub-containing area if applicable',

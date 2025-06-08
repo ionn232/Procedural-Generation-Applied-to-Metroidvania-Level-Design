@@ -64,17 +64,15 @@ func _draw(): #USES LOCAL COORDINATES!
 	if Utils.debug_show_relations:
 		for i:int in range(len(relations)):
 			var connecting_area:AreaPoint = relations[i]
-			if Utils.generator_stage < 5: ##TODO 5 <--> 6 i was debugging
+			if Utils.generator_stage < 4:
 				draw_line(Vector2(0,0), to_local(connecting_area.pos), Color.WHITE, 1, true)
-			elif (Utils.generator_stage >= 5 && Utils.generator_stage < 10):
+			elif (Utils.generator_stage >= 4 && Utils.generator_stage < 10):
 				var rel_color:Color = Color.WHITE if relation_is_progress[i] else Color.WEB_GRAY
 				draw_line(Vector2(0,0), to_local(connecting_area.pos), rel_color, 1, true)
 	#draw area index
 	if Utils.debug_show_point_indexes:
 		if (Utils.generator_stage >= 4):
 			draw_string(font,Vector2(0,20), str(area_index), 0, -1, 32, Color.BLACK)
-		else:
-			draw_string(font,Vector2(0,20), str(Level.area_points.find(self)), 0, -1, 32, Color.BLACK)
 	
 	#remark hub-containing area
 	if self.has_hub:

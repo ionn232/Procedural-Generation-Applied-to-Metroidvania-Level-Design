@@ -220,7 +220,7 @@ func step_4(): ##establish initial area and designate area order by expanding fr
 	initial_area.relation_is_progress.fill(false)
 	for route_dest:AreaPoint in ordered_areas[0].relations:
 		available_routes[0].push_back(route_dest)
-	#produce ordered areas array and list of backtrack routes
+	#produce ordered areas array and list of progression routes
 	for i:int in range(Level.num_areas):
 		if i==0: continue
 		var proceed:bool = false
@@ -241,7 +241,7 @@ func step_4(): ##establish initial area and designate area order by expanding fr
 		new_area.relation_is_progress.fill(false)
 		#remove next area from elegibility: store progression and backtracking routes
 		progression_routes[expanding_area_index].push_back(available_routes[expanding_area_index].pop_at(route_index))
-		for current_route_list in available_routes: #TODO: introduce randomness (allow multiple entries to new area) IF YOU DO THIS REWORK CODE FOR get_area_start_points()
+		for current_route_list in available_routes: 
 			current_route_list.erase(new_area)
 		#fill table: add routes from next area to unseen areas
 		for route_dest:AreaPoint in ordered_areas[i].relations:
@@ -384,7 +384,7 @@ func step_10(): ##assign points as area connectors and establish relation
 			
 			#replace points for connection points if applicable, assign connection, add to areapoint
 			var is_progress:bool = current_area.relation_is_progress[j]
-			#TODO: clean this shit up bro
+			#TODO: clean this shit up
 			if (best_potential_current_connection is ConnectionPoint) && (best_potential_related_connection is ConnectionPoint):
 				best_potential_current_connection.add_connector_relation(best_potential_related_connection, is_progress)
 				best_potential_related_connection.add_connector_relation(best_potential_current_connection, is_progress)
@@ -453,7 +453,7 @@ func step_12(): ##assign points as fast-travel rooms
 			for k:int in range(len(current_area.subpoints)):
 				var current_candidate:Point = current_area.subpoints[k]
 				if !(current_candidate.is_generic): continue
-				var num_relations:int = len(current_candidate.relations) #TODO: greater weight to generic points than connector points.
+				var num_relations:int = len(current_candidate.relations)
 				if num_relations > max_num_relations:
 					best_candidate = current_candidate
 					max_num_relations = num_relations
@@ -559,14 +559,14 @@ func step_13(): ##assign points as spawn point, side upgrades, main upgrades and
 				for subpoint:Point in current_area.subpoints:
 					#allocate memory for point relation tracking
 					subpoint.relation_is_mapped.resize(len(subpoint.relations))
-					subpoint.relation_is_mapped.fill(false) #TODO this is redundant ?
+					subpoint.relation_is_mapped.fill(false)
 					#assign step indexes for connector points and fast travel points
 					if (subpoint is FastTravelPoint):
 						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
 					elif (subpoint is ConnectionPoint):
 						subpoint.area_relation_is_mapped.resize(len(subpoint.area_relations))
-						subpoint.area_relation_is_mapped.fill(false) #TODO this is redundant ?
+						subpoint.area_relation_is_mapped.fill(false)
 						var min_neighbor_step_index = min_neighbor_step_index(subpoint)
 						subpoint.associated_step = Level.route_steps[min_neighbor_step_index]
 
@@ -676,10 +676,8 @@ func step_17(): ##Add save points
 			target_mu = get_random_MU(save_room)
 			target_mu.is_save = true
 
-func step_18(): ##Extrude keyset points 
+func step_18(): ##Extrude keyset rooms 
 	#ascending order to avoid timeouts
-	var test1 = Level.trap_rooms
-	var test2 = Level.keyset_rooms
 	for step:RouteStep in Level.route_steps:
 		for current_room:Room in Level.keyset_rooms:
 			if current_room.step_index == step.index && !(current_room.is_trap):
@@ -711,6 +709,7 @@ func step_19(): ##Distribute minor rewards
 	var no_rooms_available:bool = false
 	for step:RouteStep in Level.route_steps:
 		step_minor_rewards = step.get_minor_rewards()
+		step_minor_rewards.shuffle() #TODO: use pseudo-random generator in utils!! this uses global random seed
 		#partition exploration and backtracking rewards unless initial step
 		num_backtracking_rewards = len(step_minor_rewards) * Level.backtracking_factor if step.index > 0 else 0
 		num_exploration_rewards = len(step_minor_rewards) - num_backtracking_rewards
@@ -792,7 +791,7 @@ func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) 
 		#dead end
 		return null
 
-func extrude_reward_room(room:Room): #TODO: cases where there are no available rooms
+func extrude_reward_room(room:Room):
 	var number_of_extrusions:int = Utils.rng.randi_range(1,4)
 	var adjacent_MU:MU
 	var adjacent_pos:Vector2i
@@ -1470,7 +1469,7 @@ func connect_points(points:Array):
 	for i:int in range(len(points)):
 		var current_point:Point = points[i]
 		compute_point_relations(points, i)
-	clean_islands(points) #TODO: currently not doing anything, will be needed for higher values of angular distance
+	clean_islands(points) #TODO: currently not doing anything, will be needed for higher values of angular distance if made customizable
 
 func compute_point_relations(points:Array, index:int):
 	var angles:Array = [] #type: float | null
@@ -1499,8 +1498,6 @@ func compute_point_relations(points:Array, index:int):
 		if index==j: continue
 		current_point.relations.push_back(points[j])
 		points[j].relations.push_back(current_point)
-		if index == 1 || j == 1:
-			var debug
 		clear_incompatible_relations(points[j])
 	clear_incompatible_relations(current_point)
 
@@ -1527,7 +1524,7 @@ func decide_relations(points:Array, current_point:Point, angles:Array, angle_can
 					angle_candidates[k] = null
 					angle_candidates[j] = angles[j]
 		if suitable:
-			angle_candidates[j] = second_point_angle #TODO: introduce randomness to make it more interesting maybe
+			angle_candidates[j] = second_point_angle
 
 func clean_islands(points:Array):
 	var remaining_points:Array = points.duplicate() #Array[Points]

@@ -1410,8 +1410,8 @@ func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false):
 		points[i] = current_point
 
 func ensure_min_dist_around(center_point:Point, points:Array, min_distance:Vector2):
-	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
-	var map_boundary_y:float = Level.map_size_y*16/2.0 - 4.0
+	var map_boundary_x:float = Level.map_size_x*16/2.0 - 5.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_y:float = Level.map_size_y*16/2.0 - 5.0
 	for second_point:Point in points:
 		if center_point == second_point: continue
 		var distance:Vector2 = second_point.global_position - center_point.global_position

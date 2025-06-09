@@ -8,7 +8,8 @@ const LINE_WIDTH = 2
 func _draw():
 	var range_x = Level.map_size_x * GRID_SIZE
 	var range_y = Level.map_size_y * GRID_SIZE
-	var top_left : Vector2i = Vector2i(-4 - range_x/2, -4 - range_y/2)
+	
+	var top_left : Vector2i = Vector2i((-4 if Level.map_size_x%2==0 else 4) - range_x/2, (-4 if Level.map_size_y%2==0 else 4) - range_y/2)
 	var i:int = 0
 	var j:int = 0
 	var current_column_origin:Vector2 = top_left

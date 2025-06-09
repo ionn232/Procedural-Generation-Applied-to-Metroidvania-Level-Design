@@ -39,8 +39,8 @@ static func createNew(pos:Vector2i, area_i:int, step_i:int, size:Vector2i = Vect
 
 static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1), origin_point:Point = null) -> bool:
 	if size.x == 0 && size.y == 0: return false #uninitialized room
-	elif pos.x + (size.x-1) > Level.map_size_x/2 || pos.x < -Level.map_size_x/2: return false #out of bounds - x
-	elif pos.y + (size.y-1) > Level.map_size_y/2 || pos.y < -Level.map_size_y/2: return false #out of bounds - y
+	elif pos.x + (size.x-1) > ((Level.map_size_x)/2 - int(Level.map_size_x%2==0)) || pos.x < -(Level.map_size_x)/2: return false #out of bounds - x
+	elif pos.y + (size.y-1) > ((Level.map_size_y)/2 - int(Level.map_size_y%2==0)) || pos.y < -(Level.map_size_y)/2: return false #out of bounds - y
 	
 	#check if MU exists in this position already.
 	if origin_point != null:

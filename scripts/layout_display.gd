@@ -126,6 +126,9 @@ func draw_rooms():
 					tilemap_content.set_cell(mu.grid_pos, 0, minor_boss_atlas)
 				_ when mu.is_major_boss: 
 					tilemap_content.set_cell(mu.grid_pos, 0, major_boss_atlas)
+			#shitty hack for a few edge cases
+			if mu.is_save && (mu.is_spawn || mu.is_fast_travel || mu.is_shop || mu.is_minor_boss || mu.is_major_boss):
+				tilemap_content.set_cell(mu.grid_pos, 0, multiple_items_atlas)
 			
 			#mu content
 			if len(mu.rewards) == 1:

@@ -220,7 +220,7 @@ layout_mode = 2
 [node name="SideUps" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]
 layout_mode = 2
 size_flags_horizontal = 3
-max_value = 10.0
+max_value = 9.0
 value = 5.0
 
 [node name="Equips" type="SpinBox" parent="UI/UI/ConfigPanel/Config/LootCounts"]

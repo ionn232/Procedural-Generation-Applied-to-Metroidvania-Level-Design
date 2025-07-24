@@ -1030,7 +1030,7 @@ func connect_adjacent_mus(r1_mu:MU, r2_mu:MU, gate:LockedDoor = null, protect_ga
 	#return start point for use in next computations if necessary
 	return r2_mu
 
-
+#returns r2's selected mu if succesful, null otherwise (rooms alredy connected)
 func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_gate:bool=false, r1_start:MU =null): 
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
 	var r1_candidates:Array[Vector2i]
@@ -1086,11 +1086,14 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_ga
 	var rand_index:int = Utils.rng.randf_range(0, len(r1_candidates)-1)
 	r1_mu = Level.map.get_mu_at(r1.grid_pos + r1_candidates[rand_index])
 	r2_mu = Level.map.get_mu_at(r1_mu.grid_pos + direction_vec)
-	#connect rooms by selected MUs
 	var direction = Utils.vec2i_to_direction(direction_vec)
+	var neg_direction:Utils.direction = Utils.opposite_direction(direction)
+	#abort if selected MUs are alredy connected (avoid impossible maps to form)
+	if r1_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || r1_mu.borders[direction] == Utils.border_type.LOCKED_DOOR:
+		return null
+	#connect rooms by selected MUs
 	r1_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
 	r1_mu.border_data[direction] = connection_gate
-	var neg_direction:Utils.direction = Utils.opposite_direction(direction)
 	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 	r2_mu.border_data[neg_direction] = connection_gate
 	#use initial and final room to set point weights
@@ -1121,10 +1124,20 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 	var skip_direction_computation:bool = true
 	while true:
 		count +=1
+		#safeguard, abort procedure if stuck in infinite loop.
 		if count == 1000:
 			print('LIMIT REACHED FROM ', origin.grid_pos, ' TO ', destination.grid_pos, ' IN ROOM ', current_room.grid_pos)
 			return
-		
+		#target is adjacent, try to complete procedure
+		if current_room.is_adjacent_to(destination):
+			var gate:LockedDoor = null
+			#gate entrance to new room
+			if is_progress && (origin.step_index != destination.step_index):
+				gate = LockedDoor.createNew(Utils.gate_state.TRAVERSABLE, Utils.gate_directionality.TWO_WAY, null, higher_step_previous_keyset)
+			elif !is_progress && (origin.step_index != destination.step_index):
+				gate = LockedDoor.createNew(Utils.gate_state.OPEN, Utils.gate_directionality.ONE_WAY, direction if origin.step_index > destination.step_index else Utils.opposite_direction(direction))
+			var try_connection = connect_adjacent_rooms(current_room, destination, gate, false, room_entry_MU)
+			if try_connection != null: return
 		#weighted random walk: decide direction
 		if !skip_direction_computation:
 			direction = weighted_random_walk_dir(current_pos, destination.grid_pos)
@@ -1293,7 +1306,6 @@ func weighted_random_walk_dir(current_pos:Vector2i, destination:Vector2i) -> Uti
 		if sum > roll:
 			direction = i
 			break
-	#var test = (Utils.absolute_direction(current_pos, destination))
 	return direction
 
 func compute_direction_weighs(position:Vector2i, objective:Vector2i) -> Array[float]:
@@ -1403,14 +1415,15 @@ func steps_to_crossroads(point:Point, seen_points:Array[Point] = []) -> int:
 		else: steps = min_steps + 1
 		return steps
 
-func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #Input: Array[Point] (or subclasses)
+func spawn_points(points:Array, pixel_dimensions:Vector2, is_area:bool = false): #points: Array[Point]
 	for i in range(len(points)):
 		var random_pos = Vector2(Utils.rng.randf_range(-pixel_dimensions.x/2.0,pixel_dimensions.x/2.0), Utils.rng.randf_range(-pixel_dimensions.y/2.0, pixel_dimensions.y/2.0))
 		var current_point = AreaPoint.createNew(random_pos) if is_area else Point.createNew(random_pos)
 		points[i] = current_point
 
 func ensure_min_dist_around(center_point:Point, points:Array, min_distance:Vector2):
-	var map_boundary_x:float = Level.map_size_x*16/2.0 - 5.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	#note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_x:float = Level.map_size_x*16/2.0 - 5.0 
 	var map_boundary_y:float = Level.map_size_y*16/2.0 - 5.0
 	for second_point:Point in points:
 		if center_point == second_point: continue
@@ -1433,8 +1446,8 @@ func expand_points(points:Array, center:Vector2, min_distance:Vector2, expansion
 		var center_to_point:Vector2 = current_point.global_position - center
 		current_point.update_position(current_point.pos + center_to_point * expansion_factor) 
 	#expand points from each other
-	#TODO: tweak parameters
-	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 #note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	#note: the range in cells is actually (-n/2 to n/2-1) due to the 0 element, so some leeway is necessary
+	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 
 	var map_boundary_y:float = Level.map_size_y*16/2.0 - 4.0
 	var clear = false
 	var count:int = 0
@@ -1569,7 +1582,6 @@ func get_island(island_points:Array[Point], current_point:Point):
 		get_island(island_points, relation)
 
 func clear_incompatible_relations(point:Point): #iterate over point relations. resolve relation conflicts
-	#TODO: does not detect in some specific cases. test: '1', 25 areas
 	var relation_angles:Array[float]
 	relation_angles.resize(len(point.relations))
 	var relations_to_remove:Array[Point]
@@ -1601,28 +1613,6 @@ func angles_collide(angle_1:float, angle_2:float) -> bool:
 		if abs(nu_angle_2 - nu_angle_1) < Utils.MIN_ANGULAR_DISTANCE:
 			return true
 	return false
-
-#func DEBUG_check_parity():
-	#var parity = true
-	#for area:AreaPoint in Level.area_points:
-		#for relation:AreaPoint in area.relations:
-			#if !area in relation.relations:
-				#parity = false
-				#print('non-compliant: ', Level.area_points.find(area), ' // ' , Level.area_points.find(relation))
-	#print('parity holds: ', parity)
-#
-#func DEBUG_check_RSs():
-	#for RS:RouteStep in Level.route_steps:
-		#print('---------------------------------------------------------------')
-		#print('RS', RS.index, ' with areas: ')
-		#for area in RS.areas:
-			#print(area.area_index)
-#
-#func DEBUG_check_borders(mu:MU):
-	#print('up: ', mu.borders[Utils.direction.UP])
-	#print('down: ', mu.borders[Utils.direction.DOWN])
-	#print('left: ', mu.borders[Utils.direction.LEFT])
-	#print('right: ', mu.borders[Utils.direction.RIGHT])
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:

@@ -34,7 +34,6 @@ static func createNew(pos:Vector2i, area_i:int, step_i:int, size:Vector2i = Vect
 	newRoom.createRoomMUs()
 	Level.rooms.push_back(newRoom)
 	
-	#newRoom.mimic_adjacent_rooms_area()
 	return newRoom
 
 static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1), origin_point:Point = null) -> bool:
@@ -144,3 +143,47 @@ func mimic_adjacent_rooms_area():
 			for prev_area_adjacent_room:Room in seen_rooms.filter(func(val:Room): return val.area_index == initial_area_index):
 				prev_area_adjacent_room.mimic_adjacent_rooms_area()
 			return
+
+enum relation_type {
+	NON_ADJACENT,
+	ADJACENT,
+	OVERLAP,
+}
+
+func is_adjacent_to(other_room:Room) -> bool:
+	var x_mode:relation_type
+	var y_mode:relation_type
+	var x_difference:int = 0
+	var y_difference:int = 0
+	#x difference
+	if other_room.grid_pos.x < self.grid_pos.x:
+		x_difference = self.grid_pos.x - (other_room.grid_pos.x + other_room.room_size.x - 1)
+	else:
+		x_difference = other_room.grid_pos.x - (self.grid_pos.x + self.room_size.x - 1)
+	#x relation
+	match (x_difference):
+		1:
+			x_mode = relation_type.ADJACENT
+		_ when x_difference <= 0:
+			x_mode = relation_type.OVERLAP
+		_ when x_difference > 1:
+			x_mode = relation_type.NON_ADJACENT
+	#y difference
+	if other_room.grid_pos.y < self.grid_pos.y:
+		y_difference = self.grid_pos.y - (other_room.grid_pos.y + other_room.room_size.y - 1)
+	else:
+		y_difference = other_room.grid_pos.y - (self.grid_pos.y + self.room_size.y - 1)
+	#y relation
+	match (y_difference):
+		1:
+			y_mode = relation_type.ADJACENT
+		_ when y_difference <= 0:
+			y_mode = relation_type.OVERLAP
+		_ when y_difference > 1:
+			y_mode = relation_type.NON_ADJACENT
+	#result computation
+	return (
+		x_mode == relation_type.OVERLAP && y_mode == relation_type.ADJACENT
+		||
+		x_mode == relation_type.ADJACENT && y_mode == relation_type.OVERLAP
+	)

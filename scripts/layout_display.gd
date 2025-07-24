@@ -112,6 +112,8 @@ func draw_rooms():
 		layout_tilemaps[room.area_index+1].set_cells_terrain_connect(limits, 0, 0)
 		for mu:MU in room.room_MUs:
 			var current_tilemap_layout_pos:Vector2i = mu.grid_pos*2
+			
+			
 			#mu type
 			match(mu):
 				_ when mu.is_spawn:

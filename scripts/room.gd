@@ -115,6 +115,7 @@ func add_MU(newMU:MU, index:int = 0):
 
 func mimic_adjacent_rooms_area():
 	var seen_rooms:Array[Room]
+	var target_pos:Vector2i
 	var target_mu:MU
 	var target_room:Room
 	var initial_area_index:int = self.area_index
@@ -124,7 +125,9 @@ func mimic_adjacent_rooms_area():
 	for current_mu:MU in self.room_MUs:
 		for direction:Utils.direction in range(4):
 			if current_mu.borders[direction] == Utils.border_type.SAME_ROOM: continue
-			target_mu = Level.map.get_mu_at(current_mu.grid_pos + Utils.direction_to_vec2i(direction))
+			target_pos = current_mu.grid_pos + Utils.direction_to_vec2i(direction)
+			if !Utils.is_pos_inside_map(target_pos): continue
+			target_mu = Level.map.get_mu_at(target_pos)
 			if target_mu != null:
 				if !Utils.is_pos_inside_map(target_mu.grid_pos): continue
 				target_room = target_mu.parent_room

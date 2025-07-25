@@ -135,7 +135,7 @@ func draw_rooms():
 			#mu content
 			if len(mu.rewards) == 1:
 				match mu.rewards[0]:
-					_ when mu.is_major_boss || mu.is_minor_boss:
+					_ when mu.is_major_boss || mu.is_minor_boss || mu.is_spawn:
 						tilemap_content.set_cell(mu.grid_pos, 0, multiple_items_atlas)
 					_ when mu.rewards[0] is MainUpgrade:
 						tilemap_content.set_cell(mu.grid_pos, 0, main_upgrade_atlas)

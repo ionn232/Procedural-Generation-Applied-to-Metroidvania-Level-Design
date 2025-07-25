@@ -619,7 +619,7 @@ func step_15(): ##Place hub zone rooms
 		while !Room.canCreate(new_room_pos, new_room_dimensions):
 			rand_direction = Utils.rng.randi_range(0, 3)
 			rand_direction_vec = Utils.direction_to_vec2i(rand_direction)
-			new_room_dimensions = Vector2i(2,2)
+			new_room_dimensions = [Vector2i(2,2), Vector2i(1,2), Vector2i(2,1)].pick_random() #TODO: follow rng seed
 			if rand_direction_vec.x < 0 || rand_direction_vec.y < 0:
 				new_room_pos = hub_room_1.grid_pos + rand_direction_vec * new_room_dimensions
 			else:

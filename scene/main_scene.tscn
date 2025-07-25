@@ -34,6 +34,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 
 [node name="StepCounter" type="Label" parent="UI/UI"]
 layout_mode = 1
@@ -55,6 +56,7 @@ offset_top = 6.0
 offset_right = -6.0
 offset_bottom = 134.0
 grow_horizontal = 0
+mouse_filter = 0
 
 [node name="StepInfo" type="MenuButton" parent="UI/UI/TopRightElems"]
 layout_mode = 2
@@ -67,19 +69,23 @@ layout_mode = 2
 [node name="layout" type="VBoxContainer" parent="UI/UI/TopRightElems/RoomSelectionInfo"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
+mouse_filter = 0
 
 [node name="Title" type="Label" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
 layout_mode = 2
+mouse_filter = 0
 text = "Room Selection"
 horizontal_alignment = 1
 
 [node name="Position" type="Label" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
 layout_mode = 2
+mouse_filter = 0
 text = "No room selected"
 horizontal_alignment = 1
 
 [node name="ColumnContainer" type="HBoxContainer" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout"]
 layout_mode = 2
+mouse_filter = 0
 alignment = 1
 
 [node name="Content" type="MenuButton" parent="UI/UI/TopRightElems/RoomSelectionInfo/layout/ColumnContainer"]

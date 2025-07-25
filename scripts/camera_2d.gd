@@ -12,6 +12,6 @@ func _process(delta: float) -> void:
 		position = get_global_mouse_position()
 	
 	if Input.is_action_just_pressed("ZoomTick"):
-		self.zoom *= 2
+		self.zoom *= 1.25
 	elif Input.is_action_just_pressed("UnZoomTick"):
-		self.zoom /= 2
+		self.zoom /= 1.25

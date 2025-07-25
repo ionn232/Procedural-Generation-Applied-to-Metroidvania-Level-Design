@@ -16,24 +16,6 @@ static var selected_room_pos = null
 
 signal room_selected()
 
-func _process(delta: float) -> void:
-	#input detection
-	#if (Input.is_action_just_pressed("Click")):
-		#var mouse_room_coords:Vector2i = layout_display.tilemap_content.local_to_map(get_local_mouse_position() + Vector2(4, 4))
-		#if Utils.is_pos_inside_map(mouse_room_coords) && (Level.map.get_mu_at(mouse_room_coords) != null):
-			#selected_room_pos = mouse_room_coords
-			#room_selected.emit()
-		#else:
-			#selected_room_pos = null
-	#if (Input.is_action_just_pressed("UIToggle")):
-		#ui.visible = !ui.visible
-	#
-	#if Input.is_action_just_pressed("Reset"):
-		#step_counter.text = '\n0'
-		#reset()
-	pass
-		
-
 func _input(event: InputEvent) -> void:
 	if (Input.is_action_just_pressed("UIToggle")):
 		ui.visible = !ui.visible

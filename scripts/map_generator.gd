@@ -792,6 +792,9 @@ func dfs_get_room_at_dist(room:Room, distance:int, seen_rooms:Array[Room] = []) 
 		return null
 
 func extrude_reward_room(room:Room):
+	if room.grid_pos == Vector2i(19,8):
+		pass
+	
 	var number_of_extrusions:int = Utils.rng.randi_range(1,4)
 	var adjacent_MU:MU
 	var adjacent_pos:Vector2i
@@ -1153,7 +1156,7 @@ func connect_rooms(origin:Room, destination:Room, is_progress:bool = true, can_r
 			skip_direction_computation = true
 			continue
 		var target_mu:MU = Level.map.get_mu_at(next_mu_pos)
-		if count==0 && origin.step_index != destination.step_index: on_existing_path = (true if target_mu == null else false)
+		if count==0 && origin.step_index != destination.step_index: on_existing_path = (true if target_mu == null else false) #BUG count==0 always false, starts at 1
 		#adjacent room exists
 		if target_mu != null:
 			#must force gate but would overwrite existing one, reroll
@@ -1277,7 +1280,7 @@ func _can_proceed_normally(room:Room, room_memory:Array[Room]) -> bool:
 	var adjacent_mu:MU
 	for room_mu:MU in room.room_MUs:
 		for direction:Utils.direction in range(4):
-			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || Utils.border_type.SAME_ROOM: #TODO arreglar esto sin crashes: room_mu.borders[direction] == 
+			if room_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || room_mu.borders[direction] == Utils.border_type.SAME_ROOM: #TODO arreglar esto sin crashes: room_mu.borders[direction] == ##what does this mean???
 				continue
 			adjacent_mu = Level.map.get_mu_at(room_mu.grid_pos + Utils.direction_to_vec2i(direction))
 			if adjacent_mu == null: 

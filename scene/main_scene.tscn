@@ -142,7 +142,7 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Map Size (W, H)"
+text = " Map Size (W, H)"
 
 [node name="XYinput" type="HBoxContainer" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -168,7 +168,7 @@ layout_mode = 2
 
 [node name="Title2" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Main Route steps"
+text = " Main Route steps"
 
 [node name="RouteSteps" type="SpinBox" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -181,7 +181,7 @@ layout_mode = 2
 
 [node name="Title3" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Areas"
+text = " Areas"
 
 [node name="Areas" type="SpinBox" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -194,7 +194,7 @@ layout_mode = 2
 
 [node name="Title4" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Area size multiplier"
+text = " Area size multiplier"
 
 [node name="AreaSizeVal" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
@@ -213,11 +213,11 @@ layout_mode = 2
 
 [node name="Title5" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Upgrades"
+text = " Upgrades"
 
 [node name="LootTypes" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Side | Equipment | Collectibles | Stat upgrades"
+text = " Side | Equipment | Collectibles | Stat upgrades "
 horizontal_alignment = 1
 
 [node name="LootCounts" type="HBoxContainer" parent="UI/UI/ConfigPanel/Config"]
@@ -249,7 +249,7 @@ layout_mode = 2
 
 [node name="Title6" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2
-text = "Backtracking Factor"
+text = " Minor reward backtracking factor"
 
 [node name="BacktrackVal" type="Label" parent="UI/UI/ConfigPanel/Config"]
 layout_mode = 2

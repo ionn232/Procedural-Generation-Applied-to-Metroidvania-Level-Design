@@ -713,30 +713,55 @@ func step_19(): ##Distribute minor rewards
 		#partition exploration and backtracking rewards unless initial step
 		num_backtracking_rewards = len(step_minor_rewards) * Level.backtracking_factor if step.index > 0 else 0
 		num_exploration_rewards = len(step_minor_rewards) - num_backtracking_rewards
+		#edge case: no viable rooms for exploration rewards (and they exist >0)
+		if len(Level.minor_reward_room_counts[step.index][0]) == 0 && num_exploration_rewards > 0:
+			#step 0: add rewards to next step
+			if step.index == 0:
+					Level.route_steps[step.index+1].add_rewards(step_minor_rewards)
+					step.clear_minor_rewards()
+					continue
+			#make all rewards backtracking
+			else:
+					num_backtracking_rewards += num_exploration_rewards
+					num_exploration_rewards = 0
 		#distribute exploration rewards
 		for i:int in range(num_exploration_rewards):
-			existing_room_reward_count = -1
+			existing_room_reward_count = -1 #initialized to 0 in first loop
 			selected_room = null
 			selected_mu = null
 			no_rooms_available = false
 			current_reward = step_minor_rewards[i]
+			
 			while selected_room == null:
 				existing_room_reward_count += 1
-				#force backtracking instead of exploration if no rooms available or stacking too many rewards together
+				#available rooms have too many rewards: force backtracking instead of exploration
 				if (existing_room_reward_count >= len(Level.minor_reward_room_counts[step.index]) || existing_room_reward_count >= 3) && step.index > 0:
 					num_backtracking_rewards += (num_exploration_rewards - i)
 					num_exploration_rewards = i
 					no_rooms_available = true
 					break
+				#obtain room candidates
 				potential_room = Level.minor_reward_room_counts[step.index][existing_room_reward_count]
 				#single room left
 				if potential_room is Room:
 					selected_room = potential_room
-				#select random available room
+				#select random room candidate
 				elif len(potential_room) > 0:
 					random_index = Utils.rng.randf_range(0, len(potential_room)-1)
 					potential_room = potential_room.pop_at(random_index)
 					selected_room = potential_room
+				##no rooms available: add rewards to next step (backtracking for last step)
+				#else:
+					##add rewards to next step
+					#if step.index < Level.num_route_steps-1:
+						#Level.route_steps[step.index+1].add_rewards(step_minor_rewards)
+						#step.clear_minor_rewards()
+					##set all rewards to backtracking
+					#else:
+						#num_backtracking_rewards += num_exploration_rewards
+						#num_exploration_rewards = 0
+					#no_rooms_available = true
+					#break
 			if no_rooms_available: break
 			selected_mu = selected_room.get_random_viable_reward_MU()
 			selected_mu.add_reward(current_reward)

@@ -42,6 +42,14 @@ func add_reward(new_reward:Reward):
 	reward_pool.push_back(new_reward)
 	new_reward.route_step = self
 
+func add_rewards(new_rewards:Array[Reward]):
+	for new_reward:Reward in new_rewards:
+		reward_pool.push_back(new_reward)
+		new_reward.route_step = self
+
+func clear_minor_rewards():
+	reward_pool = reward_pool.filter(func(val): return (val is SideUpgrade))
+
 func _ready() -> void:
 	pass # Replace with function body.
 

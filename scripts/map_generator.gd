@@ -574,7 +574,7 @@ func step_14(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.subpoints)):
 			var current_point:Point = current_area.subpoints[j]
-			current_point.room_creation_reposition()
+			current_point.random_reposition()
 			var room_position:Vector2i = Utils.world_pos_to_room(current_point.global_position)
 			var room_dimensions:Vector2i = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
 			#reroll size to avoid room superposition
@@ -969,9 +969,10 @@ func check_protect_point(original:Point, new_point:Point, area:AreaPoint, area_s
 			original.associated_step = Level.route_steps[original_required_step_index]
 			area_step_points.erase(original)
 			#move new point in a random direction so it doesen't overlap with original
-			new_point.update_position(new_point.pos + Vector2(Utils.rng.randf_range(-1, 1), Utils.rng.randf_range(-1, 1)).normalized() * area.intra_area_distance*2)
+			new_point.random_reposition(true)
 			ensure_min_dist_around(new_point, area.subpoints, area.intra_area_distance)
 			return
+
 	#replace original point for new point
 	new_point.absorb_relations(original)
 	new_point.is_protected = original.is_protected #just for visualization purposes

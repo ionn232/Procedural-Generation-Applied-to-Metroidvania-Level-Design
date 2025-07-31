@@ -31,11 +31,14 @@ func update_position(newPos:Vector2):
 	pos = newPos
 	position = newPos
 
-#move point to an available, free position, that avoids collision with area subpoints and existing rooms
-func room_creation_reposition():
+#move point to an available, free position
+func random_reposition(force_first_roll:bool = false):
 	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 
 	var map_boundary_y:float = Level.map_size_y*16/2.0 - 4.0
 	var count:int = -1
+	
+	if force_first_roll: self.update_position(self.pos + Vector2(Utils.rng.randfn(0.0, Utils.ROOM_SIZE), Utils.rng.randfn(0.0, Utils.ROOM_SIZE)))
+	
 	while count < 1000:
 		count += 1
 		#check room superposition

@@ -618,7 +618,7 @@ func step_15(): ##Place hub zone rooms
 		while !Room.canCreate(new_room_pos, new_room_dimensions):
 			rand_direction = Utils.rng.randi_range(0, 3)
 			rand_direction_vec = Utils.direction_to_vec2i(rand_direction)
-			new_room_dimensions = [Vector2i(2,2), Vector2i(1,2), Vector2i(2,1)].pick_random() #TODO: follow rng seed
+			new_room_dimensions = [Vector2i(2,2), Vector2i(1,2), Vector2i(2,1)][Utils.rng.randi_range(0, 2)]
 			if rand_direction_vec.x < 0 || rand_direction_vec.y < 0:
 				new_room_pos = hub_room_1.grid_pos + rand_direction_vec * new_room_dimensions
 			else:
@@ -708,7 +708,7 @@ func step_19(): ##Distribute minor rewards
 	var no_rooms_available:bool = false
 	for step:RouteStep in Level.route_steps:
 		step_minor_rewards = step.get_minor_rewards()
-		step_minor_rewards.shuffle() #TODO: use pseudo-random generator in utils!! this uses global random seed
+		Utils.array_shuffle(step_minor_rewards)
 		#partition exploration and backtracking rewards unless initial step
 		num_backtracking_rewards = len(step_minor_rewards) * Level.backtracking_factor if step.index > 0 else 0
 		num_exploration_rewards = len(step_minor_rewards) - num_backtracking_rewards

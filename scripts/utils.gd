@@ -193,3 +193,9 @@ static func gate_state_to_str(gate:LockedDoor):
 			return 'Traversable'
 		gate_state.OPEN:
 			return 'Open'
+static func array_shuffle(array: Array) -> void:
+	for i in array.size() - 2:
+		var j := rng.randi_range(i, array.size() - 1)
+		var tmp = array[i]
+		array[i] = array[j]
+		array[j] = tmp

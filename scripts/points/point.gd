@@ -31,6 +31,29 @@ func update_position(newPos:Vector2):
 	pos = newPos
 	position = newPos
 
+#move point to an available, free position, that avoids collision with area subpoints and existing rooms
+func room_creation_reposition():
+	var map_boundary_x:float = Level.map_size_x*16/2.0 - 4.0 
+	var map_boundary_y:float = Level.map_size_y*16/2.0 - 4.0
+	var count:int = -1
+	while count < 1000:
+		count += 1
+		#check room superposition
+		if Level.map.get_mu_at(Utils.world_pos_to_room(self.global_position)) == null:
+			#viable position found
+			return
+		#roll new position
+		self.update_position(self.pos + Vector2(Utils.rng.randfn(0.0, Utils.ROOM_SIZE), Utils.rng.randfn(0.0, Utils.ROOM_SIZE)))
+		#keep point inside grid (border mirroring)
+		if abs(self.global_position.x) > map_boundary_x:
+			var point_to_reflection:Vector2 = Vector2(1, 0) * (2 * (sign(self.global_position.x) * map_boundary_x - self.global_position.x))
+			self.update_position(self.pos + point_to_reflection)
+		elif abs(self.global_position.y) > map_boundary_y:
+			var point_to_reflection:Vector2 = Vector2(0, 1) * (2 * (sign(self.global_position.y) * map_boundary_y - self.global_position.y))
+			self.update_position(self.pos + point_to_reflection)
+
+	print('TIMEOUT: POINT REPOSITION at step ', self.associated_step.index)
+
 func set_point_color(newColor:Color):
 	#sprite.modulate = newColor
 	sprite.self_modulate = newColor

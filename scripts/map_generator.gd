@@ -574,12 +574,12 @@ func step_14(): ##Place rooms for main upgrades, keyset units, side upgrades, ar
 		var current_area:AreaPoint = Level.area_points[i]
 		for j:int in range(len(current_area.subpoints)):
 			var current_point:Point = current_area.subpoints[j]
+			current_point.room_creation_reposition()
 			var room_position:Vector2i = Utils.world_pos_to_room(current_point.global_position)
 			var room_dimensions:Vector2i = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
 			#reroll size to avoid room superposition
 			while !Room.canCreate(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), room_dimensions, current_point):
 				room_dimensions = Vector2i(Utils.rng.randi_range(1, 3), Utils.rng.randi_range(1, 3)) #TODO discriminate by room type
-				room_position = Utils.world_pos_to_room(current_point.global_position)
 			var new_room:Room = Room.createNew(Vector2i(room_position.x - room_dimensions.x/2, room_position.y - room_dimensions.y/2), current_area.area_index, current_point.associated_step.index , room_dimensions, current_point)
 			current_point.associated_room = new_room
 			var random_room_mu:MU = get_random_MU(new_room)

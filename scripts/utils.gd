@@ -145,7 +145,7 @@ static func room_index_to_world(index:int) -> int:
 static func room_pos_to_world(pos:Vector2i) -> Vector2i:
 	return pos * 16
 static func world_pos_to_room(world_pos:Vector2) -> Vector2i:
-	var result = Vector2i(round((world_pos.x-4)/16.0), round((world_pos.y-4)/16.0))
+	var result = Vector2i(round((world_pos.x-4.0)/16.0), round((world_pos.y-4.0)/16.0))
 	#hack to avoid some crashes
 	result.x = clamp(result.x, -Level.map_size_x/2, ((Level.map_size_x)/2 - int(Level.map_size_x%2==0)))
 	result.y = clamp(result.y, -Level.map_size_y/2, ((Level.map_size_y)/2 - int(Level.map_size_y%2==0)))

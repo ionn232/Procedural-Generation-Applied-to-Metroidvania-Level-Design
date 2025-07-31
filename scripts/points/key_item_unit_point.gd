@@ -11,7 +11,7 @@ var key_index:int
 var key_unit_value:KeyItemUnit
 
 #associated RS
-var associated_RS:RouteStep
+var associated_RS:RouteStep #TODO: remove duplicate info, present in base class
 
 
 static func createNew(pos:Vector2, generic_identity:Point = null) -> KeyItemUnitPoint:

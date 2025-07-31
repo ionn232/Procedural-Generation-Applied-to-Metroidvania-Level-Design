@@ -42,11 +42,12 @@ static func canCreate(pos:Vector2i, size:Vector2i = Vector2i(1,1), origin_point:
 	elif pos.y + (size.y-1) > ((Level.map_size_y)/2 - int(Level.map_size_y%2==0)) || pos.y < -(Level.map_size_y)/2: return false #out of bounds - y
 	
 	#check if MU exists in this position already.
-	if origin_point != null:
-		var point_mu:MU = Level.map.get_mu_at(Utils.world_pos_to_room(origin_point.global_position))
-		if point_mu != null: #This mu is alredy occupied by another room. Move point.
-			origin_point.update_position(origin_point.pos + Vector2(Utils.rng.randf_range(1.0, 2.0) * 16, Utils.rng.randf_range(1.0, 2.0) * 16)) #16 -> room size TODO make global
-			return false #create room next iteration
+	#if origin_point != null:
+		#var point_mu:MU = Level.map.get_mu_at(Utils.world_pos_to_room(origin_point.global_position))
+		#if point_mu != null: #This mu is alredy occupied by another room. Move point.
+			#var new_position:Vector2 = origin_point.pos + Vector2(Utils.rng.randf_range(1.0, 2.0) * 16, Utils.rng.randf_range(1.0, 2.0) * 16)
+			#origin_point.update_position(new_position) #16 -> room size TODO make global
+			#return false #create room next iteration
 	
 	var current_pos:Vector2i
 	for i in range(size.x):

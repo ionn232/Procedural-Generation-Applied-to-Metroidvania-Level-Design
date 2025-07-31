@@ -142,7 +142,6 @@ func _get_direction_icon(dir:Utils.direction) -> Resource:
 func load_step_info():
 	var step_popup:PopupMenu = step_info_menu.get_popup()
 	step_popup.clear(true)
-	print('updating rewards')
 	for step:RouteStep in Level.route_steps:
 		var new_option_popup:PopupMenu = PopupMenu.new()
 		new_option_popup.title = 'Step ' + str(step.index)

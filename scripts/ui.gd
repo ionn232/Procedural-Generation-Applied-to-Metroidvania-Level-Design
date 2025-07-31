@@ -35,10 +35,14 @@ func _ready() -> void:
 	set_rng_mode(true)
 	load_step_rooms_menu()
 
+func reset_info() -> void:
+	load_step_info()
+	load_step_rooms_menu()
+	clear_room_info()
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	pass
-
 
 func load_step_rooms_menu() -> void:
 	var step_rooms_popup:PopupMenu = step_rooms.get_popup()
@@ -55,6 +59,13 @@ func step_selected(step_index:int):
 func display_step_desc(current_stage:int):
 	step_counter.text = STEP_DESCRIPTIONS[current_stage]
 	step_counter.text += '\n' + str(Utils.generator_stage)
+
+func clear_room_info():
+	room_select_position.text = "No room selected"
+	room_select_rewards.disabled = true
+	room_select_borders.disabled = true
+	room_select_rewards.get_popup().clear(true)
+	room_select_borders.get_popup().clear(true)
 
 func display_room_info():
 	var selected_mu = Level.map.get_mu_at(main_scene.selected_room_pos)
@@ -131,6 +142,7 @@ func _get_direction_icon(dir:Utils.direction) -> Resource:
 func load_step_info():
 	var step_popup:PopupMenu = step_info_menu.get_popup()
 	step_popup.clear(true)
+	print('updating rewards')
 	for step:RouteStep in Level.route_steps:
 		var new_option_popup:PopupMenu = PopupMenu.new()
 		new_option_popup.title = 'Step ' + str(step.index)
@@ -189,6 +201,7 @@ func _on_advance_btn_button_down() -> void:
 		stage_changed.emit()
 		if Utils.generator_stage == 7: load_step_info()
 
+#show output
 func _on_result_btn_down() -> void:
 	main_scene.reset()
 	result_signal.emit()
@@ -228,8 +241,6 @@ func map_y_changed(height:float):
 func change_num_route_steps(steps:float):
 	Level.num_route_steps = int(steps)
 	main_scene.reset()
-	load_step_info()
-	load_step_rooms_menu()
 
 func change_num_areas(areas:float):
 	Level.num_areas = int(areas)
@@ -238,23 +249,29 @@ func change_num_areas(areas:float):
 func change_area_size_mult(value:float):
 	Level.area_size_multiplier = value
 	area_size_val.text = str(value)
+	main_scene.reset()
 
 #loot
 func change_side_ups_count(val:float):
 	Level.num_side_upgrades = val
+	main_scene.reset()
 
 func change_equip_count(val:float):
 	Level.num_equipment = val
+	main_scene.reset()
 
 func change_collectible_count(val:float):
 	Level.num_collectibles = val
+	main_scene.reset()
 
 func change_stat_ups_count(val:float):
 	Level.num_stat_ups = val
+	main_scene.reset()
 
 func change_backtracking_factor(val:float):
 	Level.backtracking_factor = val
 	backtrack_val.text = str(val)
+	main_scene.reset()
 
 #debug components
 func set_area_size_visible(is_visible:bool):

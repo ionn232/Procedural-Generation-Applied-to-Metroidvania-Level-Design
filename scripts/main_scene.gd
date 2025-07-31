@@ -3,6 +3,7 @@ extends Node2D
 @onready var room_selection: Label = $UI/UI/RoomSelection
 @onready var route_steps_keyset: Label = $UI/UI/RouteStepsKeyset
 
+@onready var ui_layer: CanvasLayer = $UI
 @onready var ui: Control = $UI/UI
 @onready var step_counter: Label = $UI/UI/StepCounter
 
@@ -47,3 +48,5 @@ func reset():
 	layout_display.free()
 	layout_display = LAYOUT_DISPLAY.instantiate()
 	add_child(layout_display, true)
+	
+	ui_layer.reset_info()

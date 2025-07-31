@@ -34,7 +34,6 @@ func _ready() -> void: ##level, map initializations // rng seeding
 	area_size_rooms_xy = ceil(area_size_xy / 16.0)
 	Level.area_size_xy = area_size_xy
 	
-	
 	#load reward pool
 	RewardPool.import_reward_pool()
 	RewardPool.make_equipment(Level.num_equipment)
@@ -750,18 +749,6 @@ func step_19(): ##Distribute minor rewards
 					random_index = Utils.rng.randf_range(0, len(potential_room)-1)
 					potential_room = potential_room.pop_at(random_index)
 					selected_room = potential_room
-				##no rooms available: add rewards to next step (backtracking for last step)
-				#else:
-					##add rewards to next step
-					#if step.index < Level.num_route_steps-1:
-						#Level.route_steps[step.index+1].add_rewards(step_minor_rewards)
-						#step.clear_minor_rewards()
-					##set all rewards to backtracking
-					#else:
-						#num_backtracking_rewards += num_exploration_rewards
-						#num_exploration_rewards = 0
-					#no_rooms_available = true
-					#break
 			if no_rooms_available: break
 			selected_mu = selected_room.get_random_viable_reward_MU()
 			selected_mu.add_reward(current_reward)

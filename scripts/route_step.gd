@@ -37,7 +37,6 @@ func add_key(new_key:Reward):
 			kiu.unit_index = i
 			kiu.route_step = self
 
-
 func add_reward(new_reward:Reward):
 	reward_pool.push_back(new_reward)
 	new_reward.route_step = self

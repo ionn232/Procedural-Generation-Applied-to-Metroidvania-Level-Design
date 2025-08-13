@@ -23,6 +23,15 @@ const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
 @onready var area_size_val: Label = $UI/ConfigPanel/Config/AreaSizeVal
 @onready var backtrack_val: Label = $UI/ConfigPanel/Config/BacktrackVal
 
+#debug UI components
+@onready var debug_area_size: CheckBox = $UI/DebugPanel/VBoxContainer/AreaSize
+@onready var debug_area_inner_size: CheckBox = $UI/DebugPanel/VBoxContainer/AreaInnerSize
+@onready var debug_point_index: CheckBox = $UI/DebugPanel/VBoxContainer/PointIndex
+@onready var debug_point_step: CheckBox = $UI/DebugPanel/VBoxContainer/PointStep
+@onready var debug_relation_angles: CheckBox = $UI/DebugPanel/VBoxContainer/RelationAngles
+@onready var debug_relations: CheckBox = $UI/DebugPanel/VBoxContainer/Relations
+@onready var debug_points: CheckBox = $UI/DebugPanel/VBoxContainer/Points
+
 
 signal stage_changed()
 signal max_step_selected(step_index:int)
@@ -298,6 +307,15 @@ func set_point_relations_visible(is_visible:bool):
 	Utils.redraw_all()
 
 func set_points_visible(is_visible:bool):
+	Utils.debug_show_points = is_visible
+	#disable dependant options
+	debug_area_size.disabled = !is_visible
+	debug_area_inner_size.disabled = !is_visible
+	debug_point_index.disabled = !is_visible
+	debug_point_step.disabled = !is_visible
+	debug_relation_angles.disabled = !is_visible
+	debug_relations.disabled = !is_visible
+	#apply visibility to existing points
 	for area:AreaPoint in Level.area_points:
 		area.visible = is_visible
 

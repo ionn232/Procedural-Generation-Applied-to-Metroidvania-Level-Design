@@ -19,6 +19,7 @@ var reward_pool:Array #type: Array[Reward] or subclasses
 
 static func createNew(pos:Vector2, generic_identity:Point = null) -> AreaPoint:
 	var newPoint = AREA_POINT.instantiate()
+	newPoint.visible = Utils.debug_show_points
 	newPoint.position = pos
 	newPoint.pos = pos
 	newPoint.relations = []

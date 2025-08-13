@@ -22,6 +22,7 @@ var associated_step:RouteStep
 
 static func createNew(pos:Vector2, generic_identity:Point = null) -> Point:
 	var newPoint = POINT.instantiate()
+	newPoint.visible = Utils.debug_show_points
 	newPoint.relations = []
 	newPoint.position = pos
 	newPoint.pos = pos

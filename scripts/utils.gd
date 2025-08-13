@@ -20,6 +20,7 @@ static var debug_show_point_angles:bool = true
 static var debug_show_relations:bool = true
 static var debug_show_points:bool = true
 
+
 static var visualized_step_index:int
 
 enum border_type {

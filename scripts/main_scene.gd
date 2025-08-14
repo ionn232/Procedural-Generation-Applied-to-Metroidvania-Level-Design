@@ -10,8 +10,8 @@ extends Node2D
 @onready var map_generator: MapGenerator = $MapGenerator
 @onready var layout_display: LayoutDisplay = $LayoutDisplay
 
-const LAYOUT_DISPLAY = preload("res://scene/layout_display.tscn")
-const MAP_GENERATOR = preload("res://scene/map_generator.tscn")
+const LAYOUT_DISPLAY = preload("res://scene/layout/layout_display.tscn")
+const MAP_GENERATOR = preload("res://scene/general/map_generator.tscn")
 
 static var selected_room_pos = null
 

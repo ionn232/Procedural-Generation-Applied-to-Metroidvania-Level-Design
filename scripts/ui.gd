@@ -1,9 +1,9 @@
 extends CanvasLayer
 
-const DOWN_DIRECTION_ICON = preload("res://data/images/down_direction_icon.png")
-const LEFT_DIRECTION_ICON = preload("res://data/images/left_direction_icon.png")
-const RIGHT_DIRECTION_ICON = preload("res://data/images/right_direction_icon.png")
-const UP_DIRECTION_ICON = preload("res://data/images/up_direction_icon.png")
+const DOWN_DIRECTION_ICON = preload("res://data/images/direction_arrows/down_direction_icon.png")
+const LEFT_DIRECTION_ICON = preload("res://data/images/direction_arrows/left_direction_icon.png")
+const RIGHT_DIRECTION_ICON = preload("res://data/images/direction_arrows/right_direction_icon.png")
+const UP_DIRECTION_ICON = preload("res://data/images/direction_arrows/up_direction_icon.png")
 
 @onready var main_scene: Node2D = $".."
 @onready var grid: Node2D = $"../Grid"

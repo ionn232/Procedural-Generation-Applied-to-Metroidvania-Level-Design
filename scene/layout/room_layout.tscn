@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://dscphoch3nqjy"]
+
+[ext_resource type="TileSet" uid="uid://1kbhisi0s48" path="res://data/tilesets/tileset.tres" id="1_qhq1g"]
+
+[node name="RoomLayout" type="TileMapLayer"]
+texture_filter = 1
+scale = Vector2(0.5, 0.5)
+tile_set = ExtResource("1_qhq1g")

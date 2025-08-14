@@ -1,8 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://du4oigwo0e2wf"]
+[gd_scene load_steps=7 format=3 uid="uid://ce5d3rslp85dq"]
 
-[ext_resource type="PackedScene" uid="uid://bj1kuktkg5o3x" path="res://scene/map_generator.tscn" id="1_6rntq"]
 [ext_resource type="Script" path="res://scripts/main_scene.gd" id="1_gbq8f"]
-[ext_resource type="PackedScene" uid="uid://ocnc86sdjvvv" path="res://scene/layout_display.tscn" id="2_qa15b"]
+[ext_resource type="PackedScene" uid="uid://bj1kuktkg5o3x" path="res://scene/general/map_generator.tscn" id="2_7u8ej"]
+[ext_resource type="PackedScene" uid="uid://ocnc86sdjvvv" path="res://scene/layout/layout_display.tscn" id="3_1f5cb"]
 [ext_resource type="Script" path="res://scripts/grid_display.gd" id="4_wqh5d"]
 [ext_resource type="Script" path="res://scripts/camera_2d.gd" id="5_6cnhv"]
 [ext_resource type="Script" path="res://scripts/ui.gd" id="6_u3gya"]
@@ -10,9 +10,9 @@
 [node name="MainScene" type="Node2D"]
 script = ExtResource("1_gbq8f")
 
-[node name="MapGenerator" parent="." instance=ExtResource("1_6rntq")]
+[node name="MapGenerator" parent="." instance=ExtResource("2_7u8ej")]
 
-[node name="LayoutDisplay" parent="." instance=ExtResource("2_qa15b")]
+[node name="LayoutDisplay" parent="." instance=ExtResource("3_1f5cb")]
 
 [node name="Grid" type="Node2D" parent="."]
 z_index = -1

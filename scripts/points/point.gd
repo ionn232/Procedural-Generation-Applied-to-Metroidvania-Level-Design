@@ -3,7 +3,7 @@ extends Node2D
 
 #prefab for instancing
 const POINT = preload("res://scene/points/point.tscn")
-const font = preload("res://data/upheavtt.ttf")
+const font = preload("res://data/fonts/upheavtt.ttf")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 
@@ -14,7 +14,7 @@ var is_generic:bool = true
 var is_protected:bool = false
 
 var relations : Array #type: Array[Point] (or subclass)
-var relation_is_mapped : Array[bool] #index parity ^, relation rooms built? 
+var relation_is_mapped : Array[bool] #index parity with relations array ^
 
 var associated_room:Room
 

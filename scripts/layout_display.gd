@@ -12,7 +12,7 @@ var step_display_cap:int = 9999
 
 var layout_tilemaps:Array[TileMapLayer]
 
-const ROOM_LAYOUT = preload("res://scene/tilemaplayers/room_layout.tscn")
+const ROOM_LAYOUT = preload("res://scene/layout/room_layout.tscn")
 
 const wall_up_atlas := Vector2i(1,0)
 const wall_down_atlas := Vector2i(1,2)

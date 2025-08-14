@@ -191,3 +191,12 @@ func is_adjacent_to(other_room:Room) -> bool:
 		||
 		x_mode == relation_type.ADJACENT && y_mode == relation_type.OVERLAP
 	)
+	
+func get_random_MU() -> MU:
+	return self.room_MUs[Utils.rng.randi_range(0, len(self.room_MUs)-1)]
+
+func get_free_MU() -> MU: #Excludes save points! (avoid crashes) #TODO make random
+	for room_mu:MU in self.room_MUs:
+		if len(room_mu.rewards) == 0 && !room_mu.is_fast_travel && !room_mu.is_shop && !room_mu.is_spawn:
+			return room_mu
+	return null

@@ -1,6 +1,90 @@
-[gd_scene load_steps=2 format=3 uid="uid://bj1kuktkg5o3x"]
+[gd_scene load_steps=23 format=3 uid="uid://bj1kuktkg5o3x"]
 
-[ext_resource type="Script" path="res://scripts/map_generator.gd" id="1_8rwc1"]
+[ext_resource type="Script" path="res://scripts/generator/map_generator.gd" id="1_8rwc1"]
+[ext_resource type="Script" path="res://scripts/generator/step1.gd" id="2_w70tu"]
+[ext_resource type="Script" path="res://scripts/generator/step2.gd" id="3_jnq7j"]
+[ext_resource type="Script" path="res://scripts/generator/step3.gd" id="4_rrwcw"]
+[ext_resource type="Script" path="res://scripts/generator/step4.gd" id="5_r8oex"]
+[ext_resource type="Script" path="res://scripts/generator/step5.gd" id="6_v4nmv"]
+[ext_resource type="Script" path="res://scripts/generator/step6.gd" id="7_nxrfq"]
+[ext_resource type="Script" path="res://scripts/generator/step7.gd" id="8_0ktcn"]
+[ext_resource type="Script" path="res://scripts/generator/step8.gd" id="9_fq6d6"]
+[ext_resource type="Script" path="res://scripts/generator/step9.gd" id="10_tw1th"]
+[ext_resource type="Script" path="res://scripts/generator/step10.gd" id="11_fe7km"]
+[ext_resource type="Script" path="res://scripts/generator/step11.gd" id="12_rfres"]
+[ext_resource type="Script" path="res://scripts/generator/step12.gd" id="13_p57q2"]
+[ext_resource type="Script" path="res://scripts/generator/step13.gd" id="14_rdyor"]
+[ext_resource type="Script" path="res://scripts/generator/step14.gd" id="15_v60lj"]
+[ext_resource type="Script" path="res://scripts/generator/step15.gd" id="16_p4i3e"]
+[ext_resource type="Script" path="res://scripts/generator/step16.gd" id="17_mwqo7"]
+[ext_resource type="Script" path="res://scripts/generator/step17.gd" id="18_0bv35"]
+[ext_resource type="Script" path="res://scripts/generator/step18.gd" id="19_t4oa3"]
+[ext_resource type="Script" path="res://scripts/generator/step19.gd" id="20_xjlju"]
+[ext_resource type="Script" path="res://scripts/generator/step20.gd" id="21_8hlpr"]
+[ext_resource type="Script" path="res://scripts/generator/common.gd" id="22_fettg"]
 
 [node name="MapGenerator" type="Node2D"]
 script = ExtResource("1_8rwc1")
+
+[node name="Step1" type="Node2D" parent="."]
+script = ExtResource("2_w70tu")
+
+[node name="Step2" type="Node2D" parent="."]
+script = ExtResource("3_jnq7j")
+
+[node name="Step3" type="Node2D" parent="."]
+script = ExtResource("4_rrwcw")
+
+[node name="Step4" type="Node2D" parent="."]
+script = ExtResource("5_r8oex")
+
+[node name="Step5" type="Node2D" parent="."]
+script = ExtResource("6_v4nmv")
+
+[node name="Step6" type="Node2D" parent="."]
+script = ExtResource("7_nxrfq")
+
+[node name="Step7" type="Node2D" parent="."]
+script = ExtResource("8_0ktcn")
+
+[node name="Step8" type="Node2D" parent="."]
+script = ExtResource("9_fq6d6")
+
+[node name="Step9" type="Node2D" parent="."]
+script = ExtResource("10_tw1th")
+
+[node name="Step10" type="Node2D" parent="."]
+script = ExtResource("11_fe7km")
+
+[node name="Step11" type="Node2D" parent="."]
+script = ExtResource("12_rfres")
+
+[node name="Step12" type="Node2D" parent="."]
+script = ExtResource("13_p57q2")
+
+[node name="Step13" type="Node2D" parent="."]
+script = ExtResource("14_rdyor")
+
+[node name="Step14" type="Node2D" parent="."]
+script = ExtResource("15_v60lj")
+
+[node name="Step15" type="Node2D" parent="."]
+script = ExtResource("16_p4i3e")
+
+[node name="Step16" type="Node2D" parent="."]
+script = ExtResource("17_mwqo7")
+
+[node name="Step17" type="Node2D" parent="."]
+script = ExtResource("18_0bv35")
+
+[node name="Step18" type="Node2D" parent="."]
+script = ExtResource("19_t4oa3")
+
+[node name="Step19" type="Node2D" parent="."]
+script = ExtResource("20_xjlju")
+
+[node name="Step20" type="Node2D" parent="."]
+script = ExtResource("21_8hlpr")
+
+[node name="Common" type="Node2D" parent="."]
+script = ExtResource("22_fettg")

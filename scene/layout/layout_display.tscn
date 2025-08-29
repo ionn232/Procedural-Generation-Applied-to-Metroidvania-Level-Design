@@ -5,6 +5,7 @@
 [ext_resource type="TileSet" uid="uid://c7dt66dbvlgs" path="res://data/tilesets/tilemap_icons.tres" id="2_v0ri3"]
 
 [node name="LayoutDisplay" type="Node2D"]
+texture_filter = 1
 script = ExtResource("1_auwf0")
 
 [node name="Background" type="TileMapLayer" parent="."]

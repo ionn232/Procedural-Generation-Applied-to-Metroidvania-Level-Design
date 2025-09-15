@@ -426,7 +426,7 @@ func connect_adjacent_mus(r1_mu:MU, r2_mu:MU, gate:LockedDoor = null, protect_ga
 func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_gate:bool=false, r1_start:MU =null): 
 	var r1_to_r2:Vector2i = r2.grid_pos - r1.grid_pos
 	var r1_candidates:Array[Vector2i]
-	var x_candidates:Array #either x or y is always length 1 (different for each call)
+	var x_candidates:Array #either x_candidates or y_candidates is always length 1 (different for each call)
 	var y_candidates:Array
 	var overlap:int
 	var connection_gate:LockedDoor
@@ -483,12 +483,15 @@ func connect_adjacent_rooms(r1:Room, r2:Room, gate:LockedDoor = null, protect_ga
 	#abort if selected MUs are alredy connected (avoid impossible maps to form)
 	if r1_mu.borders[direction] == Utils.border_type.LOCKED_DOOR || r1_mu.borders[direction] == Utils.border_type.LOCKED_DOOR:
 		return null
+	#correct invalid gate direction if applicable (distant room correction algorithm may provide incorrect direction)
+	if (connection_gate.directionality == Utils.gate_directionality.ONE_WAY) && (connection_gate.direction != direction && connection_gate.direction != neg_direction):
+		connection_gate.direction = direction if r1.step_index > r2.step_index else Utils.opposite_direction(direction)
 	#connect rooms by selected MUs
 	r1_mu.borders[direction] = Utils.border_type.LOCKED_DOOR
 	r1_mu.border_data[direction] = connection_gate
 	r2_mu.borders[neg_direction] = Utils.border_type.LOCKED_DOOR
 	r2_mu.border_data[neg_direction] = connection_gate
-	#use initial and final room to set point weights
+	#use initial and final MU to set point weights
 	if r1_start != null && !r1.is_trap: _set_room_minor_reward_weights(r1, r1_start, r1_mu)
 	#return start point for use in next computations if necessary
 	return r2_mu

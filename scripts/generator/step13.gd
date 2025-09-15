@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 
 func execute(): ##assign points as spawn point, side upgrades, main upgrades and key item units
 	#identify protected points for each area beyond initial
@@ -21,9 +21,9 @@ func execute(): ##assign points as spawn point, side upgrades, main upgrades and
 		for j:int in range(len(current_step.areas)):
 			var current_area:AreaPoint = current_step.areas[j]
 			#Array[MainUpgrade || KeyItemUnit]
-			var area_step_keyset:Array = common.get_intersection(step_keyset_flat, current_area.reward_pool)
+			var area_step_keyset:Array = common.array_inner_join(step_keyset_flat, current_area.reward_pool)
 			#Array[SideUpgrade]
-			var area_step_SUs:Array = common.get_intersection(current_step.reward_pool, current_area.reward_pool).filter(func(val): return val is SideUpgrade)
+			var area_step_SUs:Array = common.array_inner_join(current_step.reward_pool, current_area.reward_pool).filter(func(val): return val is SideUpgrade)
 			var area_step_points:Array[Point] = common.get_area_step_points(current_area, len(area_step_keyset) + len(area_step_SUs) + (1 if !spawn_placed else 0), spawn_placed)
 			
 			#assign spawn point TODO:fuse with keyset points procedure (its the same)

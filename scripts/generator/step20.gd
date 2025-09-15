@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 
 func execute(): ##Reassign room areas
 	for i:int in range(Level.num_route_steps):

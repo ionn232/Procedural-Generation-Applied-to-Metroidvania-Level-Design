@@ -1,7 +1,7 @@
 extends Node
 
 @onready var main_scene: Node2D = $"../.."
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 
 func execute(): ##1: place as many points as the number of areas
 	var area_points : Array[AreaPoint] = []

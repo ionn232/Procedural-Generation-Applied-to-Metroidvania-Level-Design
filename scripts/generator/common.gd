@@ -1,3 +1,4 @@
+class_name Common
 extends Node
 
 ##
@@ -335,7 +336,7 @@ func get_area_step_points(area:AreaPoint, number_of_points:int, spawn_placed:boo
 				func(acc:Array, val:ConnectionPoint): 
 				return acc + val.area_relations 
 				, [])
-			starting_point = get_intersection(point_candidates, second_area_inter_connectors)[0]
+			starting_point = array_inner_join(point_candidates, second_area_inter_connectors)[0]
 	#step in first area, expand from spawn
 	elif area.area_index == 0:
 		starting_point = area.subpoints.filter(func(val): return val is SpawnPoint)[0]
@@ -356,7 +357,7 @@ func get_area_step_points(area:AreaPoint, number_of_points:int, spawn_placed:boo
 			func(acc:Array, val:ConnectionPoint): 
 			return acc + val.area_relations 
 			, [])
-		starting_point = get_intersection(point_candidates, previous_area_inter_connectors)[0]
+		starting_point = array_inner_join(point_candidates, previous_area_inter_connectors)[0]
 		
 	#expand from starting point, DFS preorder graph
 	var area_step_points:Array[Point] = []
@@ -861,7 +862,7 @@ func extrude_reward_room(room:Room):
 ## MISC FUNCTIONS
 ##
 
-func get_intersection(arr1:Array, arr2:Array) -> Array:
+func array_inner_join(arr1:Array, arr2:Array) -> Array:
 	var intersection:Array = []
 	for element in arr1:
 		if element in arr2: intersection.push_back(element)

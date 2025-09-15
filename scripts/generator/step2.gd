@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 @onready var generator: MapGenerator = $".."
 
 func execute(): ##expand points from centroid and ensure minimum distance

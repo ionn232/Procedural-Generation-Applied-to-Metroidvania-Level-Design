@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 
 func execute(): ##Place hub zone rooms
 	var hub_area:AreaPoint = Level.area_points.filter(func(val:AreaPoint): return val.has_hub)[0]

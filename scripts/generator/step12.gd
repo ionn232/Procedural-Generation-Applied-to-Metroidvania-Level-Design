@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 
 func execute(): ##assign points as fast-travel rooms
 		for j:int in range(len(Level.area_points)):

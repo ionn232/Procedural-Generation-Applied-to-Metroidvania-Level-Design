@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 
 func execute(): ##establish relations between area subpoints
 	for current_area:AreaPoint in Level.area_points:

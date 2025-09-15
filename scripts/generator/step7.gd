@@ -1,6 +1,6 @@
 extends Node
 
-@onready var common: Node2D = $"../Common"
+@onready var common: Common = $"../Common"
 @onready var generator: MapGenerator = $".."
 
 func execute(): ##randomly place around areas a point for each relation, one for fast-travel room and one extra for spawn room
